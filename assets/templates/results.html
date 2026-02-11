@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>CVE Details</title>
+    <link rel="stylesheet" href="../static/css/style.css?v=8.0">
+</head>
+<body>
+    <div class="container">
+        <h1>CVE Details</h1>
+        {{range .Vulnerabilities}}
+                <div>
+                    <h2>CVE ID: {{.CVE.ID}}</h2>
+                    <p><strong>Published:</strong> {{.CVE.Published}}</p>
+                    <p><strong>Last Modified:</strong> {{.CVE.LastModified}}</p>
+                    <p><strong>Description:</strong> {{(index .CVE.Descriptions 0).Value}}</p>
+                    {{range .CVE.Metrics.CvssMetricV31}}
+                        <p><strong>Base Score:</strong> {{.CvssData.BaseScore}}</p>
+                        <p><strong>Base Severity:</strong> {{.CvssData.BaseSeverity}}</p>
+                    {{end}}
+
+                    <summary><strong>Configuration Details</strong></summary>
+                    <table>
+                        <tr>
+                            <th>Criteria</th>
+                            <th>Version Start Including</th>
+                            <th>Version Start Excluding</th>
+                            <th>Version End Including</th>
+                            <th>Version End Excluding</th>
+                        </tr>
+                        {{range .CVE.Configurations}}
+                            {{range .Nodes}}
+                                {{range .CPEMatch}}
+                                    <tr>
+                                        <td>{{.Criteria}}</td>
+                                        <td>{{if .VersionStartIncluding}}{{.VersionStartIncluding}}{{else}}N/A{{end}}</td>
+                                        <td>{{if .VersionStartExcluding}}{{.VersionStartExcluding}}{{else}}N/A{{end}}</td>
+                                        <td>{{if .VersionEndIncluding}}{{.VersionEndIncluding}}{{else}}N/A{{end}}</td>
+                                        <td>{{if .VersionEndExcluding}}{{.VersionEndExcluding}}{{else}}N/A{{end}}</td>
+                                    </tr>
+                                {{end}}
+                            {{end}}
+                        {{end}}
+                    </table>
+                    <p><strong>Reference URLs:</strong></p>
+                    {{range .CVE.References}}
+                        <p><a href="{{.URL}}" target="_blank">{{.URL}}</a></p>
+                    {{end}}
+        {{end}}
+        </div>
+    </div>
+    <script src="../static/javascript/script.js"></script>
+</body>
+</html>

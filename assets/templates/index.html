@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>DEFENDER</title>
+    <link rel="stylesheet" href="../static/css/style.css?v=8.0">
+</head>
+<body>
+    <div class="container">
+        <h1>DEFENDER</h1>
+        <form action="/process" method="post">
+            <label for="cveID">Individual CVE ID (example: CVE-2021-36159):</label>
+            <input type="text" name="cveID" id="cveID">
+            <button type="submit">Submit</button>
+        </form>
+        <form action="/upload" method="post" enctype="multipart/form-data">
+            <label for="file">Trivy SBOM or Listed Text File Containing CVE IDs and (Optionally) Their PURLs:</label>
+            <input type="file" name="file" id="file">
+            <button type="submit">Upload</button>
+        </form>
+        <form action="/sbom-process" method="post" enctype="multipart/form-data">
+            <label for="sbom-file">SBOM of any type to Run Through Trivy and Process CVE Data:</label>
+            <input type="file" name="sbom-file" id="sbom-file">
+            <button type="submit">Upload</button>
+        </form>
+        <form action="/upload-cyclonedx-bom" method="post" enctype="multipart/form-data">
+            <label for="cyclonedx-bom-file">CycloneDX SBOM. Produces Dependency Graph and Vulnerability Tracing:</label>
+            <input type="file" name="cyclonedx-bom-file" id="cyclonedx-bom-file">
+            <button type="submit">Upload</button>
+        </form>
+    </div>
+
+    <script src="../static/javascript/script.js"></script>    
+</body>
+</html>

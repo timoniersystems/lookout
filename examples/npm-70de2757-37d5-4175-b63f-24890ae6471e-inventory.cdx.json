@@ -1,0 +1,4225 @@
+{
+  "bomFormat" : "CycloneDX",
+  "specVersion" : "1.5",
+  "serialNumber" : "urn:uuid:ef588d29-4070-4da2-852d-af218294259d",
+  "version" : 1,
+  "metadata" : {
+    "timestamp" : "2024-05-29T22:05:57Z",
+    "tools" : [
+      {
+        "vendor" : "OWASP",
+        "name" : "Dependency-Track",
+        "version" : "4.11.1"
+      }
+    ],
+    "component" : {
+      "name" : "Vulnerable Sample Project",
+      "version" : "SNAPSHOT",
+      "type" : "application",
+      "bom-ref" : "70de2757-37d5-4175-b63f-24890ae6471e"
+    }
+  },
+  "components" : [
+    {
+      "name" : "accepts",
+      "version" : "1.2.13",
+      "description" : "Higher-level content negotiation",
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "MIT"
+          }
+        }
+      ],
+      "purl" : "pkg:npm/accepts@1.2.13",
+      "externalReferences" : [
+        {
+          "type" : "vcs",
+          "url" : "git+https://github.com/jshttp/accepts.git",
+          "comment" : "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "type" : "website",
+          "url" : "https://github.com/jshttp/accepts#readme",
+          "comment" : "as detected from PackageJson property \"homepage\""
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/jshttp/accepts/issues",
+          "comment" : "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "type" : "distribution",
+          "url" : "https://registry.npmjs.org/accepts/-/accepts-1.2.13.tgz",
+          "comment" : "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        }
+      ],
+      "type" : "library",
+      "bom-ref" : "7bbd7c86-2bf5-4619-a6a9-1574a4b24364"
+    },
+    {
+      "author" : "Blake Embrey",
+      "name" : "array-flatten",
+      "version" : "1.1.1",
+      "description" : "Flatten an array of nested arrays into a single flat array",
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "MIT"
+          }
+        }
+      ],
+      "purl" : "pkg:npm/array-flatten@1.1.1",
+      "externalReferences" : [
+        {
+          "type" : "vcs",
+          "url" : "git://github.com/blakeembrey/array-flatten.git",
+          "comment" : "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "type" : "website",
+          "url" : "https://github.com/blakeembrey/array-flatten",
+          "comment" : "as detected from PackageJson property \"homepage\""
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/blakeembrey/array-flatten/issues",
+          "comment" : "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "type" : "distribution",
+          "url" : "https://registry.npmjs.org/array-flatten/-/array-flatten-1.1.1.tgz",
+          "comment" : "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        }
+      ],
+      "type" : "library",
+      "bom-ref" : "9414179e-c68f-4745-8c6a-7ba4b7245f9a"
+    },
+    {
+      "name" : "basic-auth",
+      "version" : "1.0.4",
+      "description" : "node.js basic auth parser",
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "MIT"
+          }
+        }
+      ],
+      "purl" : "pkg:npm/basic-auth@1.0.4",
+      "externalReferences" : [
+        {
+          "type" : "vcs",
+          "url" : "git+https://github.com/jshttp/basic-auth.git",
+          "comment" : "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "type" : "website",
+          "url" : "https://github.com/jshttp/basic-auth#readme",
+          "comment" : "as detected from PackageJson property \"homepage\""
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/jshttp/basic-auth/issues",
+          "comment" : "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "type" : "distribution",
+          "url" : "https://registry.npmjs.org/basic-auth/-/basic-auth-1.0.4.tgz",
+          "comment" : "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        }
+      ],
+      "type" : "library",
+      "bom-ref" : "f32830a0-293d-489c-89a3-560740a37f2b"
+    },
+    {
+      "name" : "body-parser",
+      "version" : "1.13.3",
+      "description" : "Node.js body parsing middleware",
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "MIT"
+          }
+        }
+      ],
+      "purl" : "pkg:npm/body-parser@1.13.3",
+      "externalReferences" : [
+        {
+          "type" : "vcs",
+          "url" : "git+https://github.com/expressjs/body-parser.git",
+          "comment" : "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "type" : "website",
+          "url" : "https://github.com/expressjs/body-parser#readme",
+          "comment" : "as detected from PackageJson property \"homepage\""
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/expressjs/body-parser/issues",
+          "comment" : "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "type" : "distribution",
+          "url" : "https://registry.npmjs.org/body-parser/-/body-parser-1.13.3.tgz",
+          "comment" : "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        }
+      ],
+      "type" : "library",
+      "bom-ref" : "c2bfc56f-612a-48b9-ae67-abe36d92622c"
+    },
+    {
+      "author" : "Brian M. Carlson",
+      "name" : "buffer-writer",
+      "version" : "1.0.1",
+      "description" : "a fast, efficient buffer writer",
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "MIT"
+          }
+        }
+      ],
+      "purl" : "pkg:npm/buffer-writer@1.0.1",
+      "externalReferences" : [
+        {
+          "type" : "vcs",
+          "url" : "git://github.com/brianc/node-buffer-writer.git",
+          "comment" : "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "type" : "website",
+          "url" : "https://github.com/brianc/node-buffer-writer#readme",
+          "comment" : "as detected from PackageJson property \"homepage\""
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/brianc/node-buffer-writer/issues",
+          "comment" : "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "type" : "distribution",
+          "url" : "https://registry.npmjs.org/buffer-writer/-/buffer-writer-1.0.1.tgz",
+          "comment" : "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        }
+      ],
+      "type" : "library",
+      "bom-ref" : "bff4b819-c17f-4173-9940-919f68aaaae6"
+    },
+    {
+      "author" : "TJ Holowaychuk",
+      "name" : "bytes",
+      "version" : "2.4.0",
+      "description" : "Utility to parse a string bytes to bytes and vice-versa",
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "MIT"
+          }
+        }
+      ],
+      "purl" : "pkg:npm/bytes@2.4.0",
+      "externalReferences" : [
+        {
+          "type" : "vcs",
+          "url" : "git+https://github.com/visionmedia/bytes.js.git",
+          "comment" : "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "type" : "website",
+          "url" : "https://github.com/visionmedia/bytes.js#readme",
+          "comment" : "as detected from PackageJson property \"homepage\""
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/visionmedia/bytes.js/issues",
+          "comment" : "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "type" : "distribution",
+          "url" : "https://registry.npmjs.org/bytes/-/bytes-2.4.0.tgz",
+          "comment" : "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        }
+      ],
+      "type" : "library",
+      "bom-ref" : "bdaf7e5d-0fe4-4f9b-8eaa-eaba57ce072f"
+    },
+    {
+      "author" : "TJ Holowaychuk",
+      "name" : "bytes",
+      "version" : "2.1.0",
+      "description" : "Utility to parse a string bytes to bytes and vice-versa",
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "MIT"
+          }
+        }
+      ],
+      "purl" : "pkg:npm/bytes@2.1.0",
+      "externalReferences" : [
+        {
+          "type" : "vcs",
+          "url" : "git+https://github.com/visionmedia/bytes.js.git",
+          "comment" : "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "type" : "website",
+          "url" : "https://github.com/visionmedia/bytes.js#readme",
+          "comment" : "as detected from PackageJson property \"homepage\""
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/visionmedia/bytes.js/issues",
+          "comment" : "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "type" : "distribution",
+          "url" : "https://registry.npmjs.org/bytes/-/bytes-2.1.0.tgz",
+          "comment" : "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        }
+      ],
+      "type" : "library",
+      "bom-ref" : "d9ba0c82-7178-48d5-9212-239761ea68f4"
+    },
+    {
+      "name" : "content-disposition",
+      "version" : "0.5.1",
+      "description" : "Create and parse Content-Disposition header",
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "MIT"
+          }
+        }
+      ],
+      "purl" : "pkg:npm/content-disposition@0.5.1",
+      "externalReferences" : [
+        {
+          "type" : "vcs",
+          "url" : "git+https://github.com/jshttp/content-disposition.git",
+          "comment" : "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "type" : "website",
+          "url" : "https://github.com/jshttp/content-disposition#readme",
+          "comment" : "as detected from PackageJson property \"homepage\""
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/jshttp/content-disposition/issues",
+          "comment" : "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "type" : "distribution",
+          "url" : "https://registry.npmjs.org/content-disposition/-/content-disposition-0.5.1.tgz",
+          "comment" : "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        }
+      ],
+      "type" : "library",
+      "bom-ref" : "c58d7ccf-949e-45c2-bbfd-e1fbb32699f2"
+    },
+    {
+      "author" : "Douglas Christopher Wilson",
+      "name" : "content-type",
+      "version" : "1.0.5",
+      "description" : "Create and parse HTTP Content-Type header",
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "MIT"
+          }
+        }
+      ],
+      "purl" : "pkg:npm/content-type@1.0.5",
+      "externalReferences" : [
+        {
+          "type" : "vcs",
+          "url" : "git+https://github.com/jshttp/content-type.git",
+          "comment" : "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "type" : "website",
+          "url" : "https://github.com/jshttp/content-type#readme",
+          "comment" : "as detected from PackageJson property \"homepage\""
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/jshttp/content-type/issues",
+          "comment" : "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "type" : "distribution",
+          "url" : "https://registry.npmjs.org/content-type/-/content-type-1.0.5.tgz",
+          "comment" : "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        }
+      ],
+      "type" : "library",
+      "bom-ref" : "dcc70f76-02ea-4cf3-8497-8b4e876ed7a4"
+    },
+    {
+      "author" : "Roman Shtylman",
+      "name" : "cookie",
+      "version" : "0.1.3",
+      "description" : "cookie parsing and serialization",
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "MIT"
+          }
+        }
+      ],
+      "purl" : "pkg:npm/cookie@0.1.3",
+      "externalReferences" : [
+        {
+          "type" : "vcs",
+          "url" : "git+https://github.com/jshttp/cookie.git",
+          "comment" : "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "type" : "website",
+          "url" : "https://github.com/jshttp/cookie#readme",
+          "comment" : "as detected from PackageJson property \"homepage\""
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/jshttp/cookie/issues",
+          "comment" : "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "type" : "distribution",
+          "url" : "https://registry.npmjs.org/cookie/-/cookie-0.1.3.tgz",
+          "comment" : "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        }
+      ],
+      "type" : "library",
+      "bom-ref" : "1a7d356c-bdee-4a3e-b0b6-309dfaa144c3"
+    },
+    {
+      "author" : "Roman Shtylman",
+      "name" : "cookie",
+      "version" : "0.1.5",
+      "description" : "cookie parsing and serialization",
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "MIT"
+          }
+        }
+      ],
+      "purl" : "pkg:npm/cookie@0.1.5",
+      "externalReferences" : [
+        {
+          "type" : "vcs",
+          "url" : "git+https://github.com/jshttp/cookie.git",
+          "comment" : "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "type" : "website",
+          "url" : "https://github.com/jshttp/cookie#readme",
+          "comment" : "as detected from PackageJson property \"homepage\""
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/jshttp/cookie/issues",
+          "comment" : "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "type" : "distribution",
+          "url" : "https://registry.npmjs.org/cookie/-/cookie-0.1.5.tgz",
+          "comment" : "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        }
+      ],
+      "type" : "library",
+      "bom-ref" : "d0055d0f-d681-4b39-8445-7dfcbb4c33ab"
+    },
+    {
+      "author" : "Roman Shtylman",
+      "name" : "cookie",
+      "version" : "0.6.0",
+      "description" : "HTTP server cookie parsing and serialization",
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "MIT"
+          }
+        }
+      ],
+      "purl" : "pkg:npm/cookie@0.6.0",
+      "externalReferences" : [
+        {
+          "type" : "vcs",
+          "url" : "git+https://github.com/jshttp/cookie.git",
+          "comment" : "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "type" : "website",
+          "url" : "https://github.com/jshttp/cookie#readme",
+          "comment" : "as detected from PackageJson property \"homepage\""
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/jshttp/cookie/issues",
+          "comment" : "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "type" : "distribution",
+          "url" : "https://registry.npmjs.org/cookie/-/cookie-0.6.0.tgz",
+          "comment" : "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        }
+      ],
+      "type" : "library",
+      "bom-ref" : "a65778bb-6782-4e54-a31e-7b313c7cbb92"
+    },
+    {
+      "author" : "TJ Holowaychuk",
+      "name" : "cookie-parser",
+      "version" : "1.3.5",
+      "description" : "cookie parsing with signatures",
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "MIT"
+          }
+        }
+      ],
+      "purl" : "pkg:npm/cookie-parser@1.3.5",
+      "externalReferences" : [
+        {
+          "type" : "vcs",
+          "url" : "git+https://github.com/expressjs/cookie-parser.git",
+          "comment" : "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "type" : "website",
+          "url" : "https://github.com/expressjs/cookie-parser#readme",
+          "comment" : "as detected from PackageJson property \"homepage\""
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/expressjs/cookie-parser/issues",
+          "comment" : "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "type" : "distribution",
+          "url" : "https://registry.npmjs.org/cookie-parser/-/cookie-parser-1.3.5.tgz",
+          "comment" : "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        }
+      ],
+      "type" : "library",
+      "bom-ref" : "bc5ab70d-bcbe-49a6-9daa-0ee562d925c4"
+    },
+    {
+      "author" : "TJ Holowaychuk",
+      "name" : "cookie-signature",
+      "version" : "1.0.7",
+      "description" : "Sign and unsign cookies",
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "MIT"
+          }
+        }
+      ],
+      "purl" : "pkg:npm/cookie-signature@1.0.7",
+      "externalReferences" : [
+        {
+          "type" : "vcs",
+          "url" : "git+https://github.com/visionmedia/node-cookie-signature.git",
+          "comment" : "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "type" : "website",
+          "url" : "https://github.com/visionmedia/node-cookie-signature#readme",
+          "comment" : "as detected from PackageJson property \"homepage\""
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/visionmedia/node-cookie-signature/issues",
+          "comment" : "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "type" : "distribution",
+          "url" : "https://registry.npmjs.org/cookie-signature/-/cookie-signature-1.0.7.tgz",
+          "comment" : "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        }
+      ],
+      "type" : "library",
+      "bom-ref" : "c67f74f0-053c-4e77-ba9d-e0e1fbf08caf"
+    },
+    {
+      "author" : "TJ Holowaychuk",
+      "name" : "cookie-signature",
+      "version" : "1.0.6",
+      "description" : "Sign and unsign cookies",
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "MIT"
+          }
+        }
+      ],
+      "purl" : "pkg:npm/cookie-signature@1.0.6",
+      "externalReferences" : [
+        {
+          "type" : "vcs",
+          "url" : "git+https://github.com/visionmedia/node-cookie-signature.git",
+          "comment" : "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "type" : "website",
+          "url" : "https://github.com/visionmedia/node-cookie-signature#readme",
+          "comment" : "as detected from PackageJson property \"homepage\""
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/visionmedia/node-cookie-signature/issues",
+          "comment" : "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "type" : "distribution",
+          "url" : "https://registry.npmjs.org/cookie-signature/-/cookie-signature-1.0.6.tgz",
+          "comment" : "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        }
+      ],
+      "type" : "library",
+      "bom-ref" : "9b7414f3-94fe-4a3c-bad1-6c7d87f6be81"
+    },
+    {
+      "author" : "Isaac Z. Schlueter",
+      "name" : "core-util-is",
+      "version" : "1.0.3",
+      "description" : "The `util.is*` functions introduced in Node v0.12.",
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "MIT"
+          }
+        }
+      ],
+      "purl" : "pkg:npm/core-util-is@1.0.3",
+      "externalReferences" : [
+        {
+          "type" : "vcs",
+          "url" : "git://github.com/isaacs/core-util-is.git",
+          "comment" : "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "type" : "website",
+          "url" : "https://github.com/isaacs/core-util-is#readme",
+          "comment" : "as detected from PackageJson property \"homepage\""
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/isaacs/core-util-is/issues",
+          "comment" : "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "type" : "distribution",
+          "url" : "https://registry.npmjs.org/core-util-is/-/core-util-is-1.0.3.tgz",
+          "comment" : "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        }
+      ],
+      "type" : "library",
+      "bom-ref" : "7942c822-9319-42f8-bc9c-1d01936acc24"
+    },
+    {
+      "author" : "TJ Holowaychuk",
+      "name" : "debug",
+      "version" : "2.6.9",
+      "description" : "small debugging utility",
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "MIT"
+          }
+        }
+      ],
+      "purl" : "pkg:npm/debug@2.6.9",
+      "externalReferences" : [
+        {
+          "type" : "vcs",
+          "url" : "git://github.com/visionmedia/debug.git",
+          "comment" : "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "type" : "website",
+          "url" : "https://github.com/visionmedia/debug#readme",
+          "comment" : "as detected from PackageJson property \"homepage\""
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/visionmedia/debug/issues",
+          "comment" : "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "type" : "distribution",
+          "url" : "https://registry.npmjs.org/debug/-/debug-2.6.9.tgz",
+          "comment" : "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        }
+      ],
+      "type" : "library",
+      "bom-ref" : "74859b3a-db6c-4417-8e23-3feee63ed3f1"
+    },
+    {
+      "author" : "TJ Holowaychuk",
+      "name" : "debug",
+      "version" : "2.2.0",
+      "description" : "small debugging utility",
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "MIT"
+          }
+        }
+      ],
+      "purl" : "pkg:npm/debug@2.2.0",
+      "externalReferences" : [
+        {
+          "type" : "vcs",
+          "url" : "git://github.com/visionmedia/debug.git",
+          "comment" : "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "type" : "website",
+          "url" : "https://github.com/visionmedia/debug#readme",
+          "comment" : "as detected from PackageJson property \"homepage\""
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/visionmedia/debug/issues",
+          "comment" : "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "type" : "distribution",
+          "url" : "https://registry.npmjs.org/debug/-/debug-2.2.0.tgz",
+          "comment" : "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        }
+      ],
+      "type" : "library",
+      "bom-ref" : "50c67d46-a4ce-42d9-97d4-ee658196d25e"
+    },
+    {
+      "author" : "Douglas Christopher Wilson",
+      "name" : "depd",
+      "version" : "2.0.0",
+      "description" : "Deprecate all the things",
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "MIT"
+          }
+        }
+      ],
+      "purl" : "pkg:npm/depd@2.0.0",
+      "externalReferences" : [
+        {
+          "type" : "vcs",
+          "url" : "git+https://github.com/dougwilson/nodejs-depd.git",
+          "comment" : "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "type" : "website",
+          "url" : "https://github.com/dougwilson/nodejs-depd#readme",
+          "comment" : "as detected from PackageJson property \"homepage\""
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/dougwilson/nodejs-depd/issues",
+          "comment" : "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "type" : "distribution",
+          "url" : "https://registry.npmjs.org/depd/-/depd-2.0.0.tgz",
+          "comment" : "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        }
+      ],
+      "type" : "library",
+      "bom-ref" : "a3731643-8abe-49ca-9e7a-99eb2a89640e"
+    },
+    {
+      "author" : "Douglas Christopher Wilson",
+      "name" : "depd",
+      "version" : "1.0.1",
+      "description" : "Deprecate all the things",
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "MIT"
+          }
+        }
+      ],
+      "purl" : "pkg:npm/depd@1.0.1",
+      "externalReferences" : [
+        {
+          "type" : "vcs",
+          "url" : "git+https://github.com/dougwilson/nodejs-depd.git",
+          "comment" : "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "type" : "website",
+          "url" : "https://github.com/dougwilson/nodejs-depd#readme",
+          "comment" : "as detected from PackageJson property \"homepage\""
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/dougwilson/nodejs-depd/issues",
+          "comment" : "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "type" : "distribution",
+          "url" : "https://registry.npmjs.org/depd/-/depd-1.0.1.tgz",
+          "comment" : "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        }
+      ],
+      "type" : "library",
+      "bom-ref" : "4abbabbc-faca-44b8-a373-802d0c004811"
+    },
+    {
+      "author" : "Douglas Christopher Wilson",
+      "name" : "depd",
+      "version" : "1.1.2",
+      "description" : "Deprecate all the things",
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "MIT"
+          }
+        }
+      ],
+      "purl" : "pkg:npm/depd@1.1.2",
+      "externalReferences" : [
+        {
+          "type" : "vcs",
+          "url" : "git+https://github.com/dougwilson/nodejs-depd.git",
+          "comment" : "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "type" : "website",
+          "url" : "https://github.com/dougwilson/nodejs-depd#readme",
+          "comment" : "as detected from PackageJson property \"homepage\""
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/dougwilson/nodejs-depd/issues",
+          "comment" : "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "type" : "distribution",
+          "url" : "https://registry.npmjs.org/depd/-/depd-1.1.2.tgz",
+          "comment" : "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        }
+      ],
+      "type" : "library",
+      "bom-ref" : "0e9ba669-0147-49b7-ac13-c4a701f66e32"
+    },
+    {
+      "author" : "Douglas Christopher Wilson",
+      "name" : "depd",
+      "version" : "1.1.2",
+      "description" : "Deprecate all the things",
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "MIT"
+          }
+        }
+      ],
+      "purl" : "pkg:npm/depd@1.1.2",
+      "externalReferences" : [
+        {
+          "type" : "vcs",
+          "url" : "git+https://github.com/dougwilson/nodejs-depd.git",
+          "comment" : "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "type" : "website",
+          "url" : "https://github.com/dougwilson/nodejs-depd#readme",
+          "comment" : "as detected from PackageJson property \"homepage\""
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/dougwilson/nodejs-depd/issues",
+          "comment" : "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "type" : "distribution",
+          "url" : "https://registry.npmjs.org/depd/-/depd-1.1.2.tgz",
+          "comment" : "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        }
+      ],
+      "type" : "library",
+      "bom-ref" : "77bdf737-aa9d-4028-9102-ad1a936a244b"
+    },
+    {
+      "author" : "Douglas Christopher Wilson",
+      "name" : "depd",
+      "version" : "1.1.2",
+      "description" : "Deprecate all the things",
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "MIT"
+          }
+        }
+      ],
+      "purl" : "pkg:npm/depd@1.1.2",
+      "externalReferences" : [
+        {
+          "type" : "vcs",
+          "url" : "git+https://github.com/dougwilson/nodejs-depd.git",
+          "comment" : "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "type" : "website",
+          "url" : "https://github.com/dougwilson/nodejs-depd#readme",
+          "comment" : "as detected from PackageJson property \"homepage\""
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/dougwilson/nodejs-depd/issues",
+          "comment" : "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "type" : "distribution",
+          "url" : "https://registry.npmjs.org/depd/-/depd-1.1.2.tgz",
+          "comment" : "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        }
+      ],
+      "type" : "library",
+      "bom-ref" : "0a06b00b-759f-4e9d-be26-411412890177"
+    },
+    {
+      "author" : "Jonathan Ong",
+      "name" : "destroy",
+      "version" : "1.0.4",
+      "description" : "destroy a stream if possible",
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "MIT"
+          }
+        }
+      ],
+      "purl" : "pkg:npm/destroy@1.0.4",
+      "externalReferences" : [
+        {
+          "type" : "vcs",
+          "url" : "git+https://github.com/stream-utils/destroy.git",
+          "comment" : "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "type" : "website",
+          "url" : "https://github.com/stream-utils/destroy#readme",
+          "comment" : "as detected from PackageJson property \"homepage\""
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/stream-utils/destroy/issues",
+          "comment" : "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "type" : "distribution",
+          "url" : "https://registry.npmjs.org/destroy/-/destroy-1.0.4.tgz",
+          "comment" : "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        }
+      ],
+      "type" : "library",
+      "bom-ref" : "34977f4d-4d26-429f-a767-0bad37bddc54"
+    },
+    {
+      "author" : "Jonathan Ong",
+      "name" : "ee-first",
+      "version" : "1.1.1",
+      "description" : "return the first event in a set of ee/event pairs",
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "MIT"
+          }
+        }
+      ],
+      "purl" : "pkg:npm/ee-first@1.1.1",
+      "externalReferences" : [
+        {
+          "type" : "vcs",
+          "url" : "git+https://github.com/jonathanong/ee-first.git",
+          "comment" : "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "type" : "website",
+          "url" : "https://github.com/jonathanong/ee-first#readme",
+          "comment" : "as detected from PackageJson property \"homepage\""
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/jonathanong/ee-first/issues",
+          "comment" : "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "type" : "distribution",
+          "url" : "https://registry.npmjs.org/ee-first/-/ee-first-1.1.1.tgz",
+          "comment" : "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        }
+      ],
+      "type" : "library",
+      "bom-ref" : "7e59fa09-8a0c-4075-8128-0623980ff4a2"
+    },
+    {
+      "author" : "TJ Holowaychuk",
+      "name" : "ejs",
+      "version" : "0.8.8",
+      "description" : "Embedded JavaScript templates",
+      "purl" : "pkg:npm/ejs@0.8.8",
+      "externalReferences" : [
+        {
+          "type" : "vcs",
+          "url" : "git://github.com/visionmedia/ejs.git",
+          "comment" : "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "type" : "website",
+          "url" : "https://github.com/visionmedia/ejs#readme",
+          "comment" : "as detected from PackageJson property \"homepage\""
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/visionmedia/ejs/issues",
+          "comment" : "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "type" : "distribution",
+          "url" : "https://registry.npmjs.org/ejs/-/ejs-0.8.8.tgz",
+          "comment" : "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        }
+      ],
+      "type" : "library",
+      "bom-ref" : "ff09aa47-6490-450b-bbde-e14a75427df1"
+    },
+    {
+      "author" : "Matthew Eernisse",
+      "name" : "ejs",
+      "version" : "2.7.4",
+      "description" : "Embedded JavaScript templates",
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "Apache-2.0"
+          }
+        }
+      ],
+      "purl" : "pkg:npm/ejs@2.7.4",
+      "externalReferences" : [
+        {
+          "type" : "vcs",
+          "url" : "git://github.com/mde/ejs.git",
+          "comment" : "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "type" : "website",
+          "url" : "https://github.com/mde/ejs",
+          "comment" : "as detected from PackageJson property \"homepage\""
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/mde/ejs/issues",
+          "comment" : "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "type" : "distribution",
+          "url" : "https://registry.npmjs.org/ejs/-/ejs-2.7.4.tgz",
+          "comment" : "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        }
+      ],
+      "type" : "library",
+      "bom-ref" : "243f77f0-59ba-482e-b77c-cded05e3d145"
+    },
+    {
+      "author" : "Tom Carden",
+      "name" : "ejs-locals",
+      "version" : "1.0.2",
+      "description" : "Express 3.x locals for layout, partial and blocks.",
+      "purl" : "pkg:npm/ejs-locals@1.0.2",
+      "externalReferences" : [
+        {
+          "type" : "vcs",
+          "url" : "git://github.com/randometc/ejs-locals.git",
+          "comment" : "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "type" : "website",
+          "url" : "https://github.com/randometc/ejs-locals",
+          "comment" : "as detected from PackageJson property \"homepage\""
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/randometc/ejs-locals/issues",
+          "comment" : "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "type" : "distribution",
+          "url" : "https://registry.npmjs.org/ejs-locals/-/ejs-locals-1.0.2.tgz",
+          "comment" : "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        }
+      ],
+      "type" : "library",
+      "bom-ref" : "8cee23bb-ddea-4854-a507-3a9fccf73147"
+    },
+    {
+      "name" : "escape-html",
+      "version" : "1.0.3",
+      "description" : "Escape string for use in HTML",
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "MIT"
+          }
+        }
+      ],
+      "purl" : "pkg:npm/escape-html@1.0.3",
+      "externalReferences" : [
+        {
+          "type" : "vcs",
+          "url" : "git+https://github.com/component/escape-html.git",
+          "comment" : "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "type" : "website",
+          "url" : "https://github.com/component/escape-html#readme",
+          "comment" : "as detected from PackageJson property \"homepage\""
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/component/escape-html/issues",
+          "comment" : "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "type" : "distribution",
+          "url" : "https://registry.npmjs.org/escape-html/-/escape-html-1.0.3.tgz",
+          "comment" : "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        }
+      ],
+      "type" : "library",
+      "bom-ref" : "4f961993-ad3b-41c0-acea-ea725972b89f"
+    },
+    {
+      "name" : "etag",
+      "version" : "1.7.0",
+      "description" : "Create simple ETags",
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "MIT"
+          }
+        }
+      ],
+      "purl" : "pkg:npm/etag@1.7.0",
+      "externalReferences" : [
+        {
+          "type" : "vcs",
+          "url" : "git+https://github.com/jshttp/etag.git",
+          "comment" : "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "type" : "website",
+          "url" : "https://github.com/jshttp/etag#readme",
+          "comment" : "as detected from PackageJson property \"homepage\""
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/jshttp/etag/issues",
+          "comment" : "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "type" : "distribution",
+          "url" : "https://registry.npmjs.org/etag/-/etag-1.7.0.tgz",
+          "comment" : "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        }
+      ],
+      "type" : "library",
+      "bom-ref" : "208a3f8d-4ab4-43cd-a2cb-0519493a9544"
+    },
+    {
+      "author" : "TJ Holowaychuk",
+      "name" : "express",
+      "version" : "4.13.4",
+      "description" : "Fast, unopinionated, minimalist web framework",
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "MIT"
+          }
+        }
+      ],
+      "purl" : "pkg:npm/express@4.13.4",
+      "externalReferences" : [
+        {
+          "type" : "vcs",
+          "url" : "git+https://github.com/expressjs/express.git",
+          "comment" : "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "type" : "website",
+          "url" : "https://github.com/expressjs/express#readme",
+          "comment" : "as detected from PackageJson property \"homepage\""
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/expressjs/express/issues",
+          "comment" : "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "type" : "distribution",
+          "url" : "https://registry.npmjs.org/express/-/express-4.13.4.tgz",
+          "comment" : "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        }
+      ],
+      "type" : "library",
+      "bom-ref" : "c863f840-ae08-4845-9981-8aa5b8165ddb"
+    },
+    {
+      "author" : "TJ Holowaychuk",
+      "name" : "express-session",
+      "version" : "1.18.0",
+      "description" : "Simple session middleware for Express",
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "MIT"
+          }
+        }
+      ],
+      "purl" : "pkg:npm/express-session@1.18.0",
+      "externalReferences" : [
+        {
+          "type" : "vcs",
+          "url" : "git+https://github.com/expressjs/session.git",
+          "comment" : "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "type" : "website",
+          "url" : "https://github.com/expressjs/session#readme",
+          "comment" : "as detected from PackageJson property \"homepage\""
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/expressjs/session/issues",
+          "comment" : "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "type" : "distribution",
+          "url" : "https://registry.npmjs.org/express-session/-/express-session-1.18.0.tgz",
+          "comment" : "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        }
+      ],
+      "type" : "library",
+      "bom-ref" : "fa232f05-50fb-4d96-bc30-7ae0dc326e92"
+    },
+    {
+      "author" : "Douglas Christopher Wilson",
+      "name" : "finalhandler",
+      "version" : "0.4.1",
+      "description" : "Node.js final http responder",
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "MIT"
+          }
+        }
+      ],
+      "purl" : "pkg:npm/finalhandler@0.4.1",
+      "externalReferences" : [
+        {
+          "type" : "vcs",
+          "url" : "git+https://github.com/pillarjs/finalhandler.git",
+          "comment" : "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "type" : "website",
+          "url" : "https://github.com/pillarjs/finalhandler#readme",
+          "comment" : "as detected from PackageJson property \"homepage\""
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/pillarjs/finalhandler/issues",
+          "comment" : "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "type" : "distribution",
+          "url" : "https://registry.npmjs.org/finalhandler/-/finalhandler-0.4.1.tgz",
+          "comment" : "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        }
+      ],
+      "type" : "library",
+      "bom-ref" : "47abfc9f-d487-4bde-99e3-fe8309df3346"
+    },
+    {
+      "name" : "forwarded",
+      "version" : "0.1.2",
+      "description" : "Parse HTTP X-Forwarded-For header",
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "MIT"
+          }
+        }
+      ],
+      "purl" : "pkg:npm/forwarded@0.1.2",
+      "externalReferences" : [
+        {
+          "type" : "vcs",
+          "url" : "git+https://github.com/jshttp/forwarded.git",
+          "comment" : "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "type" : "website",
+          "url" : "https://github.com/jshttp/forwarded#readme",
+          "comment" : "as detected from PackageJson property \"homepage\""
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/jshttp/forwarded/issues",
+          "comment" : "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "type" : "distribution",
+          "url" : "https://registry.npmjs.org/forwarded/-/forwarded-0.1.2.tgz",
+          "comment" : "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        }
+      ],
+      "type" : "library",
+      "bom-ref" : "65af6a49-b794-4e65-be6b-83e71a59a46e"
+    },
+    {
+      "author" : "TJ Holowaychuk",
+      "name" : "fresh",
+      "version" : "0.3.0",
+      "description" : "HTTP response freshness testing",
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "MIT"
+          }
+        }
+      ],
+      "purl" : "pkg:npm/fresh@0.3.0",
+      "externalReferences" : [
+        {
+          "type" : "vcs",
+          "url" : "git+https://github.com/jshttp/fresh.git",
+          "comment" : "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "type" : "website",
+          "url" : "https://github.com/jshttp/fresh#readme",
+          "comment" : "as detected from PackageJson property \"homepage\""
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/jshttp/fresh/issues",
+          "comment" : "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "type" : "distribution",
+          "url" : "https://registry.npmjs.org/fresh/-/fresh-0.3.0.tgz",
+          "comment" : "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        }
+      ],
+      "type" : "library",
+      "bom-ref" : "f768580a-97f3-495a-a06b-d69a273446c5"
+    },
+    {
+      "author" : "James Cooper",
+      "name" : "generic-pool",
+      "version" : "2.4.2",
+      "description" : "Generic resource pooling for Node.JS",
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "MIT"
+          }
+        }
+      ],
+      "purl" : "pkg:npm/generic-pool@2.4.2",
+      "externalReferences" : [
+        {
+          "type" : "vcs",
+          "url" : "git+ssh://git@github.com/coopernurse/node-pool.git",
+          "comment" : "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "type" : "website",
+          "url" : "https://github.com/coopernurse/node-pool#readme",
+          "comment" : "as detected from PackageJson property \"homepage\""
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/coopernurse/node-pool/issues",
+          "comment" : "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "type" : "distribution",
+          "url" : "https://registry.npmjs.org/generic-pool/-/generic-pool-2.4.2.tgz",
+          "comment" : "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        }
+      ],
+      "type" : "library",
+      "bom-ref" : "0868843c-5e75-4540-9ff7-711c50187c6c"
+    },
+    {
+      "author" : "Jonathan Ong",
+      "name" : "http-errors",
+      "version" : "1.3.1",
+      "description" : "Create HTTP error objects",
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "MIT"
+          }
+        }
+      ],
+      "purl" : "pkg:npm/http-errors@1.3.1",
+      "externalReferences" : [
+        {
+          "type" : "vcs",
+          "url" : "git+https://github.com/jshttp/http-errors.git",
+          "comment" : "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "type" : "website",
+          "url" : "https://github.com/jshttp/http-errors#readme",
+          "comment" : "as detected from PackageJson property \"homepage\""
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/jshttp/http-errors/issues",
+          "comment" : "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "type" : "distribution",
+          "url" : "https://registry.npmjs.org/http-errors/-/http-errors-1.3.1.tgz",
+          "comment" : "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        }
+      ],
+      "type" : "library",
+      "bom-ref" : "f8dfe703-180b-4104-9dd2-6a67a18ff7f7"
+    },
+    {
+      "author" : "Alexander Shtuchkin",
+      "name" : "iconv-lite",
+      "version" : "0.4.13",
+      "description" : "Convert character encodings in pure javascript.",
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "MIT"
+          }
+        }
+      ],
+      "purl" : "pkg:npm/iconv-lite@0.4.13",
+      "externalReferences" : [
+        {
+          "type" : "vcs",
+          "url" : "git://github.com/ashtuchkin/iconv-lite.git",
+          "comment" : "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "type" : "website",
+          "url" : "https://github.com/ashtuchkin/iconv-lite",
+          "comment" : "as detected from PackageJson property \"homepage\""
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/ashtuchkin/iconv-lite/issues",
+          "comment" : "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "type" : "distribution",
+          "url" : "https://registry.npmjs.org/iconv-lite/-/iconv-lite-0.4.13.tgz",
+          "comment" : "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        }
+      ],
+      "type" : "library",
+      "bom-ref" : "b391da70-f27b-4852-824b-c051ea1313ce"
+    },
+    {
+      "author" : "Alexander Shtuchkin",
+      "name" : "iconv-lite",
+      "version" : "0.4.11",
+      "description" : "Convert character encodings in pure javascript.",
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "MIT"
+          }
+        }
+      ],
+      "purl" : "pkg:npm/iconv-lite@0.4.11",
+      "externalReferences" : [
+        {
+          "type" : "vcs",
+          "url" : "git://github.com/ashtuchkin/iconv-lite.git",
+          "comment" : "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "type" : "website",
+          "url" : "https://github.com/ashtuchkin/iconv-lite",
+          "comment" : "as detected from PackageJson property \"homepage\""
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/ashtuchkin/iconv-lite/issues",
+          "comment" : "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "type" : "distribution",
+          "url" : "https://registry.npmjs.org/iconv-lite/-/iconv-lite-0.4.11.tgz",
+          "comment" : "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        }
+      ],
+      "type" : "library",
+      "bom-ref" : "f7d71dcb-0c50-4fba-8891-1dc16316ef66"
+    },
+    {
+      "name" : "inherits",
+      "version" : "2.0.4",
+      "description" : "Browser-friendly inheritance fully compatible with standard node.js inherits()",
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "ISC"
+          }
+        }
+      ],
+      "purl" : "pkg:npm/inherits@2.0.4",
+      "externalReferences" : [
+        {
+          "type" : "vcs",
+          "url" : "git://github.com/isaacs/inherits.git",
+          "comment" : "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "type" : "website",
+          "url" : "https://github.com/isaacs/inherits#readme",
+          "comment" : "as detected from PackageJson property \"homepage\""
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/isaacs/inherits/issues",
+          "comment" : "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "type" : "distribution",
+          "url" : "https://registry.npmjs.org/inherits/-/inherits-2.0.4.tgz",
+          "comment" : "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        }
+      ],
+      "type" : "library",
+      "bom-ref" : "80e83322-70a6-49e9-b061-267f1e1719e0"
+    },
+    {
+      "author" : "whitequark",
+      "name" : "ipaddr.js",
+      "version" : "1.0.5",
+      "description" : "A library for manipulating IPv4 and IPv6 addresses in JavaScript.",
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "MIT"
+          }
+        }
+      ],
+      "purl" : "pkg:npm/ipaddr.js@1.0.5",
+      "externalReferences" : [
+        {
+          "type" : "vcs",
+          "url" : "git://github.com/whitequark/ipaddr.js.git",
+          "comment" : "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "type" : "website",
+          "url" : "https://github.com/whitequark/ipaddr.js#readme",
+          "comment" : "as detected from PackageJson property \"homepage\""
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/whitequark/ipaddr.js/issues",
+          "comment" : "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "type" : "distribution",
+          "url" : "https://registry.npmjs.org/ipaddr.js/-/ipaddr.js-1.0.5.tgz",
+          "comment" : "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        }
+      ],
+      "type" : "library",
+      "bom-ref" : "dbda83c2-cb7c-40ed-a965-d5bd995e22a3"
+    },
+    {
+      "author" : "Julian Gruber",
+      "name" : "isarray",
+      "version" : "0.0.1",
+      "description" : "Array#isArray for older browsers",
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "MIT"
+          }
+        }
+      ],
+      "purl" : "pkg:npm/isarray@0.0.1",
+      "externalReferences" : [
+        {
+          "type" : "vcs",
+          "url" : "git://github.com/juliangruber/isarray.git",
+          "comment" : "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "type" : "website",
+          "url" : "https://github.com/juliangruber/isarray",
+          "comment" : "as detected from PackageJson property \"homepage\""
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/juliangruber/isarray/issues",
+          "comment" : "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "type" : "distribution",
+          "url" : "https://registry.npmjs.org/isarray/-/isarray-0.0.1.tgz",
+          "comment" : "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        }
+      ],
+      "type" : "library",
+      "bom-ref" : "4f6d72a4-8d19-4ac1-ba5d-d34f2676185f"
+    },
+    {
+      "author" : "Gareth Jones",
+      "name" : "log4js",
+      "version" : "0.6.38",
+      "description" : "Port of Log4js to work with node.",
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "Apache-2.0"
+          }
+        }
+      ],
+      "purl" : "pkg:npm/log4js@0.6.38",
+      "externalReferences" : [
+        {
+          "type" : "vcs",
+          "url" : "git+https://github.com/nomiddlename/log4js-node.git",
+          "comment" : "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "type" : "website",
+          "url" : "https://github.com/nomiddlename/log4js-node#readme",
+          "comment" : "as detected from PackageJson property \"homepage\""
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "http://github.com/nomiddlename/log4js-node/issues",
+          "comment" : "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "type" : "distribution",
+          "url" : "https://registry.npmjs.org/log4js/-/log4js-0.6.38.tgz",
+          "comment" : "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        }
+      ],
+      "type" : "library",
+      "bom-ref" : "7c5ae86b-d8db-4477-8dbd-d48f4bede879"
+    },
+    {
+      "author" : "Vitaly Tomilov",
+      "name" : "manakin",
+      "version" : "0.3.0",
+      "description" : "Prime colors for your console",
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "MIT"
+          }
+        }
+      ],
+      "purl" : "pkg:npm/manakin@0.3.0",
+      "externalReferences" : [
+        {
+          "type" : "vcs",
+          "url" : "git+https://github.com/vitaly-t/manakin.git",
+          "comment" : "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "type" : "website",
+          "url" : "https://github.com/vitaly-t/manakin",
+          "comment" : "as detected from PackageJson property \"homepage\""
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/vitaly-t/manakin/issues",
+          "comment" : "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "type" : "distribution",
+          "url" : "https://registry.npmjs.org/manakin/-/manakin-0.3.0.tgz",
+          "comment" : "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        }
+      ],
+      "type" : "library",
+      "bom-ref" : "c4bbd8b3-da4c-4031-9adf-b3a09a02028d"
+    },
+    {
+      "author" : "Douglas Christopher Wilson",
+      "name" : "media-typer",
+      "version" : "0.3.0",
+      "description" : "Simple RFC 6838 media type parser and formatter",
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "MIT"
+          }
+        }
+      ],
+      "purl" : "pkg:npm/media-typer@0.3.0",
+      "externalReferences" : [
+        {
+          "type" : "vcs",
+          "url" : "git+https://github.com/jshttp/media-typer.git",
+          "comment" : "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "type" : "website",
+          "url" : "https://github.com/jshttp/media-typer#readme",
+          "comment" : "as detected from PackageJson property \"homepage\""
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/jshttp/media-typer/issues",
+          "comment" : "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "type" : "distribution",
+          "url" : "https://registry.npmjs.org/media-typer/-/media-typer-0.3.0.tgz",
+          "comment" : "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        }
+      ],
+      "type" : "library",
+      "bom-ref" : "72e23327-7f89-4de9-be2e-408e2fd74c85"
+    },
+    {
+      "author" : "Jonathan Ong",
+      "name" : "merge-descriptors",
+      "version" : "1.0.1",
+      "description" : "Merge objects using descriptors",
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "MIT"
+          }
+        }
+      ],
+      "purl" : "pkg:npm/merge-descriptors@1.0.1",
+      "externalReferences" : [
+        {
+          "type" : "vcs",
+          "url" : "git+https://github.com/component/merge-descriptors.git",
+          "comment" : "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "type" : "website",
+          "url" : "https://github.com/component/merge-descriptors#readme",
+          "comment" : "as detected from PackageJson property \"homepage\""
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/component/merge-descriptors/issues",
+          "comment" : "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "type" : "distribution",
+          "url" : "https://registry.npmjs.org/merge-descriptors/-/merge-descriptors-1.0.1.tgz",
+          "comment" : "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        }
+      ],
+      "type" : "library",
+      "bom-ref" : "68a8dcc5-37e2-48b4-951d-e9de65a3742a"
+    },
+    {
+      "name" : "methods",
+      "version" : "1.1.2",
+      "description" : "HTTP methods that node supports",
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "MIT"
+          }
+        }
+      ],
+      "purl" : "pkg:npm/methods@1.1.2",
+      "externalReferences" : [
+        {
+          "type" : "vcs",
+          "url" : "git+https://github.com/jshttp/methods.git",
+          "comment" : "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "type" : "website",
+          "url" : "https://github.com/jshttp/methods#readme",
+          "comment" : "as detected from PackageJson property \"homepage\""
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/jshttp/methods/issues",
+          "comment" : "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "type" : "distribution",
+          "url" : "https://registry.npmjs.org/methods/-/methods-1.1.2.tgz",
+          "comment" : "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        }
+      ],
+      "type" : "library",
+      "bom-ref" : "48ee1e65-9a91-4518-b6c6-e70dfdcadd25"
+    },
+    {
+      "author" : "Robert Kieffer",
+      "name" : "mime",
+      "version" : "1.3.4",
+      "description" : "A comprehensive library for mime-type mapping",
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "MIT",
+            "url" : "https://raw.github.com/broofa/node-mime/master/LICENSE"
+          }
+        }
+      ],
+      "purl" : "pkg:npm/mime@1.3.4",
+      "externalReferences" : [
+        {
+          "type" : "vcs",
+          "url" : "git+https://github.com/broofa/node-mime.git",
+          "comment" : "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "type" : "website",
+          "url" : "https://github.com/broofa/node-mime#readme",
+          "comment" : "as detected from PackageJson property \"homepage\""
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/broofa/node-mime/issues",
+          "comment" : "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "type" : "distribution",
+          "url" : "https://registry.npmjs.org/mime/-/mime-1.3.4.tgz",
+          "comment" : "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        }
+      ],
+      "type" : "library",
+      "bom-ref" : "66402d03-fb52-4877-8e41-a13df952eaee"
+    },
+    {
+      "name" : "mime-db",
+      "version" : "1.52.0",
+      "description" : "Media Type Database",
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "MIT"
+          }
+        }
+      ],
+      "purl" : "pkg:npm/mime-db@1.52.0",
+      "externalReferences" : [
+        {
+          "type" : "vcs",
+          "url" : "git+https://github.com/jshttp/mime-db.git",
+          "comment" : "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "type" : "website",
+          "url" : "https://github.com/jshttp/mime-db#readme",
+          "comment" : "as detected from PackageJson property \"homepage\""
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/jshttp/mime-db/issues",
+          "comment" : "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "type" : "distribution",
+          "url" : "https://registry.npmjs.org/mime-db/-/mime-db-1.52.0.tgz",
+          "comment" : "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        }
+      ],
+      "type" : "library",
+      "bom-ref" : "8145a65b-785c-4001-8af3-8d3fbdec883f"
+    },
+    {
+      "name" : "mime-types",
+      "version" : "2.1.35",
+      "description" : "The ultimate javascript content-type utility.",
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "MIT"
+          }
+        }
+      ],
+      "purl" : "pkg:npm/mime-types@2.1.35",
+      "externalReferences" : [
+        {
+          "type" : "vcs",
+          "url" : "git+https://github.com/jshttp/mime-types.git",
+          "comment" : "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "type" : "website",
+          "url" : "https://github.com/jshttp/mime-types#readme",
+          "comment" : "as detected from PackageJson property \"homepage\""
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/jshttp/mime-types/issues",
+          "comment" : "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "type" : "distribution",
+          "url" : "https://registry.npmjs.org/mime-types/-/mime-types-2.1.35.tgz",
+          "comment" : "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        }
+      ],
+      "type" : "library",
+      "bom-ref" : "2d6c7751-66ac-4758-a769-9287e9193de1"
+    },
+    {
+      "name" : "morgan",
+      "version" : "1.6.1",
+      "description" : "HTTP request logger middleware for node.js",
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "MIT"
+          }
+        }
+      ],
+      "purl" : "pkg:npm/morgan@1.6.1",
+      "externalReferences" : [
+        {
+          "type" : "vcs",
+          "url" : "git+https://github.com/expressjs/morgan.git",
+          "comment" : "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "type" : "website",
+          "url" : "https://github.com/expressjs/morgan#readme",
+          "comment" : "as detected from PackageJson property \"homepage\""
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/expressjs/morgan/issues",
+          "comment" : "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "type" : "distribution",
+          "url" : "https://registry.npmjs.org/morgan/-/morgan-1.6.1.tgz",
+          "comment" : "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        }
+      ],
+      "type" : "library",
+      "bom-ref" : "2e1288be-5526-4532-9109-641d49d85444"
+    },
+    {
+      "name" : "ms",
+      "version" : "2.0.0",
+      "description" : "Tiny milisecond conversion utility",
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "MIT"
+          }
+        }
+      ],
+      "purl" : "pkg:npm/ms@2.0.0",
+      "externalReferences" : [
+        {
+          "type" : "vcs",
+          "url" : "git+https://github.com/zeit/ms.git",
+          "comment" : "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "type" : "website",
+          "url" : "https://github.com/zeit/ms#readme",
+          "comment" : "as detected from PackageJson property \"homepage\""
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/zeit/ms/issues",
+          "comment" : "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "type" : "distribution",
+          "url" : "https://registry.npmjs.org/ms/-/ms-2.0.0.tgz",
+          "comment" : "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        }
+      ],
+      "type" : "library",
+      "bom-ref" : "61a26d5b-ff5a-4091-97e3-1d0f9f24bab2"
+    },
+    {
+      "name" : "ms",
+      "version" : "0.7.2",
+      "description" : "Tiny milisecond conversion utility",
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "MIT"
+          }
+        }
+      ],
+      "purl" : "pkg:npm/ms@0.7.2",
+      "externalReferences" : [
+        {
+          "type" : "vcs",
+          "url" : "git+https://github.com/zeit/ms.git",
+          "comment" : "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "type" : "website",
+          "url" : "https://github.com/zeit/ms#readme",
+          "comment" : "as detected from PackageJson property \"homepage\""
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/zeit/ms/issues",
+          "comment" : "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "type" : "distribution",
+          "url" : "https://registry.npmjs.org/ms/-/ms-0.7.2.tgz",
+          "comment" : "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        }
+      ],
+      "type" : "library",
+      "bom-ref" : "b33bd108-a089-4f99-b374-46243557ce2f"
+    },
+    {
+      "name" : "ms",
+      "version" : "0.7.1",
+      "description" : "Tiny ms conversion utility",
+      "purl" : "pkg:npm/ms@0.7.1",
+      "externalReferences" : [
+        {
+          "type" : "vcs",
+          "url" : "git://github.com/guille/ms.js.git",
+          "comment" : "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "type" : "website",
+          "url" : "https://github.com/guille/ms.js#readme",
+          "comment" : "as detected from PackageJson property \"homepage\""
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/guille/ms.js/issues",
+          "comment" : "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "type" : "distribution",
+          "url" : "https://registry.npmjs.org/ms/-/ms-0.7.1.tgz",
+          "comment" : "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        }
+      ],
+      "type" : "library",
+      "bom-ref" : "9d284b21-8372-45e6-9be3-ed4888d174c9"
+    },
+    {
+      "name" : "negotiator",
+      "version" : "0.5.3",
+      "description" : "HTTP content negotiation",
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "MIT"
+          }
+        }
+      ],
+      "purl" : "pkg:npm/negotiator@0.5.3",
+      "externalReferences" : [
+        {
+          "type" : "vcs",
+          "url" : "git+https://github.com/jshttp/negotiator.git",
+          "comment" : "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "type" : "website",
+          "url" : "https://github.com/jshttp/negotiator#readme",
+          "comment" : "as detected from PackageJson property \"homepage\""
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/jshttp/negotiator/issues",
+          "comment" : "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "type" : "distribution",
+          "url" : "https://registry.npmjs.org/negotiator/-/negotiator-0.5.3.tgz",
+          "comment" : "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        }
+      ],
+      "type" : "library",
+      "bom-ref" : "084b0b9d-39fb-4b1d-acac-cf21eb93d36d"
+    },
+    {
+      "name" : "on-finished",
+      "version" : "2.3.0",
+      "description" : "Execute a callback when a request closes, finishes, or errors",
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "MIT"
+          }
+        }
+      ],
+      "purl" : "pkg:npm/on-finished@2.3.0",
+      "externalReferences" : [
+        {
+          "type" : "vcs",
+          "url" : "git+https://github.com/jshttp/on-finished.git",
+          "comment" : "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "type" : "website",
+          "url" : "https://github.com/jshttp/on-finished#readme",
+          "comment" : "as detected from PackageJson property \"homepage\""
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/jshttp/on-finished/issues",
+          "comment" : "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "type" : "distribution",
+          "url" : "https://registry.npmjs.org/on-finished/-/on-finished-2.3.0.tgz",
+          "comment" : "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        }
+      ],
+      "type" : "library",
+      "bom-ref" : "43977789-5ff5-4b6b-88fc-83d9881a831d"
+    },
+    {
+      "author" : "Douglas Christopher Wilson",
+      "name" : "on-headers",
+      "version" : "1.0.2",
+      "description" : "Execute a listener when a response is about to write headers",
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "MIT"
+          }
+        }
+      ],
+      "purl" : "pkg:npm/on-headers@1.0.2",
+      "externalReferences" : [
+        {
+          "type" : "vcs",
+          "url" : "git+https://github.com/jshttp/on-headers.git",
+          "comment" : "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "type" : "website",
+          "url" : "https://github.com/jshttp/on-headers#readme",
+          "comment" : "as detected from PackageJson property \"homepage\""
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/jshttp/on-headers/issues",
+          "comment" : "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "type" : "distribution",
+          "url" : "https://registry.npmjs.org/on-headers/-/on-headers-1.0.2.tgz",
+          "comment" : "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        }
+      ],
+      "type" : "library",
+      "bom-ref" : "83ae52b2-9eb1-45bf-b935-4534bc4b5217"
+    },
+    {
+      "author" : "Brian M. Carlson",
+      "name" : "packet-reader",
+      "version" : "0.2.0",
+      "description" : "Read binary packets...",
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "MIT"
+          }
+        }
+      ],
+      "purl" : "pkg:npm/packet-reader@0.2.0",
+      "externalReferences" : [
+        {
+          "type" : "vcs",
+          "url" : "git://github.com/brianc/node-packet-parser.git",
+          "comment" : "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "type" : "website",
+          "url" : "https://github.com/brianc/node-packet-parser",
+          "comment" : "as detected from PackageJson property \"homepage\""
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/brianc/node-packet-parser/issues",
+          "comment" : "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "type" : "distribution",
+          "url" : "https://registry.npmjs.org/packet-reader/-/packet-reader-0.2.0.tgz",
+          "comment" : "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        }
+      ],
+      "type" : "library",
+      "bom-ref" : "293b4446-7dbb-4cb8-8387-24c085190e73"
+    },
+    {
+      "name" : "parseurl",
+      "version" : "1.3.3",
+      "description" : "parse a url with memoization",
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "MIT"
+          }
+        }
+      ],
+      "purl" : "pkg:npm/parseurl@1.3.3",
+      "externalReferences" : [
+        {
+          "type" : "vcs",
+          "url" : "git+https://github.com/pillarjs/parseurl.git",
+          "comment" : "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "type" : "website",
+          "url" : "https://github.com/pillarjs/parseurl#readme",
+          "comment" : "as detected from PackageJson property \"homepage\""
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/pillarjs/parseurl/issues",
+          "comment" : "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "type" : "distribution",
+          "url" : "https://registry.npmjs.org/parseurl/-/parseurl-1.3.3.tgz",
+          "comment" : "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        }
+      ],
+      "type" : "library",
+      "bom-ref" : "0d4e9285-dc11-4414-8df6-2e3f2b4e2552"
+    },
+    {
+      "name" : "path-to-regexp",
+      "version" : "0.1.7",
+      "description" : "Express style path to RegExp utility",
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "MIT"
+          }
+        }
+      ],
+      "purl" : "pkg:npm/path-to-regexp@0.1.7",
+      "externalReferences" : [
+        {
+          "type" : "vcs",
+          "url" : "git+https://github.com/component/path-to-regexp.git",
+          "comment" : "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "type" : "website",
+          "url" : "https://github.com/component/path-to-regexp#readme",
+          "comment" : "as detected from PackageJson property \"homepage\""
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/component/path-to-regexp/issues",
+          "comment" : "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "type" : "distribution",
+          "url" : "https://registry.npmjs.org/path-to-regexp/-/path-to-regexp-0.1.7.tgz",
+          "comment" : "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        }
+      ],
+      "type" : "library",
+      "bom-ref" : "84319e55-602a-40ad-ab25-a1a98b521dc8"
+    },
+    {
+      "author" : "Brian Carlson",
+      "name" : "pg",
+      "version" : "5.1.0",
+      "description" : "PostgreSQL client - pure javascript & libpq with the same API",
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "MIT"
+          }
+        }
+      ],
+      "purl" : "pkg:npm/pg@5.1.0",
+      "externalReferences" : [
+        {
+          "type" : "vcs",
+          "url" : "git://github.com/brianc/node-postgres.git",
+          "comment" : "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "type" : "website",
+          "url" : "http://github.com/brianc/node-postgres",
+          "comment" : "as detected from PackageJson property \"homepage\""
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/brianc/node-postgres/issues",
+          "comment" : "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "type" : "distribution",
+          "url" : "https://registry.npmjs.org/pg/-/pg-5.1.0.tgz",
+          "comment" : "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        }
+      ],
+      "type" : "library",
+      "bom-ref" : "4ec3c625-7efb-42f3-9056-4090f8bc6826"
+    },
+    {
+      "author" : "Blaine Bublitz",
+      "name" : "pg-connection-string",
+      "version" : "0.1.3",
+      "description" : "Functions for dealing with a PostgresSQL connection string",
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "MIT"
+          }
+        }
+      ],
+      "purl" : "pkg:npm/pg-connection-string@0.1.3",
+      "externalReferences" : [
+        {
+          "type" : "vcs",
+          "url" : "git+https://github.com/iceddev/pg-connection-string.git",
+          "comment" : "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "type" : "website",
+          "url" : "https://github.com/iceddev/pg-connection-string",
+          "comment" : "as detected from PackageJson property \"homepage\""
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/iceddev/pg-connection-string/issues",
+          "comment" : "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "type" : "distribution",
+          "url" : "https://registry.npmjs.org/pg-connection-string/-/pg-connection-string-0.1.3.tgz",
+          "comment" : "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        }
+      ],
+      "type" : "library",
+      "bom-ref" : "d7b1de8c-cf70-472e-bac9-927c3bd4cccf"
+    },
+    {
+      "name" : "pg-int8",
+      "version" : "1.0.1",
+      "description" : "64-bit big-endian signed integer-to-string conversion",
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "ISC"
+          }
+        }
+      ],
+      "purl" : "pkg:npm/pg-int8@1.0.1",
+      "externalReferences" : [
+        {
+          "type" : "vcs",
+          "url" : "git+https://github.com/charmander/pg-int8.git",
+          "comment" : "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "type" : "website",
+          "url" : "https://github.com/charmander/pg-int8#readme",
+          "comment" : "as detected from PackageJson property \"homepage\""
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/charmander/pg-int8/issues",
+          "comment" : "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "type" : "distribution",
+          "url" : "https://registry.npmjs.org/pg-int8/-/pg-int8-1.0.1.tgz",
+          "comment" : "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        }
+      ],
+      "type" : "library",
+      "bom-ref" : "c0a8bd1f-9420-4c28-bde2-1f0d4d9bdb42"
+    },
+    {
+      "author" : "Vitaly Tomilov",
+      "name" : "pg-minify",
+      "version" : "0.3.5",
+      "description" : "Minifies PostgreSQL scripts.",
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "MIT"
+          }
+        }
+      ],
+      "purl" : "pkg:npm/pg-minify@0.3.5",
+      "externalReferences" : [
+        {
+          "type" : "vcs",
+          "url" : "git+https://github.com/vitaly-t/pg-minify.git",
+          "comment" : "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "type" : "website",
+          "url" : "https://github.com/vitaly-t/pg-minify",
+          "comment" : "as detected from PackageJson property \"homepage\""
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/vitaly-t/pg-minify/issues",
+          "comment" : "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "type" : "distribution",
+          "url" : "https://registry.npmjs.org/pg-minify/-/pg-minify-0.3.5.tgz",
+          "comment" : "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        }
+      ],
+      "type" : "library",
+      "bom-ref" : "d03a70ce-1db4-48c2-b277-047c8a610e5d"
+    },
+    {
+      "author" : "Hannes Hörl",
+      "name" : "pgpass",
+      "version" : "0.0.6",
+      "description" : "Module for reading .pgpass",
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "MIT"
+          }
+        }
+      ],
+      "purl" : "pkg:npm/pgpass@0.0.6",
+      "externalReferences" : [
+        {
+          "type" : "vcs",
+          "url" : "git+https://github.com/hoegaarden/pgpass.git",
+          "comment" : "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "type" : "website",
+          "url" : "https://github.com/hoegaarden/pgpass#readme",
+          "comment" : "as detected from PackageJson property \"homepage\""
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/hoegaarden/pgpass/issues",
+          "comment" : "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "type" : "distribution",
+          "url" : "https://registry.npmjs.org/pgpass/-/pgpass-0.0.6.tgz",
+          "comment" : "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        }
+      ],
+      "type" : "library",
+      "bom-ref" : "9eecb872-69cf-412c-bdcb-e2513746434d"
+    },
+    {
+      "author" : "Vitaly Tomilov",
+      "name" : "pg-promise",
+      "version" : "4.8.1",
+      "description" : "Promises interface for PostgreSQL",
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "MIT"
+          }
+        }
+      ],
+      "purl" : "pkg:npm/pg-promise@4.8.1",
+      "externalReferences" : [
+        {
+          "type" : "vcs",
+          "url" : "git+https://github.com/vitaly-t/pg-promise.git",
+          "comment" : "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "type" : "website",
+          "url" : "https://github.com/vitaly-t/pg-promise",
+          "comment" : "as detected from PackageJson property \"homepage\""
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/vitaly-t/pg-promise/issues",
+          "comment" : "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "type" : "distribution",
+          "url" : "https://registry.npmjs.org/pg-promise/-/pg-promise-4.8.1.tgz",
+          "comment" : "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        }
+      ],
+      "type" : "library",
+      "bom-ref" : "5b6f5a70-30e8-4ce3-9913-ff61bc7f305d"
+    },
+    {
+      "author" : "Brian M. Carlson",
+      "name" : "pg-types",
+      "version" : "1.13.0",
+      "description" : "Query result type converters for node-postgres",
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "MIT"
+          }
+        }
+      ],
+      "purl" : "pkg:npm/pg-types@1.13.0",
+      "externalReferences" : [
+        {
+          "type" : "vcs",
+          "url" : "git://github.com/brianc/node-pg-types.git",
+          "comment" : "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "type" : "website",
+          "url" : "https://github.com/brianc/node-pg-types",
+          "comment" : "as detected from PackageJson property \"homepage\""
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/brianc/node-pg-types/issues",
+          "comment" : "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "type" : "distribution",
+          "url" : "https://registry.npmjs.org/pg-types/-/pg-types-1.13.0.tgz",
+          "comment" : "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        }
+      ],
+      "type" : "library",
+      "bom-ref" : "3f476082-8c82-4de0-9b35-043e637cbdc7"
+    },
+    {
+      "author" : "Ben Drucker",
+      "name" : "postgres-array",
+      "version" : "1.0.3",
+      "description" : "Parse postgres array columns",
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "MIT"
+          }
+        }
+      ],
+      "purl" : "pkg:npm/postgres-array@1.0.3",
+      "externalReferences" : [
+        {
+          "type" : "vcs",
+          "url" : "git+https://github.com/bendrucker/postgres-array.git",
+          "comment" : "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "type" : "website",
+          "url" : "https://github.com/bendrucker/postgres-array#readme",
+          "comment" : "as detected from PackageJson property \"homepage\""
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/bendrucker/postgres-array/issues",
+          "comment" : "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "type" : "distribution",
+          "url" : "https://registry.npmjs.org/postgres-array/-/postgres-array-1.0.3.tgz",
+          "comment" : "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        }
+      ],
+      "type" : "library",
+      "bom-ref" : "a126a94c-a73f-436a-a7ac-d5eabdcf8863"
+    },
+    {
+      "author" : "Ben Drucker",
+      "name" : "postgres-bytea",
+      "version" : "1.0.0",
+      "description" : "Postgres bytea parser",
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "MIT"
+          }
+        }
+      ],
+      "purl" : "pkg:npm/postgres-bytea@1.0.0",
+      "externalReferences" : [
+        {
+          "type" : "vcs",
+          "url" : "git+https://github.com/bendrucker/postgres-bytea.git",
+          "comment" : "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "type" : "website",
+          "url" : "https://github.com/bendrucker/postgres-bytea#readme",
+          "comment" : "as detected from PackageJson property \"homepage\""
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/bendrucker/postgres-bytea/issues",
+          "comment" : "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "type" : "distribution",
+          "url" : "https://registry.npmjs.org/postgres-bytea/-/postgres-bytea-1.0.0.tgz",
+          "comment" : "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        }
+      ],
+      "type" : "library",
+      "bom-ref" : "df85715b-660a-46a1-a5cf-8063ba3d5813"
+    },
+    {
+      "author" : "Ben Drucker",
+      "name" : "postgres-date",
+      "version" : "1.0.7",
+      "description" : "Postgres date column parser",
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "MIT"
+          }
+        }
+      ],
+      "purl" : "pkg:npm/postgres-date@1.0.7",
+      "externalReferences" : [
+        {
+          "type" : "vcs",
+          "url" : "git+https://github.com/bendrucker/postgres-date.git",
+          "comment" : "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "type" : "website",
+          "url" : "https://github.com/bendrucker/postgres-date#readme",
+          "comment" : "as detected from PackageJson property \"homepage\""
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/bendrucker/postgres-date/issues",
+          "comment" : "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "type" : "distribution",
+          "url" : "https://registry.npmjs.org/postgres-date/-/postgres-date-1.0.7.tgz",
+          "comment" : "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        }
+      ],
+      "type" : "library",
+      "bom-ref" : "0098ce63-8807-485c-9c26-d06d78fe9d47"
+    },
+    {
+      "author" : "Ben Drucker",
+      "name" : "postgres-interval",
+      "version" : "1.2.0",
+      "description" : "Parse Postgres interval columns",
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "MIT"
+          }
+        }
+      ],
+      "purl" : "pkg:npm/postgres-interval@1.2.0",
+      "externalReferences" : [
+        {
+          "type" : "vcs",
+          "url" : "git+https://github.com/bendrucker/postgres-interval.git",
+          "comment" : "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "type" : "website",
+          "url" : "https://github.com/bendrucker/postgres-interval#readme",
+          "comment" : "as detected from PackageJson property \"homepage\""
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/bendrucker/postgres-interval/issues",
+          "comment" : "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "type" : "distribution",
+          "url" : "https://registry.npmjs.org/postgres-interval/-/postgres-interval-1.2.0.tgz",
+          "comment" : "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        }
+      ],
+      "type" : "library",
+      "bom-ref" : "51c2002b-af89-4792-9415-2236a44d0eef"
+    },
+    {
+      "author" : "Douglas Christopher Wilson",
+      "name" : "proxy-addr",
+      "version" : "1.0.10",
+      "description" : "Determine address of proxied request",
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "MIT"
+          }
+        }
+      ],
+      "purl" : "pkg:npm/proxy-addr@1.0.10",
+      "externalReferences" : [
+        {
+          "type" : "vcs",
+          "url" : "git+https://github.com/jshttp/proxy-addr.git",
+          "comment" : "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "type" : "website",
+          "url" : "https://github.com/jshttp/proxy-addr#readme",
+          "comment" : "as detected from PackageJson property \"homepage\""
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/jshttp/proxy-addr/issues",
+          "comment" : "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "type" : "distribution",
+          "url" : "https://registry.npmjs.org/proxy-addr/-/proxy-addr-1.0.10.tgz",
+          "comment" : "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        }
+      ],
+      "type" : "library",
+      "bom-ref" : "01cf7488-6cf7-451f-8e13-fa2dbf6e7b54"
+    },
+    {
+      "name" : "qs",
+      "version" : "4.0.0",
+      "description" : "A querystring parser that supports nesting and arrays, with a depth limit",
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "BSD-3-Clause"
+          }
+        }
+      ],
+      "purl" : "pkg:npm/qs@4.0.0",
+      "externalReferences" : [
+        {
+          "type" : "vcs",
+          "url" : "git+https://github.com/hapijs/qs.git",
+          "comment" : "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "type" : "website",
+          "url" : "https://github.com/hapijs/qs",
+          "comment" : "as detected from PackageJson property \"homepage\""
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/hapijs/qs/issues",
+          "comment" : "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "type" : "distribution",
+          "url" : "https://registry.npmjs.org/qs/-/qs-4.0.0.tgz",
+          "comment" : "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        }
+      ],
+      "type" : "library",
+      "bom-ref" : "770a31a6-40ba-44d0-8e77-b2d8972239d0"
+    },
+    {
+      "name" : "random-bytes",
+      "version" : "1.0.0",
+      "description" : "URL and cookie safe UIDs",
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "MIT"
+          }
+        }
+      ],
+      "purl" : "pkg:npm/random-bytes@1.0.0",
+      "externalReferences" : [
+        {
+          "type" : "vcs",
+          "url" : "git+https://github.com/crypto-utils/random-bytes.git",
+          "comment" : "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "type" : "website",
+          "url" : "https://github.com/crypto-utils/random-bytes#readme",
+          "comment" : "as detected from PackageJson property \"homepage\""
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/crypto-utils/random-bytes/issues",
+          "comment" : "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "type" : "distribution",
+          "url" : "https://registry.npmjs.org/random-bytes/-/random-bytes-1.0.0.tgz",
+          "comment" : "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        }
+      ],
+      "type" : "library",
+      "bom-ref" : "ac5e0c06-ff23-4187-abc9-7ad17496688f"
+    },
+    {
+      "author" : "TJ Holowaychuk",
+      "name" : "range-parser",
+      "version" : "1.0.3",
+      "description" : "Range header field string parser",
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "MIT"
+          }
+        }
+      ],
+      "purl" : "pkg:npm/range-parser@1.0.3",
+      "externalReferences" : [
+        {
+          "type" : "vcs",
+          "url" : "git+https://github.com/jshttp/range-parser.git",
+          "comment" : "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "type" : "website",
+          "url" : "https://github.com/jshttp/range-parser#readme",
+          "comment" : "as detected from PackageJson property \"homepage\""
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/jshttp/range-parser/issues",
+          "comment" : "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "type" : "distribution",
+          "url" : "https://registry.npmjs.org/range-parser/-/range-parser-1.0.3.tgz",
+          "comment" : "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        }
+      ],
+      "type" : "library",
+      "bom-ref" : "ccba62ce-aecb-43e8-860c-38202809978c"
+    },
+    {
+      "author" : "Jonathan Ong",
+      "name" : "raw-body",
+      "version" : "2.1.7",
+      "description" : "Get and validate the raw body of a readable stream.",
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "MIT"
+          }
+        }
+      ],
+      "purl" : "pkg:npm/raw-body@2.1.7",
+      "externalReferences" : [
+        {
+          "type" : "vcs",
+          "url" : "git+https://github.com/stream-utils/raw-body.git",
+          "comment" : "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "type" : "website",
+          "url" : "https://github.com/stream-utils/raw-body#readme",
+          "comment" : "as detected from PackageJson property \"homepage\""
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/stream-utils/raw-body/issues",
+          "comment" : "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "type" : "distribution",
+          "url" : "https://registry.npmjs.org/raw-body/-/raw-body-2.1.7.tgz",
+          "comment" : "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        }
+      ],
+      "type" : "library",
+      "bom-ref" : "b48456b7-2c5d-4204-b586-7469ac57672d"
+    },
+    {
+      "author" : "Isaac Z. Schlueter",
+      "name" : "readable-stream",
+      "version" : "1.0.34",
+      "description" : "Streams2, a user-land copy of the stream library from Node.js v0.10.x",
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "MIT"
+          }
+        }
+      ],
+      "purl" : "pkg:npm/readable-stream@1.0.34",
+      "externalReferences" : [
+        {
+          "type" : "vcs",
+          "url" : "git://github.com/isaacs/readable-stream.git",
+          "comment" : "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "type" : "website",
+          "url" : "https://github.com/isaacs/readable-stream#readme",
+          "comment" : "as detected from PackageJson property \"homepage\""
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/isaacs/readable-stream/issues",
+          "comment" : "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "type" : "distribution",
+          "url" : "https://registry.npmjs.org/readable-stream/-/readable-stream-1.0.34.tgz",
+          "comment" : "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        }
+      ],
+      "type" : "library",
+      "bom-ref" : "34fae79c-1b7e-499d-94cd-1881306f8e16"
+    },
+    {
+      "author" : "Feross Aboukhadijeh",
+      "name" : "safe-buffer",
+      "version" : "5.2.1",
+      "description" : "Safer Node.js Buffer API",
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "MIT"
+          }
+        }
+      ],
+      "purl" : "pkg:npm/safe-buffer@5.2.1",
+      "externalReferences" : [
+        {
+          "type" : "vcs",
+          "url" : "git://github.com/feross/safe-buffer.git",
+          "comment" : "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "type" : "website",
+          "url" : "https://github.com/feross/safe-buffer",
+          "comment" : "as detected from PackageJson property \"homepage\""
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/feross/safe-buffer/issues",
+          "comment" : "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "type" : "distribution",
+          "url" : "https://registry.npmjs.org/safe-buffer/-/safe-buffer-5.2.1.tgz",
+          "comment" : "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        }
+      ],
+      "type" : "library",
+      "bom-ref" : "ff80212e-19b0-4360-895d-d0d4dcc8af69"
+    },
+    {
+      "name" : "semver",
+      "version" : "4.3.2",
+      "description" : "The semantic version parser used by npm.",
+      "licenses" : [
+        {
+          "license" : {
+            "name" : "BSD"
+          }
+        }
+      ],
+      "purl" : "pkg:npm/semver@4.3.2",
+      "externalReferences" : [
+        {
+          "type" : "vcs",
+          "url" : "git://github.com/npm/node-semver.git",
+          "comment" : "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "type" : "website",
+          "url" : "https://github.com/npm/node-semver#readme",
+          "comment" : "as detected from PackageJson property \"homepage\""
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/npm/node-semver/issues",
+          "comment" : "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "type" : "distribution",
+          "url" : "https://registry.npmjs.org/semver/-/semver-4.3.2.tgz",
+          "comment" : "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        }
+      ],
+      "type" : "library",
+      "bom-ref" : "4c4dde79-46dd-4051-8cb8-233ed39e41f8"
+    },
+    {
+      "name" : "semver",
+      "version" : "4.3.6",
+      "description" : "The semantic version parser used by npm.",
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "ISC"
+          }
+        }
+      ],
+      "purl" : "pkg:npm/semver@4.3.6",
+      "externalReferences" : [
+        {
+          "type" : "vcs",
+          "url" : "git://github.com/npm/node-semver.git",
+          "comment" : "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "type" : "website",
+          "url" : "https://github.com/npm/node-semver#readme",
+          "comment" : "as detected from PackageJson property \"homepage\""
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/npm/node-semver/issues",
+          "comment" : "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "type" : "distribution",
+          "url" : "https://registry.npmjs.org/semver/-/semver-4.3.6.tgz",
+          "comment" : "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        }
+      ],
+      "type" : "library",
+      "bom-ref" : "f798901c-4e4f-40a1-b4be-431dbcb0759c"
+    },
+    {
+      "author" : "TJ Holowaychuk",
+      "name" : "send",
+      "version" : "0.13.1",
+      "description" : "Better streaming static file server with Range and conditional-GET support",
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "MIT"
+          }
+        }
+      ],
+      "purl" : "pkg:npm/send@0.13.1",
+      "externalReferences" : [
+        {
+          "type" : "vcs",
+          "url" : "git+https://github.com/pillarjs/send.git",
+          "comment" : "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "type" : "website",
+          "url" : "https://github.com/pillarjs/send#readme",
+          "comment" : "as detected from PackageJson property \"homepage\""
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/pillarjs/send/issues",
+          "comment" : "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "type" : "distribution",
+          "url" : "https://registry.npmjs.org/send/-/send-0.13.1.tgz",
+          "comment" : "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        }
+      ],
+      "type" : "library",
+      "bom-ref" : "d857b3b7-a66d-4c6f-8302-280e056aeaa2"
+    },
+    {
+      "author" : "TJ Holowaychuk",
+      "name" : "send",
+      "version" : "0.13.2",
+      "description" : "Better streaming static file server with Range and conditional-GET support",
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "MIT"
+          }
+        }
+      ],
+      "purl" : "pkg:npm/send@0.13.2",
+      "externalReferences" : [
+        {
+          "type" : "vcs",
+          "url" : "git+https://github.com/pillarjs/send.git",
+          "comment" : "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "type" : "website",
+          "url" : "https://github.com/pillarjs/send#readme",
+          "comment" : "as detected from PackageJson property \"homepage\""
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/pillarjs/send/issues",
+          "comment" : "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "type" : "distribution",
+          "url" : "https://registry.npmjs.org/send/-/send-0.13.2.tgz",
+          "comment" : "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        }
+      ],
+      "type" : "library",
+      "bom-ref" : "23af8824-f8c0-4c20-9dc6-9279e5a37b48"
+    },
+    {
+      "author" : "Douglas Christopher Wilson",
+      "name" : "serve-favicon",
+      "version" : "2.3.2",
+      "description" : "favicon serving middleware with caching",
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "MIT"
+          }
+        }
+      ],
+      "purl" : "pkg:npm/serve-favicon@2.3.2",
+      "externalReferences" : [
+        {
+          "type" : "vcs",
+          "url" : "git+https://github.com/expressjs/serve-favicon.git",
+          "comment" : "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "type" : "website",
+          "url" : "https://github.com/expressjs/serve-favicon#readme",
+          "comment" : "as detected from PackageJson property \"homepage\""
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/expressjs/serve-favicon/issues",
+          "comment" : "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "type" : "distribution",
+          "url" : "https://registry.npmjs.org/serve-favicon/-/serve-favicon-2.3.2.tgz",
+          "comment" : "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        }
+      ],
+      "type" : "library",
+      "bom-ref" : "09c58959-f3c2-461d-b000-882dfd372316"
+    },
+    {
+      "author" : "Douglas Christopher Wilson",
+      "name" : "serve-static",
+      "version" : "1.10.3",
+      "description" : "Serve static files",
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "MIT"
+          }
+        }
+      ],
+      "purl" : "pkg:npm/serve-static@1.10.3",
+      "externalReferences" : [
+        {
+          "type" : "vcs",
+          "url" : "git+https://github.com/expressjs/serve-static.git",
+          "comment" : "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "type" : "website",
+          "url" : "https://github.com/expressjs/serve-static#readme",
+          "comment" : "as detected from PackageJson property \"homepage\""
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/expressjs/serve-static/issues",
+          "comment" : "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "type" : "distribution",
+          "url" : "https://registry.npmjs.org/serve-static/-/serve-static-1.10.3.tgz",
+          "comment" : "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        }
+      ],
+      "type" : "library",
+      "bom-ref" : "b4049907-b63c-4142-91ab-a00a5ad8fe66"
+    },
+    {
+      "author" : "Vitaly Tomilov",
+      "name" : "spex",
+      "version" : "0.4.6",
+      "description" : "Specialized Promise Extensions",
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "MIT"
+          }
+        }
+      ],
+      "purl" : "pkg:npm/spex@0.4.6",
+      "externalReferences" : [
+        {
+          "type" : "vcs",
+          "url" : "git+https://github.com/vitaly-t/spex.git",
+          "comment" : "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "type" : "website",
+          "url" : "https://github.com/vitaly-t/spex",
+          "comment" : "as detected from PackageJson property \"homepage\""
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/vitaly-t/spex/issues",
+          "comment" : "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "type" : "distribution",
+          "url" : "https://registry.npmjs.org/spex/-/spex-0.4.6.tgz",
+          "comment" : "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        }
+      ],
+      "type" : "library",
+      "bom-ref" : "2109ab8b-f6e1-49b2-af0c-1abfe71925e3"
+    },
+    {
+      "author" : "Dominic Tarr",
+      "name" : "split",
+      "version" : "1.0.1",
+      "description" : "split a Text Stream into a Line Stream",
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "MIT"
+          }
+        }
+      ],
+      "purl" : "pkg:npm/split@1.0.1",
+      "externalReferences" : [
+        {
+          "type" : "vcs",
+          "url" : "git://github.com/dominictarr/split.git",
+          "comment" : "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "type" : "website",
+          "url" : "http://github.com/dominictarr/split",
+          "comment" : "as detected from PackageJson property \"homepage\""
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/dominictarr/split/issues",
+          "comment" : "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "type" : "distribution",
+          "url" : "https://registry.npmjs.org/split/-/split-1.0.1.tgz",
+          "comment" : "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        }
+      ],
+      "type" : "library",
+      "bom-ref" : "60e3eb3a-bbaf-422f-86db-4d5c0b86a471"
+    },
+    {
+      "author" : "Jonathan Ong",
+      "name" : "statuses",
+      "version" : "1.2.1",
+      "description" : "HTTP status utility",
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "MIT"
+          }
+        }
+      ],
+      "purl" : "pkg:npm/statuses@1.2.1",
+      "externalReferences" : [
+        {
+          "type" : "vcs",
+          "url" : "git+https://github.com/jshttp/statuses.git",
+          "comment" : "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "type" : "website",
+          "url" : "https://github.com/jshttp/statuses#readme",
+          "comment" : "as detected from PackageJson property \"homepage\""
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/jshttp/statuses/issues",
+          "comment" : "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "type" : "distribution",
+          "url" : "https://registry.npmjs.org/statuses/-/statuses-1.2.1.tgz",
+          "comment" : "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        }
+      ],
+      "type" : "library",
+      "bom-ref" : "b3be1904-d6ef-4653-affd-d3fef54019be"
+    },
+    {
+      "author" : "Jonathan Ong",
+      "name" : "statuses",
+      "version" : "1.2.1",
+      "description" : "HTTP status utility",
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "MIT"
+          }
+        }
+      ],
+      "purl" : "pkg:npm/statuses@1.2.1",
+      "externalReferences" : [
+        {
+          "type" : "vcs",
+          "url" : "git+https://github.com/jshttp/statuses.git",
+          "comment" : "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "type" : "website",
+          "url" : "https://github.com/jshttp/statuses#readme",
+          "comment" : "as detected from PackageJson property \"homepage\""
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/jshttp/statuses/issues",
+          "comment" : "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "type" : "distribution",
+          "url" : "https://registry.npmjs.org/statuses/-/statuses-1.2.1.tgz",
+          "comment" : "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        }
+      ],
+      "type" : "library",
+      "bom-ref" : "8752392f-2497-45a6-b89a-24835706199c"
+    },
+    {
+      "name" : "statuses",
+      "version" : "1.5.0",
+      "description" : "HTTP status utility",
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "MIT"
+          }
+        }
+      ],
+      "purl" : "pkg:npm/statuses@1.5.0",
+      "externalReferences" : [
+        {
+          "type" : "vcs",
+          "url" : "git+https://github.com/jshttp/statuses.git",
+          "comment" : "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "type" : "website",
+          "url" : "https://github.com/jshttp/statuses#readme",
+          "comment" : "as detected from PackageJson property \"homepage\""
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/jshttp/statuses/issues",
+          "comment" : "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "type" : "distribution",
+          "url" : "https://registry.npmjs.org/statuses/-/statuses-1.5.0.tgz",
+          "comment" : "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        }
+      ],
+      "type" : "library",
+      "bom-ref" : "c6c1e326-c1e0-4729-a937-65de66be3f00"
+    },
+    {
+      "name" : "string_decoder",
+      "version" : "0.10.31",
+      "description" : "The string_decoder module from Node core",
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "MIT"
+          }
+        }
+      ],
+      "purl" : "pkg:npm/string_decoder@0.10.31",
+      "externalReferences" : [
+        {
+          "type" : "vcs",
+          "url" : "git://github.com/rvagg/string_decoder.git",
+          "comment" : "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "type" : "website",
+          "url" : "https://github.com/rvagg/string_decoder",
+          "comment" : "as detected from PackageJson property \"homepage\""
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/rvagg/string_decoder/issues",
+          "comment" : "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "type" : "distribution",
+          "url" : "https://registry.npmjs.org/string_decoder/-/string_decoder-0.10.31.tgz",
+          "comment" : "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        }
+      ],
+      "type" : "library",
+      "bom-ref" : "c8f9869a-b0f1-4435-8765-40254f051888"
+    },
+    {
+      "author" : "Dominic Tarr",
+      "name" : "through",
+      "version" : "2.3.8",
+      "description" : "simplified stream construction",
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "MIT"
+          }
+        }
+      ],
+      "purl" : "pkg:npm/through@2.3.8",
+      "externalReferences" : [
+        {
+          "type" : "vcs",
+          "url" : "git+https://github.com/dominictarr/through.git",
+          "comment" : "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "type" : "website",
+          "url" : "https://github.com/dominictarr/through",
+          "comment" : "as detected from PackageJson property \"homepage\""
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/dominictarr/through/issues",
+          "comment" : "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "type" : "distribution",
+          "url" : "https://registry.npmjs.org/through/-/through-2.3.8.tgz",
+          "comment" : "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        }
+      ],
+      "type" : "library",
+      "bom-ref" : "cd0b1f27-98e4-4369-b6a2-d18f2833a2b9"
+    },
+    {
+      "name" : "type-is",
+      "version" : "1.6.18",
+      "description" : "Infer the content-type of a request.",
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "MIT"
+          }
+        }
+      ],
+      "purl" : "pkg:npm/type-is@1.6.18",
+      "externalReferences" : [
+        {
+          "type" : "vcs",
+          "url" : "git+https://github.com/jshttp/type-is.git",
+          "comment" : "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "type" : "website",
+          "url" : "https://github.com/jshttp/type-is#readme",
+          "comment" : "as detected from PackageJson property \"homepage\""
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/jshttp/type-is/issues",
+          "comment" : "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "type" : "distribution",
+          "url" : "https://registry.npmjs.org/type-is/-/type-is-1.6.18.tgz",
+          "comment" : "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        }
+      ],
+      "type" : "library",
+      "bom-ref" : "b38e2ca7-29dc-4fd9-8ded-c2c08798b7ff"
+    },
+    {
+      "name" : "uid-safe",
+      "version" : "2.1.5",
+      "description" : "URL and cookie safe UIDs",
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "MIT"
+          }
+        }
+      ],
+      "purl" : "pkg:npm/uid-safe@2.1.5",
+      "externalReferences" : [
+        {
+          "type" : "vcs",
+          "url" : "git+https://github.com/crypto-utils/uid-safe.git",
+          "comment" : "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "type" : "website",
+          "url" : "https://github.com/crypto-utils/uid-safe#readme",
+          "comment" : "as detected from PackageJson property \"homepage\""
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/crypto-utils/uid-safe/issues",
+          "comment" : "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "type" : "distribution",
+          "url" : "https://registry.npmjs.org/uid-safe/-/uid-safe-2.1.5.tgz",
+          "comment" : "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        }
+      ],
+      "type" : "library",
+      "bom-ref" : "ba9e1750-f84b-4f7f-8fed-973c21db40f7"
+    },
+    {
+      "author" : "Douglas Christopher Wilson",
+      "name" : "unpipe",
+      "version" : "1.0.0",
+      "description" : "Unpipe a stream from all destinations",
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "MIT"
+          }
+        }
+      ],
+      "purl" : "pkg:npm/unpipe@1.0.0",
+      "externalReferences" : [
+        {
+          "type" : "vcs",
+          "url" : "git+https://github.com/stream-utils/unpipe.git",
+          "comment" : "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "type" : "website",
+          "url" : "https://github.com/stream-utils/unpipe#readme",
+          "comment" : "as detected from PackageJson property \"homepage\""
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/stream-utils/unpipe/issues",
+          "comment" : "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "type" : "distribution",
+          "url" : "https://registry.npmjs.org/unpipe/-/unpipe-1.0.0.tgz",
+          "comment" : "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        }
+      ],
+      "type" : "library",
+      "bom-ref" : "03bd1d9e-b0cc-4d48-ae89-44aff01247e6"
+    },
+    {
+      "author" : "Jared Hanson",
+      "name" : "utils-merge",
+      "version" : "1.0.0",
+      "description" : "merge() utility function",
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "MIT",
+            "url" : "http://www.opensource.org/licenses/MIT"
+          }
+        }
+      ],
+      "purl" : "pkg:npm/utils-merge@1.0.0",
+      "externalReferences" : [
+        {
+          "type" : "vcs",
+          "url" : "git://github.com/jaredhanson/utils-merge.git",
+          "comment" : "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "type" : "website",
+          "url" : "https://github.com/jaredhanson/utils-merge#readme",
+          "comment" : "as detected from PackageJson property \"homepage\""
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "http://github.com/jaredhanson/utils-merge/issues",
+          "comment" : "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "type" : "distribution",
+          "url" : "https://registry.npmjs.org/utils-merge/-/utils-merge-1.0.0.tgz",
+          "comment" : "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        }
+      ],
+      "type" : "library",
+      "bom-ref" : "1a18d54f-0283-4a1c-bf11-f6ee81f3de61"
+    },
+    {
+      "author" : "Douglas Christopher Wilson",
+      "name" : "vary",
+      "version" : "1.0.1",
+      "description" : "Manipulate the HTTP Vary header",
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "MIT"
+          }
+        }
+      ],
+      "purl" : "pkg:npm/vary@1.0.1",
+      "externalReferences" : [
+        {
+          "type" : "vcs",
+          "url" : "git+https://github.com/jshttp/vary.git",
+          "comment" : "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "type" : "website",
+          "url" : "https://github.com/jshttp/vary#readme",
+          "comment" : "as detected from PackageJson property \"homepage\""
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/jshttp/vary/issues",
+          "comment" : "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "type" : "distribution",
+          "url" : "https://registry.npmjs.org/vary/-/vary-1.0.1.tgz",
+          "comment" : "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        }
+      ],
+      "type" : "library",
+      "bom-ref" : "b07e1831-3d87-4384-84b3-088ab752ad83"
+    },
+    {
+      "author" : "Raynos",
+      "name" : "xtend",
+      "version" : "4.0.2",
+      "description" : "extend like a boss",
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "MIT"
+          }
+        }
+      ],
+      "purl" : "pkg:npm/xtend@4.0.2",
+      "externalReferences" : [
+        {
+          "type" : "vcs",
+          "url" : "git://github.com/Raynos/xtend.git",
+          "comment" : "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "type" : "website",
+          "url" : "https://github.com/Raynos/xtend",
+          "comment" : "as detected from PackageJson property \"homepage\""
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/Raynos/xtend/issues",
+          "comment" : "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "type" : "distribution",
+          "url" : "https://registry.npmjs.org/xtend/-/xtend-4.0.2.tgz",
+          "comment" : "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        }
+      ],
+      "type" : "library",
+      "bom-ref" : "430ab7de-15ce-4811-93b0-fd11fbea3836"
+    }
+  ],
+  "dependencies" : [
+    {
+      "ref" : "70de2757-37d5-4175-b63f-24890ae6471e",
+      "dependsOn" : [
+        "c2bfc56f-612a-48b9-ae67-abe36d92622c",
+        "bc5ab70d-bcbe-49a6-9daa-0ee562d925c4",
+        "50c67d46-a4ce-42d9-97d4-ee658196d25e",
+        "8cee23bb-ddea-4854-a507-3a9fccf73147",
+        "243f77f0-59ba-482e-b77c-cded05e3d145",
+        "fa232f05-50fb-4d96-bc30-7ae0dc326e92",
+        "c863f840-ae08-4845-9981-8aa5b8165ddb",
+        "7c5ae86b-d8db-4477-8dbd-d48f4bede879",
+        "2e1288be-5526-4532-9109-641d49d85444",
+        "5b6f5a70-30e8-4ce3-9913-ff61bc7f305d",
+        "09c58959-f3c2-461d-b000-882dfd372316"
+      ]
+    },
+    {
+      "ref" : "7bbd7c86-2bf5-4619-a6a9-1574a4b24364",
+      "dependsOn" : [
+        "2d6c7751-66ac-4758-a769-9287e9193de1",
+        "084b0b9d-39fb-4b1d-acac-cf21eb93d36d"
+      ]
+    },
+    {
+      "ref" : "9414179e-c68f-4745-8c6a-7ba4b7245f9a",
+      "dependsOn" : [ ]
+    },
+    {
+      "ref" : "f32830a0-293d-489c-89a3-560740a37f2b",
+      "dependsOn" : [ ]
+    },
+    {
+      "ref" : "c2bfc56f-612a-48b9-ae67-abe36d92622c",
+      "dependsOn" : [
+        "d9ba0c82-7178-48d5-9212-239761ea68f4",
+        "dcc70f76-02ea-4cf3-8497-8b4e876ed7a4",
+        "50c67d46-a4ce-42d9-97d4-ee658196d25e",
+        "4abbabbc-faca-44b8-a373-802d0c004811",
+        "f8dfe703-180b-4104-9dd2-6a67a18ff7f7",
+        "f7d71dcb-0c50-4fba-8891-1dc16316ef66",
+        "43977789-5ff5-4b6b-88fc-83d9881a831d",
+        "770a31a6-40ba-44d0-8e77-b2d8972239d0",
+        "b48456b7-2c5d-4204-b586-7469ac57672d",
+        "b38e2ca7-29dc-4fd9-8ded-c2c08798b7ff"
+      ]
+    },
+    {
+      "ref" : "bff4b819-c17f-4173-9940-919f68aaaae6",
+      "dependsOn" : [ ]
+    },
+    {
+      "ref" : "bdaf7e5d-0fe4-4f9b-8eaa-eaba57ce072f",
+      "dependsOn" : [ ]
+    },
+    {
+      "ref" : "d9ba0c82-7178-48d5-9212-239761ea68f4",
+      "dependsOn" : [ ]
+    },
+    {
+      "ref" : "c58d7ccf-949e-45c2-bbfd-e1fbb32699f2",
+      "dependsOn" : [ ]
+    },
+    {
+      "ref" : "dcc70f76-02ea-4cf3-8497-8b4e876ed7a4",
+      "dependsOn" : [ ]
+    },
+    {
+      "ref" : "1a7d356c-bdee-4a3e-b0b6-309dfaa144c3",
+      "dependsOn" : [ ]
+    },
+    {
+      "ref" : "d0055d0f-d681-4b39-8445-7dfcbb4c33ab",
+      "dependsOn" : [ ]
+    },
+    {
+      "ref" : "a65778bb-6782-4e54-a31e-7b313c7cbb92",
+      "dependsOn" : [ ]
+    },
+    {
+      "ref" : "bc5ab70d-bcbe-49a6-9daa-0ee562d925c4",
+      "dependsOn" : [
+        "9b7414f3-94fe-4a3c-bad1-6c7d87f6be81",
+        "1a7d356c-bdee-4a3e-b0b6-309dfaa144c3"
+      ]
+    },
+    {
+      "ref" : "c67f74f0-053c-4e77-ba9d-e0e1fbf08caf",
+      "dependsOn" : [ ]
+    },
+    {
+      "ref" : "9b7414f3-94fe-4a3c-bad1-6c7d87f6be81",
+      "dependsOn" : [ ]
+    },
+    {
+      "ref" : "7942c822-9319-42f8-bc9c-1d01936acc24",
+      "dependsOn" : [ ]
+    },
+    {
+      "ref" : "74859b3a-db6c-4417-8e23-3feee63ed3f1",
+      "dependsOn" : [
+        "61a26d5b-ff5a-4091-97e3-1d0f9f24bab2"
+      ]
+    },
+    {
+      "ref" : "50c67d46-a4ce-42d9-97d4-ee658196d25e",
+      "dependsOn" : [
+        "9d284b21-8372-45e6-9be3-ed4888d174c9"
+      ]
+    },
+    {
+      "ref" : "a3731643-8abe-49ca-9e7a-99eb2a89640e",
+      "dependsOn" : [ ]
+    },
+    {
+      "ref" : "4abbabbc-faca-44b8-a373-802d0c004811",
+      "dependsOn" : [ ]
+    },
+    {
+      "ref" : "0e9ba669-0147-49b7-ac13-c4a701f66e32",
+      "dependsOn" : [ ]
+    },
+    {
+      "ref" : "77bdf737-aa9d-4028-9102-ad1a936a244b",
+      "dependsOn" : [ ]
+    },
+    {
+      "ref" : "0a06b00b-759f-4e9d-be26-411412890177",
+      "dependsOn" : [ ]
+    },
+    {
+      "ref" : "34977f4d-4d26-429f-a767-0bad37bddc54",
+      "dependsOn" : [ ]
+    },
+    {
+      "ref" : "7e59fa09-8a0c-4075-8128-0623980ff4a2",
+      "dependsOn" : [ ]
+    },
+    {
+      "ref" : "ff09aa47-6490-450b-bbde-e14a75427df1",
+      "dependsOn" : [ ]
+    },
+    {
+      "ref" : "243f77f0-59ba-482e-b77c-cded05e3d145",
+      "dependsOn" : [ ]
+    },
+    {
+      "ref" : "8cee23bb-ddea-4854-a507-3a9fccf73147",
+      "dependsOn" : [
+        "ff09aa47-6490-450b-bbde-e14a75427df1"
+      ]
+    },
+    {
+      "ref" : "4f961993-ad3b-41c0-acea-ea725972b89f",
+      "dependsOn" : [ ]
+    },
+    {
+      "ref" : "208a3f8d-4ab4-43cd-a2cb-0519493a9544",
+      "dependsOn" : [ ]
+    },
+    {
+      "ref" : "c863f840-ae08-4845-9981-8aa5b8165ddb",
+      "dependsOn" : [
+        "7bbd7c86-2bf5-4619-a6a9-1574a4b24364",
+        "9414179e-c68f-4745-8c6a-7ba4b7245f9a",
+        "c58d7ccf-949e-45c2-bbfd-e1fbb32699f2",
+        "dcc70f76-02ea-4cf3-8497-8b4e876ed7a4",
+        "9b7414f3-94fe-4a3c-bad1-6c7d87f6be81",
+        "d0055d0f-d681-4b39-8445-7dfcbb4c33ab",
+        "50c67d46-a4ce-42d9-97d4-ee658196d25e",
+        "0e9ba669-0147-49b7-ac13-c4a701f66e32",
+        "4f961993-ad3b-41c0-acea-ea725972b89f",
+        "208a3f8d-4ab4-43cd-a2cb-0519493a9544",
+        "47abfc9f-d487-4bde-99e3-fe8309df3346",
+        "f768580a-97f3-495a-a06b-d69a273446c5",
+        "68a8dcc5-37e2-48b4-951d-e9de65a3742a",
+        "48ee1e65-9a91-4518-b6c6-e70dfdcadd25",
+        "43977789-5ff5-4b6b-88fc-83d9881a831d",
+        "0d4e9285-dc11-4414-8df6-2e3f2b4e2552",
+        "84319e55-602a-40ad-ab25-a1a98b521dc8",
+        "01cf7488-6cf7-451f-8e13-fa2dbf6e7b54",
+        "770a31a6-40ba-44d0-8e77-b2d8972239d0",
+        "ccba62ce-aecb-43e8-860c-38202809978c",
+        "d857b3b7-a66d-4c6f-8302-280e056aeaa2",
+        "b4049907-b63c-4142-91ab-a00a5ad8fe66",
+        "b38e2ca7-29dc-4fd9-8ded-c2c08798b7ff",
+        "1a18d54f-0283-4a1c-bf11-f6ee81f3de61",
+        "b07e1831-3d87-4384-84b3-088ab752ad83"
+      ]
+    },
+    {
+      "ref" : "fa232f05-50fb-4d96-bc30-7ae0dc326e92",
+      "dependsOn" : [
+        "c67f74f0-053c-4e77-ba9d-e0e1fbf08caf",
+        "a65778bb-6782-4e54-a31e-7b313c7cbb92",
+        "74859b3a-db6c-4417-8e23-3feee63ed3f1",
+        "a3731643-8abe-49ca-9e7a-99eb2a89640e",
+        "83ae52b2-9eb1-45bf-b935-4534bc4b5217",
+        "0d4e9285-dc11-4414-8df6-2e3f2b4e2552",
+        "ff80212e-19b0-4360-895d-d0d4dcc8af69",
+        "ba9e1750-f84b-4f7f-8fed-973c21db40f7"
+      ]
+    },
+    {
+      "ref" : "47abfc9f-d487-4bde-99e3-fe8309df3346",
+      "dependsOn" : [
+        "50c67d46-a4ce-42d9-97d4-ee658196d25e",
+        "4f961993-ad3b-41c0-acea-ea725972b89f",
+        "43977789-5ff5-4b6b-88fc-83d9881a831d",
+        "03bd1d9e-b0cc-4d48-ae89-44aff01247e6"
+      ]
+    },
+    {
+      "ref" : "65af6a49-b794-4e65-be6b-83e71a59a46e",
+      "dependsOn" : [ ]
+    },
+    {
+      "ref" : "f768580a-97f3-495a-a06b-d69a273446c5",
+      "dependsOn" : [ ]
+    },
+    {
+      "ref" : "0868843c-5e75-4540-9ff7-711c50187c6c",
+      "dependsOn" : [ ]
+    },
+    {
+      "ref" : "f8dfe703-180b-4104-9dd2-6a67a18ff7f7",
+      "dependsOn" : [
+        "80e83322-70a6-49e9-b061-267f1e1719e0",
+        "c6c1e326-c1e0-4729-a937-65de66be3f00"
+      ]
+    },
+    {
+      "ref" : "b391da70-f27b-4852-824b-c051ea1313ce",
+      "dependsOn" : [ ]
+    },
+    {
+      "ref" : "f7d71dcb-0c50-4fba-8891-1dc16316ef66",
+      "dependsOn" : [ ]
+    },
+    {
+      "ref" : "80e83322-70a6-49e9-b061-267f1e1719e0",
+      "dependsOn" : [ ]
+    },
+    {
+      "ref" : "dbda83c2-cb7c-40ed-a965-d5bd995e22a3",
+      "dependsOn" : [ ]
+    },
+    {
+      "ref" : "4f6d72a4-8d19-4ac1-ba5d-d34f2676185f",
+      "dependsOn" : [ ]
+    },
+    {
+      "ref" : "7c5ae86b-d8db-4477-8dbd-d48f4bede879",
+      "dependsOn" : [
+        "34fae79c-1b7e-499d-94cd-1881306f8e16",
+        "f798901c-4e4f-40a1-b4be-431dbcb0759c"
+      ]
+    },
+    {
+      "ref" : "c4bbd8b3-da4c-4031-9adf-b3a09a02028d",
+      "dependsOn" : [ ]
+    },
+    {
+      "ref" : "72e23327-7f89-4de9-be2e-408e2fd74c85",
+      "dependsOn" : [ ]
+    },
+    {
+      "ref" : "68a8dcc5-37e2-48b4-951d-e9de65a3742a",
+      "dependsOn" : [ ]
+    },
+    {
+      "ref" : "48ee1e65-9a91-4518-b6c6-e70dfdcadd25",
+      "dependsOn" : [ ]
+    },
+    {
+      "ref" : "66402d03-fb52-4877-8e41-a13df952eaee",
+      "dependsOn" : [ ]
+    },
+    {
+      "ref" : "8145a65b-785c-4001-8af3-8d3fbdec883f",
+      "dependsOn" : [ ]
+    },
+    {
+      "ref" : "2d6c7751-66ac-4758-a769-9287e9193de1",
+      "dependsOn" : [
+        "8145a65b-785c-4001-8af3-8d3fbdec883f"
+      ]
+    },
+    {
+      "ref" : "2e1288be-5526-4532-9109-641d49d85444",
+      "dependsOn" : [
+        "f32830a0-293d-489c-89a3-560740a37f2b",
+        "50c67d46-a4ce-42d9-97d4-ee658196d25e",
+        "4abbabbc-faca-44b8-a373-802d0c004811",
+        "43977789-5ff5-4b6b-88fc-83d9881a831d",
+        "83ae52b2-9eb1-45bf-b935-4534bc4b5217"
+      ]
+    },
+    {
+      "ref" : "61a26d5b-ff5a-4091-97e3-1d0f9f24bab2",
+      "dependsOn" : [ ]
+    },
+    {
+      "ref" : "b33bd108-a089-4f99-b374-46243557ce2f",
+      "dependsOn" : [ ]
+    },
+    {
+      "ref" : "9d284b21-8372-45e6-9be3-ed4888d174c9",
+      "dependsOn" : [ ]
+    },
+    {
+      "ref" : "084b0b9d-39fb-4b1d-acac-cf21eb93d36d",
+      "dependsOn" : [ ]
+    },
+    {
+      "ref" : "43977789-5ff5-4b6b-88fc-83d9881a831d",
+      "dependsOn" : [
+        "7e59fa09-8a0c-4075-8128-0623980ff4a2"
+      ]
+    },
+    {
+      "ref" : "83ae52b2-9eb1-45bf-b935-4534bc4b5217",
+      "dependsOn" : [ ]
+    },
+    {
+      "ref" : "293b4446-7dbb-4cb8-8387-24c085190e73",
+      "dependsOn" : [ ]
+    },
+    {
+      "ref" : "0d4e9285-dc11-4414-8df6-2e3f2b4e2552",
+      "dependsOn" : [ ]
+    },
+    {
+      "ref" : "84319e55-602a-40ad-ab25-a1a98b521dc8",
+      "dependsOn" : [ ]
+    },
+    {
+      "ref" : "4ec3c625-7efb-42f3-9056-4090f8bc6826",
+      "dependsOn" : [
+        "bff4b819-c17f-4173-9940-919f68aaaae6",
+        "0868843c-5e75-4540-9ff7-711c50187c6c",
+        "293b4446-7dbb-4cb8-8387-24c085190e73",
+        "d7b1de8c-cf70-472e-bac9-927c3bd4cccf",
+        "3f476082-8c82-4de0-9b35-043e637cbdc7",
+        "9eecb872-69cf-412c-bdcb-e2513746434d",
+        "4c4dde79-46dd-4051-8cb8-233ed39e41f8"
+      ]
+    },
+    {
+      "ref" : "d7b1de8c-cf70-472e-bac9-927c3bd4cccf",
+      "dependsOn" : [ ]
+    },
+    {
+      "ref" : "c0a8bd1f-9420-4c28-bde2-1f0d4d9bdb42",
+      "dependsOn" : [ ]
+    },
+    {
+      "ref" : "d03a70ce-1db4-48c2-b277-047c8a610e5d",
+      "dependsOn" : [ ]
+    },
+    {
+      "ref" : "9eecb872-69cf-412c-bdcb-e2513746434d",
+      "dependsOn" : [
+        "60e3eb3a-bbaf-422f-86db-4d5c0b86a471"
+      ]
+    },
+    {
+      "ref" : "5b6f5a70-30e8-4ce3-9913-ff61bc7f305d",
+      "dependsOn" : [
+        "c4bbd8b3-da4c-4031-9adf-b3a09a02028d",
+        "d03a70ce-1db4-48c2-b277-047c8a610e5d",
+        "4ec3c625-7efb-42f3-9056-4090f8bc6826",
+        "2109ab8b-f6e1-49b2-af0c-1abfe71925e3"
+      ]
+    },
+    {
+      "ref" : "3f476082-8c82-4de0-9b35-043e637cbdc7",
+      "dependsOn" : [
+        "c0a8bd1f-9420-4c28-bde2-1f0d4d9bdb42",
+        "a126a94c-a73f-436a-a7ac-d5eabdcf8863",
+        "df85715b-660a-46a1-a5cf-8063ba3d5813",
+        "0098ce63-8807-485c-9c26-d06d78fe9d47",
+        "51c2002b-af89-4792-9415-2236a44d0eef"
+      ]
+    },
+    {
+      "ref" : "a126a94c-a73f-436a-a7ac-d5eabdcf8863",
+      "dependsOn" : [ ]
+    },
+    {
+      "ref" : "df85715b-660a-46a1-a5cf-8063ba3d5813",
+      "dependsOn" : [ ]
+    },
+    {
+      "ref" : "0098ce63-8807-485c-9c26-d06d78fe9d47",
+      "dependsOn" : [ ]
+    },
+    {
+      "ref" : "51c2002b-af89-4792-9415-2236a44d0eef",
+      "dependsOn" : [
+        "430ab7de-15ce-4811-93b0-fd11fbea3836"
+      ]
+    },
+    {
+      "ref" : "01cf7488-6cf7-451f-8e13-fa2dbf6e7b54",
+      "dependsOn" : [
+        "65af6a49-b794-4e65-be6b-83e71a59a46e",
+        "dbda83c2-cb7c-40ed-a965-d5bd995e22a3"
+      ]
+    },
+    {
+      "ref" : "770a31a6-40ba-44d0-8e77-b2d8972239d0",
+      "dependsOn" : [ ]
+    },
+    {
+      "ref" : "ac5e0c06-ff23-4187-abc9-7ad17496688f",
+      "dependsOn" : [ ]
+    },
+    {
+      "ref" : "ccba62ce-aecb-43e8-860c-38202809978c",
+      "dependsOn" : [ ]
+    },
+    {
+      "ref" : "b48456b7-2c5d-4204-b586-7469ac57672d",
+      "dependsOn" : [
+        "bdaf7e5d-0fe4-4f9b-8eaa-eaba57ce072f",
+        "b391da70-f27b-4852-824b-c051ea1313ce",
+        "03bd1d9e-b0cc-4d48-ae89-44aff01247e6"
+      ]
+    },
+    {
+      "ref" : "34fae79c-1b7e-499d-94cd-1881306f8e16",
+      "dependsOn" : [
+        "7942c822-9319-42f8-bc9c-1d01936acc24",
+        "80e83322-70a6-49e9-b061-267f1e1719e0",
+        "4f6d72a4-8d19-4ac1-ba5d-d34f2676185f",
+        "c8f9869a-b0f1-4435-8765-40254f051888"
+      ]
+    },
+    {
+      "ref" : "ff80212e-19b0-4360-895d-d0d4dcc8af69",
+      "dependsOn" : [ ]
+    },
+    {
+      "ref" : "4c4dde79-46dd-4051-8cb8-233ed39e41f8",
+      "dependsOn" : [ ]
+    },
+    {
+      "ref" : "f798901c-4e4f-40a1-b4be-431dbcb0759c",
+      "dependsOn" : [ ]
+    },
+    {
+      "ref" : "d857b3b7-a66d-4c6f-8302-280e056aeaa2",
+      "dependsOn" : [
+        "50c67d46-a4ce-42d9-97d4-ee658196d25e",
+        "77bdf737-aa9d-4028-9102-ad1a936a244b",
+        "34977f4d-4d26-429f-a767-0bad37bddc54",
+        "4f961993-ad3b-41c0-acea-ea725972b89f",
+        "208a3f8d-4ab4-43cd-a2cb-0519493a9544",
+        "f768580a-97f3-495a-a06b-d69a273446c5",
+        "f8dfe703-180b-4104-9dd2-6a67a18ff7f7",
+        "66402d03-fb52-4877-8e41-a13df952eaee",
+        "9d284b21-8372-45e6-9be3-ed4888d174c9",
+        "43977789-5ff5-4b6b-88fc-83d9881a831d",
+        "ccba62ce-aecb-43e8-860c-38202809978c",
+        "b3be1904-d6ef-4653-affd-d3fef54019be"
+      ]
+    },
+    {
+      "ref" : "23af8824-f8c0-4c20-9dc6-9279e5a37b48",
+      "dependsOn" : [
+        "50c67d46-a4ce-42d9-97d4-ee658196d25e",
+        "0a06b00b-759f-4e9d-be26-411412890177",
+        "34977f4d-4d26-429f-a767-0bad37bddc54",
+        "4f961993-ad3b-41c0-acea-ea725972b89f",
+        "208a3f8d-4ab4-43cd-a2cb-0519493a9544",
+        "f768580a-97f3-495a-a06b-d69a273446c5",
+        "f8dfe703-180b-4104-9dd2-6a67a18ff7f7",
+        "66402d03-fb52-4877-8e41-a13df952eaee",
+        "9d284b21-8372-45e6-9be3-ed4888d174c9",
+        "43977789-5ff5-4b6b-88fc-83d9881a831d",
+        "ccba62ce-aecb-43e8-860c-38202809978c",
+        "8752392f-2497-45a6-b89a-24835706199c"
+      ]
+    },
+    {
+      "ref" : "09c58959-f3c2-461d-b000-882dfd372316",
+      "dependsOn" : [
+        "208a3f8d-4ab4-43cd-a2cb-0519493a9544",
+        "f768580a-97f3-495a-a06b-d69a273446c5",
+        "b33bd108-a089-4f99-b374-46243557ce2f",
+        "0d4e9285-dc11-4414-8df6-2e3f2b4e2552"
+      ]
+    },
+    {
+      "ref" : "b4049907-b63c-4142-91ab-a00a5ad8fe66",
+      "dependsOn" : [
+        "4f961993-ad3b-41c0-acea-ea725972b89f",
+        "0d4e9285-dc11-4414-8df6-2e3f2b4e2552",
+        "23af8824-f8c0-4c20-9dc6-9279e5a37b48"
+      ]
+    },
+    {
+      "ref" : "2109ab8b-f6e1-49b2-af0c-1abfe71925e3",
+      "dependsOn" : [ ]
+    },
+    {
+      "ref" : "60e3eb3a-bbaf-422f-86db-4d5c0b86a471",
+      "dependsOn" : [
+        "cd0b1f27-98e4-4369-b6a2-d18f2833a2b9"
+      ]
+    },
+    {
+      "ref" : "b3be1904-d6ef-4653-affd-d3fef54019be",
+      "dependsOn" : [ ]
+    },
+    {
+      "ref" : "8752392f-2497-45a6-b89a-24835706199c",
+      "dependsOn" : [ ]
+    },
+    {
+      "ref" : "c6c1e326-c1e0-4729-a937-65de66be3f00",
+      "dependsOn" : [ ]
+    },
+    {
+      "ref" : "c8f9869a-b0f1-4435-8765-40254f051888",
+      "dependsOn" : [ ]
+    },
+    {
+      "ref" : "cd0b1f27-98e4-4369-b6a2-d18f2833a2b9",
+      "dependsOn" : [ ]
+    },
+    {
+      "ref" : "b38e2ca7-29dc-4fd9-8ded-c2c08798b7ff",
+      "dependsOn" : [
+        "72e23327-7f89-4de9-be2e-408e2fd74c85",
+        "2d6c7751-66ac-4758-a769-9287e9193de1"
+      ]
+    },
+    {
+      "ref" : "ba9e1750-f84b-4f7f-8fed-973c21db40f7",
+      "dependsOn" : [
+        "ac5e0c06-ff23-4187-abc9-7ad17496688f"
+      ]
+    },
+    {
+      "ref" : "03bd1d9e-b0cc-4d48-ae89-44aff01247e6",
+      "dependsOn" : [ ]
+    },
+    {
+      "ref" : "1a18d54f-0283-4a1c-bf11-f6ee81f3de61",
+      "dependsOn" : [ ]
+    },
+    {
+      "ref" : "b07e1831-3d87-4384-84b3-088ab752ad83",
+      "dependsOn" : [ ]
+    },
+    {
+      "ref" : "430ab7de-15ce-4811-93b0-fd11fbea3836",
+      "dependsOn" : [ ]
+    }
+  ]
+}
