@@ -63,7 +63,10 @@ func NewDefaultFormatterWithSeverity(severityFilter string) *CVEFormatter {
 
 // FormatVulnerability formats and writes a single vulnerability
 func (f *CVEFormatter) FormatVulnerability(vulnerability nvd.Vulnerability, purl string) {
-	for _, cvssMetric := range vulnerability.CVE.Metrics.CvssMetricV31 {
+	// Use only the first CVSS v3.1 metric to avoid duplicates
+	// (NVD often provides multiple metrics from different sources)
+	if len(vulnerability.CVE.Metrics.CvssMetricV31) > 0 {
+		cvssMetric := vulnerability.CVE.Metrics.CvssMetricV31[0]
 		severity := strings.ToLower(strings.TrimSpace(cvssMetric.CvssData.BaseSeverity))
 
 		if f.shouldDisplaySeverity(severity) {
