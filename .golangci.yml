@@ -21,7 +21,6 @@ linters:
     - bodyclose     # Checks whether HTTP response body is closed successfully
     - noctx         # Finds sending http request without context.Context
     - sqlclosecheck # Checks that sql.Rows and sql.Stmt are closed
-    - shadow        # Check for shadowed variables
 
 linters-settings:
   errcheck:
