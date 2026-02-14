@@ -232,18 +232,21 @@ body {
 /* File Input - Futuristic */
 .file-input-wrapper {
     position: relative;
-    background: var(--bg-tertiary);
-    border: 1px dashed var(--border);
-    border-radius: 8px;
-    padding: 1.5rem;
+    background: rgba(0, 217, 255, 0.08);
+    border: 2px solid var(--neon-cyan);
+    border-radius: 12px;
+    padding: 2rem;
     text-align: center;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.3s ease;
+    box-shadow: 0 0 20px rgba(0, 217, 255, 0.2);
 }
 
 .file-input-wrapper:hover {
-    border-color: var(--neon-cyan);
-    background: var(--surface-elevated);
+    border-color: var(--neon-purple);
+    background: rgba(168, 85, 247, 0.08);
+    box-shadow: 0 0 30px rgba(168, 85, 247, 0.3);
+    transform: translateY(-2px);
 }
 
 .file-input-wrapper input[type="file"] {
@@ -257,9 +260,18 @@ body {
 }
 
 .file-input-label {
-    color: var(--text-secondary);
+    color: var(--neon-cyan);
     font-family: 'JetBrains Mono', monospace;
-    font-size: 0.875rem;
+    font-size: 1rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+.file-input-label::before {
+    content: "📁 ";
+    font-size: 1.5rem;
+    margin-right: 0.5rem;
 }
 
 /* Buttons - Neon Style */
@@ -640,9 +652,10 @@ body {
     border-radius: 8px;
     font-family: 'JetBrains Mono', monospace;
     font-size: 0.875rem;
-    color: var(--neon-green);
+    color: var(--critical);
     overflow-x: auto;
-    border-left: 3px solid;
+    border-left: 3px solid var(--critical);
+    font-weight: 600;
 }
 
 .section-description {
