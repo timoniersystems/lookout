@@ -1,9 +1,6 @@
 run:
   timeout: 5m
   tests: true
-  skip-dirs:
-    - vendor
-    - .github
 
 linters:
   enable:
@@ -24,6 +21,7 @@ linters:
     - bodyclose     # Checks whether HTTP response body is closed successfully
     - noctx         # Finds sending http request without context.Context
     - sqlclosecheck # Checks that sql.Rows and sql.Stmt are closed
+    - shadow        # Check for shadowed variables
 
 linters-settings:
   errcheck:
@@ -31,7 +29,6 @@ linters-settings:
     check-blank: true
 
   govet:
-    check-shadowing: true
     enable-all: true
 
   gofmt:
@@ -77,6 +74,10 @@ linters-settings:
     locale: US
 
 issues:
+  exclude-dirs:
+    - vendor
+    - .github
+
   exclude-rules:
     # Exclude some linters from running on tests files
     - path: _test\.go
@@ -86,7 +87,7 @@ issues:
         - errcheck
 
     # Exclude known linters from partially hard-vendored code
-    - path: pkg/gui/dgraph/
+    - path: pkg/ui/dgraph/
       linters:
         - unused
         - unparam
