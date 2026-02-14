@@ -1,40 +1,188 @@
+# golangci-lint v2.9.0 configuration
+# Based on best practices from https://github.com/maratori/golangci-lint-config
 version: 2
 
 run:
   timeout: 5m
   tests: true
+  allow-parallel-runners: true
+  go: '1.26'
+
+formatters:
+  enable:
+    - goimports
 
 linters:
   enable:
-    - errcheck
-    - govet
-    - ineffassign
-    - staticcheck
-    - unused
+    # Default linters (always enabled)
+    - errcheck      # Check for unchecked errors
+    - govet         # Vet examines Go source code
+    - ineffassign   # Detect ineffectual assignments
+    - staticcheck   # Go static analysis
+    - unused        # Check for unused code
+
+    # Additional recommended linters
+    - asasalint     # Check for pass []any as any in variadic func
+    - asciicheck    # Check for non-ASCII identifiers
+    - bidichk       # Check for dangerous unicode sequences
+    - bodyclose     # Check HTTP response body is closed
+    - copyloopvar   # Detect loop variable copies (Go 1.22+)
+    - cyclop        # Check function complexity
+    - dupl          # Detect code duplication
+    - durationcheck # Check for two durations multiplied
+    - errname       # Check error naming conventions
+    - errorlint     # Find issues with error wrapping
+    - exhaustive    # Check exhaustiveness of enum switches
+    - gochecknoinits # Check for init functions
+    - gocognit      # Compute cognitive complexity
+    - goconst       # Find repeated strings (constants)
+    - gocritic      # Comprehensive diagnostics
+    - gocyclo       # Compute cyclomatic complexity
+    - godot         # Check comments end with period
+    - gosec         # Security checks
+    - gosmopolitan  # Check for i18n issues
+    - intrange      # Find places where intrange could be used
+    - loggercheck   # Check log/slog usage
+    - misspell      # Fix commonly misspelled words
+    - nakedret      # Find naked returns in long functions
+    - nilerr        # Find code returning nil with non-nil error
+    - nilnil        # Check returning (nil, nil)
+    - noctx         # Find HTTP requests without context
+    - nolintlint    # Ensure nolint directives are proper
+    - perfsprint    # Detect non-performant sprintf usage
+    - predeclared   # Find shadowing of predeclared identifiers
+    - revive        # Fast, configurable linter
+    - sqlclosecheck # Check sql.Rows/Stmt are closed
+    - testifylint   # Checks usage of github.com/stretchr/testify
+    - unconvert     # Remove unnecessary conversions
+    - unparam       # Report unused function parameters
+    - usestdlibvars # Detect possibility to use std lib vars
+    - wastedassign  # Find wasted assignment statements
+    - whitespace    # Detect unnecessary whitespace
 
 linters-settings:
   errcheck:
     check-type-assertions: true
     check-blank: true
+    exclude-functions:
+      # Common functions where it's acceptable to ignore errors
+      - (io.Closer).Close
+      - (io.Writer).Write
+      - fmt.Fprint
+      - fmt.Fprintf
+      - fmt.Fprintln
 
   govet:
     enable-all: true
+    settings:
+      shadow:
+        strict: false
+
+  cyclop:
+    max-complexity: 30
+    package-average: 10.0
+
+  gocognit:
+    min-complexity: 20
+
+  gocyclo:
+    min-complexity: 30
+
+  dupl:
+    threshold: 100
+
+  goconst:
+    min-len: 3
+    min-occurrences: 3
+    ignore-tests: true
+
+  gosec:
+    excludes:
+      - G104 # Audit errors (covered by errcheck)
+      - G304 # File path from taint input
+
+  misspell:
+    locale: US
+
+  revive:
+    confidence: 0.8
+    rules:
+      - name: blank-imports
+      - name: context-as-argument
+      - name: context-keys-type
+      - name: dot-imports
+      - name: error-return
+      - name: error-strings
+      - name: error-naming
+      - name: exported
+        arguments:
+          - disableStutteringCheck
+      - name: increment-decrement
+      - name: var-naming
+      - name: var-declaration
+      - name: package-comments
+      - name: range
+      - name: receiver-naming
+      - name: time-naming
+      - name: unexported-return
+      - name: indent-error-flow
+      - name: errorf
+      - name: superfluous-else
+      - name: unused-parameter
+      - name: unreachable-code
+      - name: redefines-builtin-id
+
+  gocritic:
+    enabled-tags:
+      - diagnostic
+      - style
+      - performance
+      - experimental
+      - opinionated
+    disabled-checks:
+      - whyNoLint
+      - unnamedResult
+
+  nakedret:
+    max-func-lines: 30
 
 issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
+
   exclude-dirs:
     - vendor
     - .github
+    - node_modules
 
   exclude-rules:
-    # Exclude some linters from running on tests files
+    # Exclude some linters from test files
     - path: _test\.go
       linters:
+        - bodyclose
+        - dupl
         - errcheck
+        - funlen
+        - goconst
+        - gosec
+        - noctx
+        - unparam
+        - wrapcheck
 
-    # Exclude known linters from partially hard-vendored code
+    # Exclude unused/unparam for dgraph package (has type aliases)
     - path: pkg/ui/dgraph/
       linters:
         - unused
+        - unparam
 
-  max-issues-per-linter: 0
-  max-same-issues: 0
+    # Allow init functions in main packages
+    - path: cmd/
+      linters:
+        - gochecknoinits
+
+    # Exclude some staticcheck warnings
+    - linters:
+        - staticcheck
+      text: "SA1019:" # Ignore deprecation warnings for now
+
+  exclude-use-default: false
