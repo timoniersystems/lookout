@@ -64,7 +64,7 @@ jobs:
         no-cache: false
         pull: true
         build-args: |
-          GO_VERSION=1.23.5
+          GO_VERSION=1.26.0
           ALPINE_VERSION=3.21
           TRIVY_VERSION=0.58.2
 
@@ -107,7 +107,7 @@ jobs:
         push: false
         load: false
         build-args: |
-          GO_VERSION=1.23.5
+          GO_VERSION=1.26.0
           ALPINE_VERSION=3.21
           TRIVY_VERSION=0.58.2
         cache-from: type=gha
