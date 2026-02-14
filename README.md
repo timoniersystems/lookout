@@ -16,11 +16,15 @@ Lookout helps you understand and fix vulnerabilities in your software dependenci
 
 ### Key Features
 
-- **CVE Analysis** - Fetch detailed vulnerability data from the NVD
+- **CVE Analysis** - Fetch detailed vulnerability data from the NVD with rate limiting and retry logic
 - **SBOM Scanning** - Scan Software Bill of Materials with Trivy integration
 - **Dependency Path Tracing** - Trace vulnerable transitive dependencies back to your root package
-- **Multi-Interface** - CLI for automation, Web UI for exploration
+- **Multi-Interface** - CLI for automation, Web UI with real-time progress tracking
 - **Graph Database** - Dgraph-powered dependency graph visualization
+- **Async Processing** - Background SBOM processing with SSE progress updates
+- **TLS/HTTPS** - Secure communication via nginx reverse proxy
+- **Session Management** - Results storage with auto-expiration
+- **Severity Filtering** - Filter vulnerabilities by CRITICAL, HIGH, MEDIUM, LOW
 
 ## Quick Start
 
@@ -248,18 +252,34 @@ lookout -sbom mybom.json -dep-path 'pkg:npm/lodash@4.17.20'
 ```
 lookout/
 ├── cmd/
-│   ├── cli/         # CLI application
-│   └── ui/          # Web UI application
+│   ├── cli/              # CLI application entry point
+│   └── ui/               # Web UI application entry point
 ├── pkg/
-│   ├── cli/         # CLI processing
-│   ├── common/      # Shared utilities (NVD, Trivy, etc.)
-│   ├── ui/          # UI components and Dgraph ops
-│   ├── service/     # Business logic
-│   ├── repository/  # Data access layer
-│   └── validation/  # Input validation
-├── templates/       # HTML templates
-├── examples/        # Example SBOM files
-└── docs/           # Documentation
+│   ├── cli/
+│   │   └── cli_processor/ # CLI formatting and output
+│   ├── common/
+│   │   ├── cyclonedx/    # SBOM parsing
+│   │   ├── fileutil/     # File utilities
+│   │   ├── handler/      # HTTP handlers
+│   │   ├── nvd/          # NVD API client
+│   │   ├── processor/    # File processing
+│   │   ├── progress/     # Progress tracking
+│   │   └── trivy/        # Trivy integration
+│   ├── config/           # Configuration management
+│   ├── graph/            # Graph operations and queries
+│   ├── interfaces/       # Interface definitions
+│   ├── logging/          # Structured logging
+│   ├── repository/       # Data access layer
+│   ├── service/          # Business logic layer
+│   ├── ui/               # UI components
+│   │   └── echo/         # Echo server setup
+│   └── validation/       # Input validation
+├── assets/
+│   ├── static/           # CSS, JavaScript
+│   └── templates/        # HTML templates
+├── nginx/                # Nginx reverse proxy config
+├── examples/             # Example SBOM files
+└── docs/                 # Documentation
 ```
 
 ## Contributing

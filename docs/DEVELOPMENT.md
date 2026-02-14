@@ -91,7 +91,7 @@ make build
 make build-cli
 
 # Build UI only
-make build-gui
+make build-ui
 
 # Install binaries to ~/.local/bin
 make install
@@ -113,7 +113,7 @@ go run ./cmd/cli -help
 **Web UI:**
 ```bash
 # Build
-make build-gui
+make build-ui
 # or: go build -o lookout-ui ./cmd/ui
 
 # Run
@@ -123,7 +123,7 @@ make build-gui
 go run ./cmd/ui
 ```
 
-Access web UI at: http://localhost:3000
+Access web UI at: https://localhost:7443 (or http://localhost:7080 which redirects to HTTPS)
 
 ## Project Structure
 
@@ -141,17 +141,21 @@ lookout/
 │   │   ├── handler/      # HTTP handlers
 │   │   ├── nvd/          # NVD API client
 │   │   ├── processor/    # File processing
+│   │   ├── progress/     # Progress tracking (SSE)
 │   │   └── trivy/        # Trivy integration
-│   ├── config/           # Configuration
-│   ├── ui/
-│   │   ├── dgraph/       # Dgraph operations
-│   │   └── echo/         # Echo server setup
+│   ├── config/           # Configuration management
+│   ├── graph/            # Graph database operations
 │   ├── interfaces/       # Interface definitions
-│   ├── logging/          # Logging utilities
+│   ├── logging/          # Structured logging
 │   ├── repository/       # Data access layer
-│   ├── service/          # Business logic
+│   ├── service/          # Business logic layer
+│   ├── ui/
+│   │   └── echo/         # Echo server setup
 │   └── validation/       # Input validation
-├── templates/            # HTML templates
+├── assets/
+│   ├── static/           # CSS, JavaScript
+│   └── templates/        # HTML templates
+├── nginx/                # Nginx reverse proxy config
 ├── examples/             # Example SBOM files
 ├── docs/                 # Documentation
 └── .github/
@@ -205,8 +209,8 @@ go test -v ./... -count=1
 
 **Note on Integration Tests:**
 Integration tests are marked with the `//go:build integration` build tag and require external dependencies (like Dgraph). They are located alongside unit tests in the same packages:
-- `pkg/gui/dgraph/integration_test.go` - Dgraph database integration tests
 - `pkg/common/cyclonedx/integration_test.go` - SBOM parsing and traversal integration tests
+- Integration tests require Dgraph to be running (`docker-compose up -d`)
 
 To skip integration tests during development, use `go test -short ./...` or `make test`.
 
@@ -388,7 +392,7 @@ export LOG_LEVEL=debug
 
 # Use Delve debugger
 go install github.com/go-delve/delve/cmd/dlv@latest
-dlv debug ./cmd/lookout -- -cve CVE-2021-44228
+dlv debug ./cmd/cli -- -cve CVE-2021-44228
 ```
 
 ### Web UI Debugging
@@ -419,7 +423,7 @@ curl -X POST localhost:8080/query -H "Content-Type: application/dql" -d '{
 }'
 
 # Check Dgraph logs
-docker-compose logs alpha
+docker-compose logs dgraph-alpha
 
 # Check Dgraph stats
 curl http://localhost:8080/health
@@ -454,8 +458,8 @@ EOF
 ### Adding a New HTTP Endpoint
 
 1. Add handler in `pkg/common/handler/handlers.go`
-2. Register route in `pkg/gui/echo/launch_web_server.go`
-3. Create template in `templates/`
+2. Register route in `pkg/ui/echo/launch_web_server.go`
+3. Create template in `assets/templates/`
 4. Add tests
 
 ### Updating Dependencies
@@ -531,10 +535,10 @@ go mod tidy
 docker-compose ps
 
 # Restart Dgraph
-docker-compose restart alpha
+docker-compose restart dgraph-alpha
 
 # Check logs
-docker-compose logs alpha
+docker-compose logs dgraph-alpha
 ```
 
 ### Tests Failing Intermittently

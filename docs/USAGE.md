@@ -23,11 +23,17 @@ lookout -sbom mybom.json -dep-path "pkg:npm/lodash@4.17.20"
 ### Web UI
 
 ```bash
-# Start server
-docker-compose up
+# Generate TLS certificates (first time only)
+./scripts/generate-certs.sh
 
-# Access UI
-open http://localhost:3000
+# Start all services
+docker-compose up -d
+
+# Access UI (HTTPS - recommended)
+open https://localhost:7443
+
+# Or via HTTP (redirects to HTTPS)
+open http://localhost:7080
 ```
 
 ## Installation
@@ -39,11 +45,14 @@ open http://localhost:3000
 git clone https://github.com/<username>/lookout.git
 cd lookout
 
+# Generate TLS certificates (first time only)
+./scripts/generate-certs.sh
+
 # Start services
 docker-compose up -d
 
-# Access web UI
-open http://localhost:3000
+# Access web UI (HTTPS)
+open https://localhost:7443
 ```
 
 ### Binary Download
@@ -70,7 +79,16 @@ lookout -version
 ```bash
 git clone https://github.com/<username>/lookout.git
 cd lookout
-go build -o lookout ./cmd/lookout
+
+# Build CLI
+go build -o lookout ./cmd/cli
+
+# Build UI
+go build -o lookout-ui ./cmd/ui
+
+# Or use Makefile
+make build
+make install
 ```
 
 ## CLI Reference
@@ -225,10 +243,16 @@ CVE-2022-23307
 ### Starting the Server
 
 ```bash
+# Generate TLS certificates (first time only)
+./scripts/generate-certs.sh
+
+# Start all services
 docker-compose up -d
 ```
 
-Access at: http://localhost:3000
+Access at: https://localhost:7443 (or http://localhost:7080 which redirects to HTTPS)
+
+**Note:** Browser will show security warning for self-signed certificates in development. Click "Advanced" and "Proceed" to continue.
 
 ### Features
 
@@ -237,21 +261,36 @@ Access at: http://localhost:3000
 **Single CVE:**
 1. Navigate to home page
 2. Enter CVE ID (e.g., `CVE-2021-44228`)
-3. Click "Analyze"
+3. Click "Lookup CVE"
+4. View detailed vulnerability information
 
 **Batch Upload:**
-1. Click "Upload CVE List"
-2. Select text file with CVE IDs
-3. Click "Process"
-4. View results
+1. Click "Choose file..." under Batch CVE File
+2. Select text file with CVE IDs or Trivy JSON
+3. Click "Process File"
+4. View aggregated results
 
-#### 2. SBOM Analysis
+#### 2. SBOM Analysis with Progress Tracking
 
-1. Click "Upload SBOM"
+1. Click "Choose SBOM..." under Scan SBOM section
 2. Select CycloneDX JSON file
-3. Click "Scan"
-4. Wait for Trivy scan (if enabled)
-5. View vulnerability results
+3. Select severity filters (CRITICAL, HIGH, MEDIUM, LOW)
+4. Click "Analyze SBOM"
+5. **Real-time progress tracking:**
+   - Uploading SBOM
+   - Parsing Components
+   - Building Dependency Graph
+   - Scanning for Vulnerabilities
+   - Fetching CVE Data
+   - Tracing Dependency Paths
+6. View vulnerability results with dependency paths
+
+**SBOM Analysis Features:**
+- **Async Processing:** Long-running scans in background
+- **Progress Updates:** Real-time SSE progress tracking
+- **Severity Filtering:** Filter by CRITICAL, HIGH, MEDIUM, LOW
+- **Session Storage:** Results cached for 1 hour
+- **Dependency Path Tracing:** See full path from vulnerable package to root
 
 #### 3. Dependency Visualization
 
@@ -377,22 +416,35 @@ lookout -sbom release-sbom.json -severity high
 
 **Start server:**
 ```bash
+./scripts/generate-certs.sh  # First time only
 docker-compose up -d
 ```
 
-**API endpoints:**
+**API endpoints (via HTTPS):**
 
 ```bash
-# Upload and analyze SBOM
-curl -X POST http://localhost:3000/upload \
-  -F "file=@sbom.json"
+# Upload and analyze SBOM (async)
+curl -k -X POST https://localhost:7443/upload-cyclonedx-bom \
+  -F "cyclonedx-bom-file=@sbom.json" \
+  -F "severity=CRITICAL" \
+  -F "severity=HIGH"
 
-# Get component details
-curl http://localhost:3000/component?purl=pkg:npm/lodash@4.17.20
+# Process CVE from form input
+curl -k -X POST https://localhost:7443/process \
+  -F "cveID=CVE-2021-44228"
 
-# Check specific CVE
-curl http://localhost:3000/cve/CVE-2021-44228
+# Process CVE file
+curl -k -X POST https://localhost:7443/upload \
+  -F "file=@cve-list.txt"
+
+# Get SBOM analysis results by session ID
+curl -k https://localhost:7443/results/{sessionId}
+
+# Health check
+curl -k https://localhost:7443/health
 ```
+
+**Note:** Use `-k` flag to accept self-signed certificates in development. In production, remove `-k` and use valid TLS certificates.
 
 ## Best Practices
 

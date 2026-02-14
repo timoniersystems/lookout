@@ -38,7 +38,7 @@ Lookout is a CycloneDX SBOM vulnerability analysis tool with both CLI and web-ba
 
 ## Components
 
-### CLI (`cmd/lookout`)
+### CLI (`cmd/cli`)
 Command-line interface for vulnerability analysis and SBOM processing.
 
 **Operations:**
@@ -47,48 +47,85 @@ Command-line interface for vulnerability analysis and SBOM processing.
 - SBOM vulnerability scanning
 - Dependency path traversal
 
+**Key Packages:**
+- `pkg/cli/cli_processor` - Argument parsing and processing
+- `pkg/cli/cli_processor/cve_formatter.go` - Formatted CVE output (refactored for DRY)
+
 ### Web UI (`cmd/ui`)
 Web-based interface built with Echo framework and Go templates.
 
 **Features:**
 - File upload for SBOM/CVE lists
-- Interactive vulnerability browsing
+- Asynchronous SBOM processing with real-time progress tracking
+- Interactive vulnerability browsing with severity filtering
+- Session-based results storage (auto-expires after 1 hour)
 - Dgraph visualization via Ratel
 - Real-time dependency graph exploration
+- TLS/HTTPS support via nginx reverse proxy
+
+**Key Packages:**
+- `pkg/ui/echo` - Echo server setup and routing
+- `pkg/common/handler` - HTTP request handlers (async SBOM, progress, results)
+- `pkg/common/progress` - Server-Sent Events (SSE) progress tracking
 
 ### Core Packages
+
+#### `pkg/config`
+- Environment-based configuration management
+- Dgraph connection settings
+- Server configuration
+- NVD API configuration
+- Structured configuration loading
+
+#### `pkg/interfaces`
+- Interface definitions for testability
+- HTTPClient interface
+- TrivyRunner interface
+- VulnerabilityRepository interface
+- Enables mocking in tests
+
+#### `pkg/logging`
+- Structured logging with levels (debug, info, warn, error)
+- Consistent log format across application
+- Context-aware logging
+
+#### `pkg/validation`
+- Input validation (CVE IDs, PURLs, file paths)
+- Security checks (path traversal prevention)
+- Format verification
+
+#### `pkg/service`
+- Business logic layer
+- VulnerabilityService orchestrates data flow
+- Context management and timeouts
+- Error handling with context wrapping
+
+#### `pkg/repository`
+- Data access layer for Dgraph
+- Component and dependency storage
+- Dgraph query execution
+- Graph traversal operations
+
+#### `pkg/graph`
+- Graph database client management
+- DQL query execution
+- Dependency path traversal algorithms
+- Component relationship queries
 
 #### `pkg/cli/cli_processor`
 - Command-line argument parsing
 - CVE data formatting and display
 - Terminal output with color coding
-
-#### `pkg/service`
-- Business logic layer
-- Orchestrates data flow between components
-- Context management and timeouts
-
-#### `pkg/repository`
-- Data access layer
-- Dgraph database operations
-- Component and dependency storage
-
-#### `pkg/validation`
-- Input validation (CVE IDs, PURLs, file paths)
-- Security checks (path traversal prevention)
+- Refactored formatters (cve_formatter.go)
 
 #### `pkg/common`
-- **nvd**: NVD API client with rate limiting
+- **nvd**: NVD API client with rate limiting and retry logic
 - **trivy**: Trivy scanner integration
-- **cyclonedx**: CycloneDX SBOM parser
-- **processor**: File processing utilities
-- **fileutil**: Temporary file handling
-
-#### `pkg/gui/dgraph`
-- Dgraph database operations
-- Component insertion and querying
-- Dependency graph traversal
-- Vulnerability tracking
+- **cyclonedx**: CycloneDX SBOM parser with tests
+- **processor**: File processing utilities (CVE lists, Trivy JSON)
+- **fileutil**: Temporary file handling (refactored for DRY)
+- **handler**: HTTP handlers (async processing, progress, results storage)
+- **progress**: SSE progress tracking for long-running operations
 
 ## Data Flow
 
@@ -107,9 +144,18 @@ Formatter
 Terminal Output / Web Response
 ```
 
-### SBOM Processing Flow
+### SBOM Processing Flow (Web UI with Async Processing)
 ```
 SBOM File Upload
+    ↓
+Generate Session ID
+    ↓
+Start Background Processing (goroutine)
+    │
+    ├─> Progress Updates (SSE) ─> User's Browser
+    │
+    ↓
+Temporary File Creation
     ↓
 Trivy Scanner (optional)
     ↓
@@ -117,13 +163,36 @@ CycloneDX Parser
     ↓
 Component Extraction
     ↓
-Dgraph Insertion
+Dgraph Insertion (via Repository)
+    ↓
+NVD API Lookup (with rate limiting)
+    ↓
+Severity Filtering
+    ↓
+Dependency Path Tracing
+    ↓
+Results Storage (in-memory, session-based)
+    ↓
+Redirect to Results Page
+```
+
+### SBOM Processing Flow (CLI)
+```
+SBOM File Path
+    ↓
+Trivy Scanner (if installed)
+    ↓
+CycloneDX Parser
+    ↓
+Component Extraction
+    ↓
+Dgraph Insertion (if dependency tracing enabled)
     ↓
 NVD API Lookup
     ↓
 Vulnerability Mapping
     ↓
-Results Display
+Terminal Output (formatted)
 ```
 
 ### Dependency Traversal Flow
@@ -206,18 +275,41 @@ type Component {
 
 ## Configuration
 
+Configuration is managed via the `pkg/config` package, which loads settings from environment variables.
+
 ### Environment Variables
 ```bash
-DGRAPH_HOST=alpha          # Dgraph server host
+# Server Configuration
+SERVER_PORT=3000           # Web server port (internal, proxied by nginx)
+
+# Dgraph Configuration
+DGRAPH_HOST=alpha          # Dgraph server hostname
 DGRAPH_PORT=9080           # Dgraph gRPC port
-SERVER_PORT=3000           # Web server port
-NVD_API_KEY=<optional>     # NVD API key for higher rate limits
+DGRAPH_MAX_RETRIES=5       # Maximum retry attempts for Dgraph operations
+DGRAPH_RETRY_DELAY_SECONDS=2  # Delay between retries
+DGRAPH_MAX_TRAVERSAL_DEPTH=10 # Maximum depth for dependency traversal
+
+# NVD API Configuration
+NVD_API_KEY=<optional>     # NVD API key for higher rate limits (highly recommended)
+
+# Logging
+LOG_LEVEL=info             # Log level: debug, info, warn, error
 ```
 
 ### Build-time Variables
 ```bash
 VERSION=1.0.0              # Application version
+GO_VERSION=1.23.5          # Go version for Docker builds
+ALPINE_VERSION=3.21        # Alpine Linux version for Docker
+TRIVY_VERSION=0.58.2       # Trivy version for Docker
 ```
+
+### Configuration Loading
+The application uses structured configuration loading via `pkg/config/config.go`:
+- Environment variables override defaults
+- Validation on startup
+- Type-safe configuration struct
+- Documented defaults
 
 ## Scalability Considerations
 
@@ -237,10 +329,27 @@ VERSION=1.0.0              # Application version
 ### Docker Compose
 ```yaml
 services:
-  lookout:    # Web application
-  alpha:      # Dgraph Alpha (data)
-  ratel:      # Dgraph UI
+  nginx:         # Reverse proxy with TLS termination (ports 7080, 7443)
+  lookout:       # Web application (internal port 3000)
+  dgraph-alpha:  # Dgraph Alpha (data server)
+  dgraph-zero:   # Dgraph Zero (cluster coordinator)
+  dgraph-ratel:  # Dgraph UI (port 8000)
 ```
+
+**Access Points:**
+- **Web UI (HTTPS):** https://localhost:7443
+- **Web UI (HTTP):** http://localhost:7080 (redirects to HTTPS)
+- **Dgraph Ratel UI:** http://localhost:8000
+- **Dgraph HTTP API:** http://localhost:8080
+- **Dgraph gRPC API:** localhost:9080
+
+**Security Features:**
+- TLS 1.2/1.3 only via nginx
+- HTTP to HTTPS redirect
+- Security headers (HSTS, CSP, X-Frame-Options)
+- Rate limiting on upload endpoints
+- Gzip compression
+- Self-signed certificates for development (via scripts/generate-certs.sh)
 
 ### Standalone CLI
 Binary can run independently without Dgraph for:
