@@ -1,12 +1,15 @@
-# golangci-lint v2.9.0 configuration
+# golangci-lint configuration
 # Based on best practices from https://github.com/maratori/golangci-lint-config
-version: 2
 
 run:
   timeout: 5m
   tests: true
   allow-parallel-runners: true
   go: '1.26'
+  skip-dirs:
+    - vendor
+    - .github
+    - node_modules
 
 formatters:
   enable:
@@ -149,11 +152,7 @@ linters-settings:
 issues:
   max-issues-per-linter: 0
   max-same-issues: 0
-
-  exclude-dirs:
-    - vendor
-    - .github
-    - node_modules
+  exclude-use-default: false
 
   exclude-rules:
     # Exclude some linters from test files
@@ -184,5 +183,3 @@ issues:
     - linters:
         - staticcheck
       text: "SA1019:" # Ignore deprecation warnings for now
-
-  exclude-use-default: false
