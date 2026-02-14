@@ -299,9 +299,9 @@ LOG_LEVEL=info             # Log level: debug, info, warn, error
 ### Build-time Variables
 ```bash
 VERSION=1.0.0              # Application version
-GO_VERSION=1.23.5          # Go version for Docker builds
-ALPINE_VERSION=3.21        # Alpine Linux version for Docker
-TRIVY_VERSION=0.58.2       # Trivy version for Docker
+GO_VERSION=1.26.0          # Go version for Docker builds
+TRIVY_VERSION=0.69.1       # Trivy version for Docker
+# Note: Runtime uses distroless/static-debian12 for minimal attack surface
 ```
 
 ### Configuration Loading

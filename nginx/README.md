@@ -118,8 +118,8 @@ docker ps | grep lookout-app
 # Check lookout-app logs
 docker logs lookout-app
 
-# Test direct connection (should work)
-curl http://localhost:3000/health
+# Test via nginx (lookout-app uses distroless with no curl)
+curl -k https://localhost:7443/health
 ```
 
 ## Alternative: Caddy (Easier Auto-TLS)

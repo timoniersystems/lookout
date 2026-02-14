@@ -1,7 +1,7 @@
 services:
   # Dgraph Zero - cluster coordinator
   dgraph-zero:
-    image: dgraph/dgraph:v24.0.0
+    image: dgraph/dgraph:v25.0.0
     container_name: lookout-dgraph-zero
     ports:
       - "5080:5080"
@@ -19,7 +19,7 @@ services:
 
   # Dgraph Alpha - data server
   dgraph-alpha:
-    image: dgraph/dgraph:v24.0.0
+    image: dgraph/dgraph:v25.0.0
     container_name: lookout-dgraph-alpha
     ports:
       - "8080:8080"  # HTTP API
@@ -55,7 +55,7 @@ services:
       args:
         - GO_VERSION=${GO_VERSION:-1.26.0}
         - ALPINE_VERSION=${ALPINE_VERSION:-3.23}
-        - TRIVY_VERSION=${TRIVY_VERSION:-0.58.2}
+        - TRIVY_VERSION=${TRIVY_VERSION:-0.69.1}
     container_name: lookout-app
     # Don't expose port 3000 externally - only via nginx
     expose:
@@ -69,6 +69,8 @@ services:
       - DGRAPH_HOST=dgraph-alpha
       - DGRAPH_PORT=9080
       - NVD_API_KEY=${NVD_API_KEY}
+    # Note: distroless doesn't support shell-based healthchecks
+    # Health is monitored via nginx reverse proxy healthcheck
 
   # Nginx reverse proxy with TLS termination
   nginx:
@@ -96,7 +98,7 @@ services:
 
   # Convenience service - just Dgraph without the web app
   dgraph:
-    image: dgraph/dgraph:v24.0.0
+    image: dgraph/dgraph:v25.0.0
     container_name: lookout-dgraph-standalone
     ports:
       - "5080:5080"

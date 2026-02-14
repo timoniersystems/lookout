@@ -72,6 +72,7 @@ The main Lookout web UI application.
 - SBOM upload and processing
 - Dependency path visualization
 - Built with Go + Echo framework
+- Distroless base image for security (gcr.io/distroless/static-debian12)
 - Multi-architecture support (AMD64, ARM64)
 
 ### nginx (Reverse Proxy)
@@ -238,9 +239,9 @@ DGRAPH_PORT=9080
 SERVER_PORT=3000
 
 # Build arguments (optional)
-GO_VERSION=1.23.5
-ALPINE_VERSION=3.21
-TRIVY_VERSION=0.58.2
+GO_VERSION=1.26.0
+TRIVY_VERSION=0.69.1
+# Note: Runtime uses distroless/static-debian12 for security
 ```
 
 ### Service-Specific Variables
@@ -252,9 +253,9 @@ TRIVY_VERSION=0.58.2
 - `NVD_API_KEY` - NVD API key for faster CVE lookups (optional)
 
 **Build arguments:**
-- `GO_VERSION` - Go version for builder stage
-- `ALPINE_VERSION` - Alpine Linux version
-- `TRIVY_VERSION` - Trivy scanner version
+- `GO_VERSION` - Go version for builder stage (default: 1.26.0)
+- `TRIVY_VERSION` - Trivy scanner version (default: 0.69.1)
+- Runtime uses distroless/static-debian12:nonroot for minimal attack surface
 
 ---
 
@@ -305,17 +306,21 @@ docker-compose logs --since 2024-01-01T10:00:00
 ### Container Access
 
 ```bash
-# Execute command in running container
-docker exec lookout-app curl http://localhost:3000/health
+# Note: lookout-app uses distroless (no shell, no package manager)
+# For debugging, check via nginx or use docker inspect
 
-# Interactive shell
-docker exec -it lookout-app sh
+# Test health via nginx
+curl -k https://localhost:7443/health
 
-# View container processes
-docker exec lookout-app ps aux
+# Check binary info
+docker inspect lookout-app
 
-# Check binary
-docker exec lookout-app ls -lh /app/lookout-ui
+# View container logs
+docker logs lookout-app
+
+# For other containers with shell (dgraph, nginx):
+docker exec -it lookout-dgraph-alpha sh
+docker exec -it lookout-nginx sh
 ```
 
 ### Data Management
@@ -371,10 +376,7 @@ docker-compose ps
 ### Manual Health Checks
 
 ```bash
-# Test lookout UI (internal)
-docker exec lookout-app curl -f http://localhost:3000/health
-
-# Test nginx HTTPS
+# Test lookout UI via nginx (distroless doesn't have curl)
 curl -k https://localhost:7443/health
 
 # Test nginx HTTP redirect

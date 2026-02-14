@@ -103,6 +103,21 @@ body {
     letter-spacing: 0.5px;
 }
 
+/* Logo Link */
+.logo-link {
+    text-decoration: none;
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    transition: filter 0.3s ease;
+}
+
+.logo-link:hover {
+    filter: brightness(1.2);
+    cursor: pointer;
+}
+
 /* Container */
 .container {
     max-width: 1400px;
