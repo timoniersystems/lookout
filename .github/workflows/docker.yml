@@ -65,7 +65,7 @@ jobs:
         pull: true
         build-args: |
           GO_VERSION=1.26.0
-          ALPINE_VERSION=3.21
+          ALPINE_VERSION=3.23
           TRIVY_VERSION=0.58.2
 
     - name: Run Trivy vulnerability scanner
@@ -108,7 +108,7 @@ jobs:
         load: false
         build-args: |
           GO_VERSION=1.26.0
-          ALPINE_VERSION=3.21
+          ALPINE_VERSION=3.23
           TRIVY_VERSION=0.58.2
         cache-from: type=gha
         cache-to: type=gha,mode=max

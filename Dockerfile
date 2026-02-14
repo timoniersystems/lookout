@@ -1,6 +1,6 @@
 # Build arguments for version control
-ARG GO_VERSION=1.23.5
-ARG ALPINE_VERSION=3.21
+ARG GO_VERSION=1.26.0
+ARG ALPINE_VERSION=3.23
 ARG TRIVY_VERSION=0.58.2
 
 # Build stage - builds for native platform automatically
