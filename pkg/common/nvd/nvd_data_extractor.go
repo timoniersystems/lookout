@@ -14,7 +14,7 @@ import (
 	"strings"
 	"time"
 
-	"lookout/pkg/ui/dgraph"
+	"lookout/pkg/graph"
 )
 
 // Vulnerability represents a single vulnerability entry from the NVD API.
@@ -69,9 +69,9 @@ type ResultsPageData struct {
 }
 
 type CVEPURLPair struct {
-	DgraphData dgraph.Component `json:"dgraphData"`
-	Data       CVEData          `json:"data"`
-	PURL       string           `json:"purl,omitempty"`
+	DgraphData graph.Component `json:"dgraphData"`
+	Data       CVEData         `json:"data"`
+	PURL       string          `json:"purl,omitempty"`
 }
 
 type AggregatedCVEData struct {
