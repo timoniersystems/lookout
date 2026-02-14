@@ -53,8 +53,8 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        - GO_VERSION=${GO_VERSION:-1.23.5}
-        - ALPINE_VERSION=${ALPINE_VERSION:-3.21}
+        - GO_VERSION=${GO_VERSION:-1.26.0}
+        - ALPINE_VERSION=${ALPINE_VERSION:-3.23}
         - TRIVY_VERSION=${TRIVY_VERSION:-0.58.2}
     container_name: lookout-app
     # Don't expose port 3000 externally - only via nginx
