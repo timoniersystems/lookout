@@ -7,6 +7,7 @@ import (
 	"strings"
 )
 
+// TrivyResults represents the structure of Trivy JSON scan results.
 type TrivyResults struct {
 	Results []struct {
 		Vulnerabilities []struct {
@@ -20,6 +21,9 @@ type TrivyResults struct {
 	} `json:"Results"`
 }
 
+// ParseTrivyJSONFile parses a Trivy JSON scan results file and extracts CVE IDs with their PURLs.
+// Only processes vulnerabilities with IDs starting with "CVE" (case-insensitive).
+// Returns a map of CVE IDs to Package URLs.
 func ParseTrivyJSONFile(filePath string) (map[string]string, error) {
 	var trivy TrivyResults
 

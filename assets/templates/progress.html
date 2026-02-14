@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Processing SBOM - Lookout</title>
+    <link rel="stylesheet" href="../static/css/style.css?v=11.0">
+    <style>
+        .progress-container {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 2rem;
+        }
+
+        .progress-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            margin: 0 auto 1rem;
+            border: 4px solid #e2e8f0;
+            border-top: 4px solid #2563eb;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .progress-steps {
+            list-style: none;
+            padding: 0;
+            margin: 2rem 0;
+        }
+
+        .progress-step {
+            display: flex;
+            align-items: flex-start;
+            padding: 1rem;
+            margin-bottom: 0.5rem;
+            background: #f8fafc;
+            border-radius: 0.5rem;
+            border-left: 4px solid #e2e8f0;
+            transition: all 0.3s ease;
+        }
+
+        .progress-step.active {
+            background: #eff6ff;
+            border-left-color: #2563eb;
+        }
+
+        .progress-step.complete {
+            background: #f0fdf4;
+            border-left-color: #10b981;
+        }
+
+        .progress-step.error {
+            background: #fef2f2;
+            border-left-color: #ef4444;
+        }
+
+        .step-icon {
+            font-size: 1.5rem;
+            margin-right: 1rem;
+            min-width: 2rem;
+            text-align: center;
+        }
+
+        .step-content {
+            flex: 1;
+        }
+
+        .step-title {
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 0.25rem;
+        }
+
+        .step-detail {
+            font-size: 0.875rem;
+            color: #64748b;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e2e8f0;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 2rem;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #2563eb, #3b82f6);
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+
+        .final-results {
+            display: none;
+        }
+
+        .error-message {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin-top: 1rem;
+            color: #dc2626;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-content">
+            <h1>🔍 Lookout</h1>
+            <p class="subtitle">Processing SBOM</p>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="progress-container">
+            <div class="progress-header">
+                <div class="spinner"></div>
+                <h2>Analyzing SBOM and Building Dependency Graph</h2>
+                <p>This process may take several minutes depending on the number of vulnerabilities found...</p>
+            </div>
+
+            <div class="progress-bar">
+                <div class="progress-bar-fill" id="progressBar"></div>
+            </div>
+
+            <ul class="progress-steps" id="progressSteps">
+                <li class="progress-step" id="step-upload">
+                    <span class="step-icon">⏳</span>
+                    <div class="step-content">
+                        <div class="step-title">Uploading SBOM</div>
+                        <div class="step-detail">Preparing to process your SBOM file...</div>
+                    </div>
+                </li>
+                <li class="progress-step" id="step-parse">
+                    <span class="step-icon">⏳</span>
+                    <div class="step-content">
+                        <div class="step-title">Parsing Components</div>
+                        <div class="step-detail">Extracting components and dependencies...</div>
+                    </div>
+                </li>
+                <li class="progress-step" id="step-db">
+                    <span class="step-icon">⏳</span>
+                    <div class="step-content">
+                        <div class="step-title">Building Dependency Graph</div>
+                        <div class="step-detail">Storing component relationships in database...</div>
+                    </div>
+                </li>
+                <li class="progress-step" id="step-scan">
+                    <span class="step-icon">⏳</span>
+                    <div class="step-content">
+                        <div class="step-title">Scanning for Vulnerabilities</div>
+                        <div class="step-detail">Running Trivy security scanner...</div>
+                    </div>
+                </li>
+                <li class="progress-step" id="step-cve">
+                    <span class="step-icon">⏳</span>
+                    <div class="step-content">
+                        <div class="step-title">Fetching CVE Data</div>
+                        <div class="step-detail">Retrieving vulnerability details from NVD...</div>
+                    </div>
+                </li>
+                <li class="progress-step" id="step-paths">
+                    <span class="step-icon">⏳</span>
+                    <div class="step-content">
+                        <div class="step-title">Tracing Dependency Paths</div>
+                        <div class="step-detail">Mapping vulnerability paths through dependencies...</div>
+                    </div>
+                </li>
+                <li class="progress-step" id="step-complete">
+                    <span class="step-icon">⏳</span>
+                    <div class="step-content">
+                        <div class="step-title">Finalizing Results</div>
+                        <div class="step-detail">Preparing your vulnerability report...</div>
+                    </div>
+                </li>
+            </ul>
+
+            <div id="errorMessage" class="error-message" style="display: none;"></div>
+
+            <div id="finalResults" class="final-results"></div>
+        </div>
+    </div>
+
+    <footer>
+        <p>Powered by <a href="https://nvd.nist.gov/" target="_blank">NVD</a> •
+           <a href="https://github.com/aquasecurity/trivy" target="_blank">Trivy</a> •
+           <a href="https://dgraph.io/" target="_blank">Dgraph</a></p>
+    </footer>
+
+    <script>
+        const sessionId = '{{.SessionID}}';
+        const eventSource = new EventSource('/progress/' + sessionId);
+
+        const steps = {
+            'upload': 'step-upload',
+            'parse': 'step-parse',
+            'db': 'step-db',
+            'scan': 'step-scan',
+            'cve': 'step-cve',
+            'paths': 'step-paths',
+            'complete': 'step-complete'
+        };
+
+        eventSource.onmessage = function(event) {
+            const data = JSON.parse(event.data);
+
+            if (data.type === 'progress') {
+                updateProgress(data.step, data.status, data.message, data.progress);
+            } else if (data.type === 'complete') {
+                eventSource.close();
+                window.location.href = data.redirect;
+            } else if (data.type === 'error') {
+                eventSource.close();
+                showError(data.message);
+            }
+        };
+
+        eventSource.onerror = function(error) {
+            console.error('EventSource error:', error);
+            eventSource.close();
+            showError('Connection lost. Please refresh the page to check results.');
+        };
+
+        function updateProgress(step, status, message, progress) {
+            const stepId = steps[step];
+            if (!stepId) return;
+
+            const stepElement = document.getElementById(stepId);
+            const iconElement = stepElement.querySelector('.step-icon');
+            const detailElement = stepElement.querySelector('.step-detail');
+
+            // Update progress bar
+            if (progress !== undefined) {
+                document.getElementById('progressBar').style.width = progress + '%';
+            }
+
+            // Update step status
+            stepElement.classList.remove('active', 'complete', 'error');
+
+            if (status === 'active') {
+                stepElement.classList.add('active');
+                iconElement.textContent = '⏳';
+            } else if (status === 'complete') {
+                stepElement.classList.add('complete');
+                iconElement.textContent = '✅';
+            } else if (status === 'error') {
+                stepElement.classList.add('error');
+                iconElement.textContent = '❌';
+            }
+
+            // Update message
+            if (message) {
+                detailElement.textContent = message;
+            }
+        }
+
+        function showError(message) {
+            const spinner = document.querySelector('.spinner');
+            spinner.style.display = 'none';
+
+            const errorDiv = document.getElementById('errorMessage');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+
+            document.querySelector('.progress-header h2').textContent = 'Processing Failed';
+        }
+    </script>
+</body>
+</html>

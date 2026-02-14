@@ -97,7 +97,7 @@ func ExportBOM(bom *Bom, filename string) error {
 		return fmt.Errorf("failed to write BOM to file: %v", err)
 	}
 
-	fmt.Printf("Exported file: %s to dir", filename)
+	// fmt.Printf("Exported file: %s to dir", filename)  // Debug output
 
 	return nil
 }

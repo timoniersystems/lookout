@@ -1,3 +1,5 @@
+// Package processor provides utilities for reading and processing CVE data
+// from various input formats including Trivy JSON and plain text files.
 package processor
 
 import (
@@ -7,6 +9,9 @@ import (
 	"strings"
 )
 
+// ProcessFileInput processes a file containing CVE data and returns a map of CVE IDs to PURLs.
+// Supports both JSON (Trivy format) and plain text files.
+// Returns an error if the file doesn't exist, is a directory, or has an unsupported format.
 func ProcessFileInput(filePath string) (map[string]string, error) {
 	fileInfo, err := os.Stat(filePath)
 
@@ -48,6 +53,9 @@ func ProcessFileInput(filePath string) (map[string]string, error) {
 	}
 }
 
+// ProcessFileInputForCVEs processes a file and returns only the CVE IDs as a slice.
+// This is a convenience function that extracts just the CVE IDs without the PURL associations.
+// Supports both JSON (Trivy format) and plain text files.
 func ProcessFileInputForCVEs(filePath string) ([]string, error) {
 	fileType := filepath.Ext(filePath)
 

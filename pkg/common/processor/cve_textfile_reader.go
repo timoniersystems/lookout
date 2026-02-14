@@ -7,6 +7,10 @@ import (
 	"strings"
 )
 
+// ReadCVEIDsFromTextFile reads CVE IDs from a plain text file.
+// Each line should contain a CVE ID, optionally followed by a comma and PURL.
+// Format: CVE-YYYY-NNNNN[,pkg:type/name@version]
+// Returns a map of CVE IDs to PURLs (empty string if no PURL provided).
 func ReadCVEIDsFromTextFile(filePath string) (map[string]string, error) {
 	file, err := os.Open(filePath)
 	if err != nil {

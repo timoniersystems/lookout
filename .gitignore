@@ -1,8 +1,70 @@
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+lookout
+lookout-ui
+*.test
+*.out
+
+# Go build artifacts
+bin/
+dist/
+build/
+
+# Go workspace file
+go.work
+
+# Test coverage
+*.coverprofile
+coverage.html
+coverage.out
+
+# Output directories
+outputs/
+*.json.tmp
+*.sbom.tmp
+exported_*.json
+exported_bom.json
+
+# Dependency directories
+vendor/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS-specific files
 .DS_Store
-examples/bom-keycloak-cyclone-example.json
-examples/bom.json
-examples/defender-bom.json
-examples/proton-bridge-v1.8.0.bom.json
-examples/syft-cyclonedx-docker.io-library-vault.latest.json
-examples/bom-cyclone-example.json
-examples/cyclonedx-sbom-go-service-health-monitor.json
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Temporary files
+*.tmp
+*.bak
+*.log
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Debug files
+debug
+__debug_bin
+
+# Database files (local development)
+dgraph/
+*.db
+
+# TLS certificates (never commit!)
+nginx/certs/*.pem
+nginx/certs/*.key
+nginx/certs/*.crt
+
