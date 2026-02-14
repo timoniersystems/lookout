@@ -52,7 +52,18 @@
       "WebFetch(domain:www.nanobot.ai)",
       "Bash(ssh:*)",
       "Bash(rsync:*)",
-      "Bash(scp:*)"
+      "Bash(scp:*)",
+      "Bash(head:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(GIT_SSH_COMMAND=\"ssh -i ~/.ssh/ggtimonier-github\" git push origin main)",
+      "Bash(go mod tidy:*)",
+      "Bash(brew install:*)",
+      "Bash(act:*)",
+      "Bash(go list:*)",
+      "Bash(golangci-lint version:*)",
+      "Bash(golangci-lint run:*)",
+      "Bash(golangci-lint help:*)"
     ]
   }
 }

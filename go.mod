@@ -1,6 +1,6 @@
 module lookout
 
-go 1.22.3
+go 1.26
 
 require (
 	github.com/dgraph-io/dgo/v210 v210.0.0-20230328113526-b66f8ae53a2d
