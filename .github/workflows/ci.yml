@@ -126,7 +126,8 @@ jobs:
       with:
         args: '-no-fail -fmt sarif -out results.sarif ./...'
 
-    - name: Upload SARIF file
-      uses: github/codeql-action/upload-sarif@v4
-      with:
-        sarif_file: results.sarif
+    # CodeQL SARIF upload disabled (requires license)
+    # - name: Upload SARIF file
+    #   uses: github/codeql-action/upload-sarif@v4
+    #   with:
+    #     sarif_file: results.sarif
