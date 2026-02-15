@@ -1,0 +1,130 @@
+# Staging environment values for Lookout
+global:
+  environment: staging
+  gatewayAPI:
+    enabled: true
+    gatewayClassName: eg
+
+gateway:
+  enabled: true
+  name: lookout-staging
+  listeners:
+    http:
+      port: 8080  # Different port for staging
+      protocol: HTTP
+    https:
+      port: 8443  # Different port for staging
+      protocol: HTTPS
+      tls:
+        enabled: true
+        certificateRef:
+          name: lookout-tls
+          kind: Secret
+
+httproute:
+  enabled: true
+  hostnames:
+    - "staging.lookout.example.com"  # Staging subdomain
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: lookout-staging-lookout-app
+          port: 3000
+
+lookout-app:
+  enabled: true
+  replicaCount: 2  # Lower for staging
+
+  image:
+    repository: ghcr.io/timoniersystems/lookout
+    pullPolicy: Always  # Always pull latest in staging
+    tag: "latest"
+
+  service:
+    type: ClusterIP
+    port: 3000
+
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+
+  autoscaling:
+    enabled: false  # Disabled for staging
+
+  env:
+    DGRAPH_HOST: "dgraph-alpha"
+    DGRAPH_PORT: "9080"
+
+  secrets:
+    NVD_API_KEY: ""  # Optional for staging
+
+dgraph:
+  enabled: true
+
+  zero:
+    enabled: true
+    replicaCount: 1  # Single replica for staging
+
+    image:
+      repository: dgraph/dgraph
+      tag: v25.0.0
+      pullPolicy: IfNotPresent
+
+    resources:
+      limits:
+        cpu: 500m
+        memory: 512Mi
+      requests:
+        cpu: 250m
+        memory: 256Mi
+
+    persistence:
+      enabled: true
+      size: 10Gi  # Smaller for staging
+      storageClass: ""
+
+  alpha:
+    enabled: true
+    replicaCount: 1  # Single replica for staging
+
+    image:
+      repository: dgraph/dgraph
+      tag: v25.0.0
+      pullPolicy: IfNotPresent
+
+    resources:
+      limits:
+        cpu: 1000m
+        memory: 2Gi
+      requests:
+        cpu: 500m
+        memory: 1Gi
+
+    persistence:
+      enabled: true
+      size: 30Gi  # Smaller for staging
+      storageClass: ""
+
+  ratel:
+    enabled: true
+    replicaCount: 1
+
+    image:
+      repository: dgraph/ratel
+      tag: v21.03.0
+      pullPolicy: IfNotPresent
+
+    resources:
+      limits:
+        cpu: 200m
+        memory: 256Mi
+      requests:
+        cpu: 100m
+        memory: 128Mi

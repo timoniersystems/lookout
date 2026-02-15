@@ -1,0 +1,23 @@
+apiVersion: v2
+name: lookout
+description: CVE vulnerability analysis tool with dependency graph visualization
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+keywords:
+  - security
+  - cve
+  - vulnerability
+  - sbom
+home: https://github.com/timoniersystems/lookout
+sources:
+  - https://github.com/timoniersystems/lookout
+maintainers:
+  - name: Timonier Systems
+dependencies:
+  - name: lookout-app
+    version: 1.0.0
+    repository: "file://charts/lookout-app"
+  - name: dgraph
+    version: 1.0.0
+    repository: "file://charts/dgraph"

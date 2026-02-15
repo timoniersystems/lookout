@@ -1,0 +1,152 @@
+# Global configuration
+global:
+  # Environment: production or staging
+  environment: production
+
+  # Image pull secrets (if using private registry)
+  imagePullSecrets: []
+
+  # Gateway API configuration
+  gatewayAPI:
+    enabled: true
+    gatewayClassName: eg  # Envoy Gateway
+
+# Gateway configuration for this environment
+gateway:
+  enabled: true
+  name: lookout
+  listeners:
+    http:
+      port: 80
+      protocol: HTTP
+    https:
+      port: 443
+      protocol: HTTPS
+      tls:
+        enabled: true
+        certificateRef:
+          name: lookout-tls
+          kind: Secret
+
+# HTTPRoute configuration
+httproute:
+  enabled: true
+  hostnames:
+    - "lookout.example.com"  # Change this to your domain
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: lookout-app
+          port: 3000
+
+# Lookout application subchart values
+lookout-app:
+  enabled: true
+  replicaCount: 2
+
+  image:
+    repository: ghcr.io/timoniersystems/lookout
+    pullPolicy: IfNotPresent
+    tag: "latest"
+
+  service:
+    type: ClusterIP
+    port: 3000
+
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+
+  env:
+    DGRAPH_HOST: "dgraph-alpha"
+    DGRAPH_PORT: "9080"
+
+  # NVD API key (set via --set or sealed secrets)
+  secrets:
+    NVD_API_KEY: ""
+
+# Dgraph subchart values
+dgraph:
+  enabled: true
+
+  # Dgraph Zero (cluster coordinator)
+  zero:
+    replicaCount: 1
+    image:
+      repository: dgraph/dgraph
+      tag: v25.0.0
+      pullPolicy: IfNotPresent
+
+    service:
+      type: ClusterIP
+      ports:
+        grpc: 5080
+        http: 6080
+
+    resources:
+      limits:
+        cpu: 500m
+        memory: 512Mi
+      requests:
+        cpu: 250m
+        memory: 256Mi
+
+    persistence:
+      enabled: true
+      size: 10Gi
+      storageClass: ""
+
+  # Dgraph Alpha (data server)
+  alpha:
+    replicaCount: 1
+    image:
+      repository: dgraph/dgraph
+      tag: v25.0.0
+      pullPolicy: IfNotPresent
+
+    service:
+      type: ClusterIP
+      ports:
+        http: 8080
+        grpc: 9080
+
+    resources:
+      limits:
+        cpu: 1000m
+        memory: 2Gi
+      requests:
+        cpu: 500m
+        memory: 1Gi
+
+    persistence:
+      enabled: true
+      size: 50Gi
+      storageClass: ""
+
+  # Dgraph Ratel (UI - optional)
+  ratel:
+    enabled: true
+    replicaCount: 1
+    image:
+      repository: dgraph/ratel
+      tag: v21.03.0
+      pullPolicy: IfNotPresent
+
+    service:
+      type: ClusterIP
+      port: 8000
+
+    resources:
+      limits:
+        cpu: 200m
+        memory: 256Mi
+      requests:
+        cpu: 100m
+        memory: 128Mi

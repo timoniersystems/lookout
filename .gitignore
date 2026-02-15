@@ -4,8 +4,8 @@
 *.dll
 *.so
 *.dylib
-lookout
-lookout-ui
+/lookout
+/lookout-ui
 *.test
 *.out
 

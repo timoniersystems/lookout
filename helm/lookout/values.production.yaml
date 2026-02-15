@@ -1,0 +1,135 @@
+# Production environment values for Lookout
+global:
+  environment: production
+  gatewayAPI:
+    enabled: true
+    gatewayClassName: eg
+
+gateway:
+  enabled: true
+  name: lookout-production
+  listeners:
+    http:
+      port: 80
+      protocol: HTTP
+    https:
+      port: 443
+      protocol: HTTPS
+      tls:
+        enabled: true
+        certificateRef:
+          name: lookout-tls
+          kind: Secret
+
+httproute:
+  enabled: true
+  hostnames:
+    - "lookout.example.com"  # CHANGE THIS to your actual domain
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: lookout-production-lookout-app
+          port: 3000
+
+lookout-app:
+  enabled: true
+  replicaCount: 3  # High availability
+
+  image:
+    repository: ghcr.io/timoniersystems/lookout
+    pullPolicy: IfNotPresent
+    tag: "latest"  # Pin to specific version in production
+
+  service:
+    type: ClusterIP
+    port: 3000
+
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+    requests:
+      cpu: 500m
+      memory: 512Mi
+
+  autoscaling:
+    enabled: true
+    minReplicas: 3
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 70
+    targetMemoryUtilizationPercentage: 80
+
+  env:
+    DGRAPH_HOST: "dgraph-alpha"
+    DGRAPH_PORT: "9080"
+
+  # Set via --set or use sealed-secrets
+  secrets:
+    NVD_API_KEY: ""
+
+dgraph:
+  enabled: true
+
+  zero:
+    enabled: true
+    replicaCount: 3  # High availability
+
+    image:
+      repository: dgraph/dgraph
+      tag: v25.0.0
+      pullPolicy: IfNotPresent
+
+    resources:
+      limits:
+        cpu: 1000m
+        memory: 1Gi
+      requests:
+        cpu: 500m
+        memory: 512Mi
+
+    persistence:
+      enabled: true
+      size: 20Gi
+      storageClass: ""  # Use default or specify fast storage
+
+  alpha:
+    enabled: true
+    replicaCount: 3  # High availability
+
+    image:
+      repository: dgraph/dgraph
+      tag: v25.0.0
+      pullPolicy: IfNotPresent
+
+    resources:
+      limits:
+        cpu: 2000m
+        memory: 4Gi
+      requests:
+        cpu: 1000m
+        memory: 2Gi
+
+    persistence:
+      enabled: true
+      size: 100Gi  # Larger for production data
+      storageClass: ""  # Use fast SSD storage class
+
+  ratel:
+    enabled: true
+    replicaCount: 1
+
+    image:
+      repository: dgraph/ratel
+      tag: v21.03.0
+      pullPolicy: IfNotPresent
+
+    resources:
+      limits:
+        cpu: 500m
+        memory: 512Mi
+      requests:
+        cpu: 250m
+        memory: 256Mi
