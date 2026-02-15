@@ -23,6 +23,10 @@ RUN TRIVY_VER="${TRIVY_VERSION}" && \
 
 WORKDIR /app
 
+# Set Go environment to prevent fetching modules from internet
+ENV GOPROXY=direct
+ENV GOSUMDB=off
+
 # Copy dependency files first for better caching
 COPY go.mod go.sum ./
 RUN go mod download

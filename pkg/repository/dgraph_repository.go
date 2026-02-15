@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"log"
 
-	"timonier.systems/lookout/pkg/common/cyclonedx"
-	"timonier.systems/lookout/pkg/ui/dgraph"
+	"lookout/pkg/common/cyclonedx"
+	"lookout/pkg/ui/dgraph"
 
 	"github.com/dgraph-io/dgo/v210"
 )

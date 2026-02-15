@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"timonier.systems/lookout/pkg/common/cyclonedx"
-	"timonier.systems/lookout/pkg/ui/dgraph"
+	"lookout/pkg/common/cyclonedx"
+	"lookout/pkg/ui/dgraph"
 )
 
 // TestSBOMParsing_RealWorldExamples tests parsing of real-world SBOM files

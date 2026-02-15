@@ -1,4 +1,4 @@
-module timonier.systems/lookout
+module lookout
 
 go 1.26
 

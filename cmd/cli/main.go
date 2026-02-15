@@ -8,14 +8,14 @@ import (
 	"os"
 	"strings"
 
-	"timonier.systems/lookout/pkg/cli/cli_processor"
-	"timonier.systems/lookout/pkg/common/nvd"
-	"timonier.systems/lookout/pkg/common/processor"
-	"timonier.systems/lookout/pkg/common/trivy"
-	"timonier.systems/lookout/pkg/ui/dgraph"
-	"timonier.systems/lookout/pkg/logging"
-	"timonier.systems/lookout/pkg/repository"
-	"timonier.systems/lookout/pkg/service"
+	"lookout/pkg/cli/cli_processor"
+	"lookout/pkg/common/nvd"
+	"lookout/pkg/common/processor"
+	"lookout/pkg/common/trivy"
+	"lookout/pkg/ui/dgraph"
+	"lookout/pkg/logging"
+	"lookout/pkg/repository"
+	"lookout/pkg/service"
 )
 
 func RunCLI(args []string) {

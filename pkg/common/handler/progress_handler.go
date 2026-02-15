@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"timonier.systems/lookout/pkg/common/progress"
+	"lookout/pkg/common/progress"
 	"net/http"
 
 	"github.com/labstack/echo/v4"

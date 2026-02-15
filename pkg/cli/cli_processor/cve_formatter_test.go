@@ -2,7 +2,7 @@ package cli_processor
 
 import (
 	"bytes"
-	"timonier.systems/lookout/pkg/common/nvd"
+	"lookout/pkg/common/nvd"
 	"strings"
 	"testing"
 )

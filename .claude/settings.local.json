@@ -69,7 +69,9 @@
       "Bash(golangci-lint config:*)",
       "WebFetch(domain:golangci-lint.run)",
       "Bash(docker build:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(GOPROXY=direct GOSUMDB=off go build:*)",
+      "Bash(GOPROXY=direct GOSUMDB=off go test:*)"
     ]
   }
 }

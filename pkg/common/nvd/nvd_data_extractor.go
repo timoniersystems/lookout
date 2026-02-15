@@ -14,7 +14,7 @@ import (
 	"strings"
 	"time"
 
-	"timonier.systems/lookout/pkg/graph"
+	"lookout/pkg/graph"
 )
 
 // Vulnerability represents a single vulnerability entry from the NVD API.

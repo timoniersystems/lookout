@@ -7,7 +7,7 @@ import (
 	"log"
 	"strings"
 
-	"timonier.systems/lookout/pkg/logging"
+	"lookout/pkg/logging"
 )
 
 // DependsOn represents a dependency relationship

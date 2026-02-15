@@ -1,7 +1,7 @@
 package cli_processor
 
 import (
-	"timonier.systems/lookout/pkg/common/nvd"
+	"lookout/pkg/common/nvd"
 	"fmt"
 	"io"
 	"os"
