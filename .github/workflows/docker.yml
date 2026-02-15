@@ -76,7 +76,6 @@ jobs:
         pull: true
         build-args: |
           GO_VERSION=1.26.0
-          ALPINE_VERSION=3.23
           TRIVY_VERSION=0.69.1
 
     - name: Run Trivy vulnerability scanner on image (SARIF)
@@ -127,7 +126,6 @@ jobs:
         load: false
         build-args: |
           GO_VERSION=1.26.0
-          ALPINE_VERSION=3.23
           TRIVY_VERSION=0.69.1
         cache-from: type=gha
         cache-to: type=gha,mode=max
