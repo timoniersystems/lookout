@@ -1,8 +1,8 @@
 package main
 
 import (
-	"lookout/pkg/ui/dgraph"
-	"lookout/pkg/ui/echo"
+	"github.com/timoniersystems/lookout/pkg/ui/dgraph"
+	"github.com/timoniersystems/lookout/pkg/ui/echo"
 )
 
 func main() {
