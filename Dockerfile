@@ -23,6 +23,9 @@ RUN TRIVY_VER="${TRIVY_VERSION}" && \
 
 WORKDIR /app
 
+# Tell Go this module is private (don't try to fetch from GitHub)
+ENV GOPRIVATE=github.com/timoniersystems/lookout
+
 # Copy everything
 COPY . .
 
