@@ -58,6 +58,8 @@ jobs:
   lint:
     name: Lint
     runs-on: ubuntu-latest
+    env:
+      GO111MODULE: on
 
     steps:
     - name: Checkout code
@@ -79,6 +81,8 @@ jobs:
       with:
         version: v2.9.0
         args: --timeout=5m
+        skip-cache: true
+        install-mode: binary
 
   build:
     name: Build
