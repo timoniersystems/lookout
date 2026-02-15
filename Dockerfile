@@ -29,10 +29,7 @@ ENV GOPRIVATE=github.com/timoniersystems/lookout
 # Copy everything
 COPY . .
 
-# Download dependencies
-RUN go mod download
-
-# Build static binary
+# Build static binary (dependencies downloaded automatically during build)
 RUN CGO_ENABLED=0 go build -ldflags="-w -s" -o lookout-ui ./cmd/ui
 
 # Runtime stage - distroless for minimal attack surface
