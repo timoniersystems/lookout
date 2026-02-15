@@ -2,18 +2,18 @@ package handler
 
 import (
 	"fmt"
-	"io"
-	"log"
+	"net/http"
+	"os"
+	"strings"
+
 	"lookout/pkg/common/cyclonedx"
+	"lookout/pkg/common/fileutil"
 	"lookout/pkg/common/nvd"
 	"lookout/pkg/common/processor"
 	"lookout/pkg/common/progress"
 	"lookout/pkg/common/trivy"
+	"lookout/pkg/logging"
 	"lookout/pkg/ui/dgraph"
-	"net/http"
-	"os"
-	"path/filepath"
-	"strings"
 
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
@@ -26,7 +26,7 @@ func UploadBOMWithProgress(c echo.Context) error {
 
 	// Parse multipart form to populate c.Request().Form (required for file uploads)
 	if err := c.Request().ParseMultipartForm(32 << 20); err != nil { // 32MB max
-		log.Printf("Failed to parse multipart form: %v", err)
+		logging.Error("[Session %s] Failed to parse multipart form: %v", sessionID, err)
 		return c.JSON(http.StatusBadRequest, map[string]interface{}{
 			"error": "Failed to parse form data",
 		})
@@ -38,50 +38,18 @@ func UploadBOMWithProgress(c echo.Context) error {
 		// Default to HIGH and CRITICAL if none selected
 		severityFilters = []string{"CRITICAL", "HIGH"}
 	}
-	log.Printf("[Session %s] Severity filters: %v", sessionID, severityFilters)
+	logging.Info("[Session %s] Severity filters: %v", sessionID, severityFilters)
 
-	// Read and save file BEFORE starting async processing (request body will be closed)
-	file, err := c.FormFile("cyclonedx-bom-file")
+	// Use fileutil to handle temporary file creation
+	tempFileHandle, err := fileutil.CreateTempFromFormFile(c, "cyclonedx-bom-file")
 	if err != nil {
-		log.Printf("Failed to retrieve the BOM file from request: %v", err)
+		logging.Error("[Session %s] Failed to create temporary file: %v", sessionID, err)
 		return c.JSON(http.StatusBadRequest, map[string]interface{}{
 			"error": "Failed to retrieve the BOM file",
 		})
 	}
-
-	src, err := file.Open()
-	if err != nil {
-		log.Printf("Failed to open the uploaded BOM file: %v", err)
-		return c.JSON(http.StatusBadRequest, map[string]interface{}{
-			"error": "Failed to open uploaded file",
-		})
-	}
-	defer src.Close()
-
-	tempFile, err := os.CreateTemp("", "bom-*"+filepath.Ext(file.Filename))
-	if err != nil {
-		log.Printf("Failed to create a temporary file for the BOM: %v", err)
-		return c.JSON(http.StatusInternalServerError, map[string]interface{}{
-			"error": "Failed to create temporary file",
-		})
-	}
-	tempFilePath := tempFile.Name()
-
-	if _, err = io.Copy(tempFile, src); err != nil {
-		log.Printf("Failed to copy the BOM file to the temporary file: %v", err)
-		os.Remove(tempFilePath)
-		return c.JSON(http.StatusInternalServerError, map[string]interface{}{
-			"error": "Failed to save uploaded file",
-		})
-	}
-
-	if err := tempFile.Close(); err != nil {
-		log.Printf("Failed to close the temporary BOM file: %v", err)
-		os.Remove(tempFilePath)
-		return c.JSON(http.StatusInternalServerError, map[string]interface{}{
-			"error": "Failed to close temporary file",
-		})
-	}
+	tempFilePath := tempFileHandle.Path
+	// Note: We DON'T defer cleanup here because processSBOMWithProgress will handle it
 
 	// Create tracker BEFORE rendering page to avoid race condition
 	tracker := progress.NewTracker(sessionID)
@@ -94,7 +62,7 @@ func UploadBOMWithProgress(c echo.Context) error {
 	if err := c.Render(http.StatusOK, "progress.html", map[string]interface{}{
 		"SessionID": sessionID,
 	}); err != nil {
-		log.Printf("Failed to render progress page: %v", err)
+		logging.Info("Failed to render progress page: %v", err)
 		os.Remove(tempFilePath)
 		tracker.Close()
 		return err
@@ -114,7 +82,7 @@ func processSBOMWithProgress(sessionID string, tempFilePath string, severityFilt
 
 	bom, err := cyclonedx.ParseBOM(tempFilePath)
 	if err != nil {
-		log.Printf("Failed to parse BOM file: %v", err)
+		logging.Error("Failed to parse BOM file: %v", err)
 		tracker.SendError(fmt.Sprintf("Failed to parse BOM file: %v", err))
 		return
 	}
@@ -130,7 +98,7 @@ func processSBOMWithProgress(sessionID string, tempFilePath string, severityFilt
 
 	client := dgraph.DgraphClient()
 	if err := dgraph.DropAllData(client); err != nil {
-		log.Printf("Failed to drop existing data: %v", err)
+		logging.Error("Failed to drop existing data: %v", err)
 		tracker.SendError("Failed to clear database")
 		return
 	}
@@ -138,7 +106,7 @@ func processSBOMWithProgress(sessionID string, tempFilePath string, severityFilt
 	tracker.SendProgress("db", progress.StatusActive, "Initializing database schema...", 30)
 
 	if err := dgraph.SetupSchema(client); err != nil {
-		log.Printf("Failed to setup schema: %v", err)
+		logging.Info("Failed to setup schema: %v", err)
 		tracker.SendError("Failed to initialize database schema")
 		return
 	}
@@ -146,7 +114,7 @@ func processSBOMWithProgress(sessionID string, tempFilePath string, severityFilt
 	tracker.SendProgress("db", progress.StatusActive, "Building dependency graph...", 35)
 
 	if err := dgraph.InsertComponentsAndDependencies(dgraph.DgraphClient(), bom); err != nil {
-		log.Printf("Failed to insert BOM data into Dgraph: %v", err)
+		logging.Info("Failed to insert BOM data into Dgraph: %v", err)
 		tracker.SendError("Failed to insert BOM data into database")
 		return
 	}
@@ -158,14 +126,14 @@ func processSBOMWithProgress(sessionID string, tempFilePath string, severityFilt
 
 	trivyResults, err := trivy.RunTrivy(tempFilePath)
 	if err != nil {
-		log.Printf("Failed to run Trivy on %s: %v", tempFilePath, err)
+		logging.Error("Failed to run Trivy on %s: %v", tempFilePath, err)
 		tracker.SendError("Failed to run Trivy scanner")
 		return
 	}
 
 	cvePurlMap, err := processor.ProcessFileInput(trivyResults)
 	if err != nil {
-		log.Printf("Failed to process Trivy results: %v", err)
+		logging.Error("Failed to process Trivy results: %v", err)
 		tracker.SendError("Failed to process scan results")
 		return
 	}
@@ -188,14 +156,14 @@ func processSBOMWithProgress(sessionID string, tempFilePath string, severityFilt
 	// Step 6: Trace dependency paths
 	tracker.SendProgress("paths", progress.StatusActive, "Tracing dependency paths to vulnerable packages...", 78)
 
-	log.Printf("[Session %s] Starting RetrieveVulnerablePURLs for %d CVEs", sessionID, len(cvePurlMap))
+	logging.Info("[Session %s] Starting RetrieveVulnerablePURLs for %d CVEs", sessionID, len(cvePurlMap))
 	resultMap, err := dgraph.RetrieveVulnerablePURLs(cvePurlMap)
 	if err != nil {
-		log.Printf("[Session %s] Failed to retrieve vulnerable PURLs: %v", sessionID, err)
+		logging.Info("[Session %s] Failed to retrieve vulnerable PURLs: %v", sessionID, err)
 		tracker.SendError(fmt.Sprintf("Failed to retrieve vulnerability data: %v", err))
 		return
 	}
-	log.Printf("[Session %s] RetrieveVulnerablePURLs completed, got %d results", sessionID, len(resultMap))
+	logging.Info("[Session %s] RetrieveVulnerablePURLs completed, got %d results", sessionID, len(resultMap))
 
 	tracker.SendProgress("paths", progress.StatusComplete, "Dependency paths traced successfully", 82)
 
@@ -207,7 +175,7 @@ func processSBOMWithProgress(sessionID string, tempFilePath string, severityFilt
 	pageData := buildFilteredResultsPageData(aggregatedData, resultMap, severityFilters)
 
 	filteredCount := len(pageData.CVEPURLPairs)
-	log.Printf("[Session %s] Filtered %d/%d vulnerabilities matching severity filter %v", sessionID, filteredCount, totalCount, severityFilters)
+	logging.Info("[Session %s] Filtered %d/%d vulnerabilities matching severity filter %v", sessionID, filteredCount, totalCount, severityFilters)
 	tracker.SendProgress("filter", progress.StatusComplete, fmt.Sprintf("Filtered to %d/%d vulnerabilities matching selected severity levels", filteredCount, totalCount), 90)
 
 	// Step 8: Finalize results
