@@ -24,6 +24,7 @@ jobs:
       uses: actions/setup-go@v6
       with:
         go-version: ${{ matrix.go-version }}
+        cache-dependency-path: go.sum
 
     # - name: Cache Go modules
     #   uses: actions/cache@v4
@@ -42,10 +43,10 @@ jobs:
       run: go mod verify
 
     - name: Run tests
-      run: go test -v -race -timeout 5m ./...
+      run: go test -mod=mod -v -race -timeout 5m ./...
 
     - name: Run tests with coverage
-      run: go test -v -coverprofile=coverage.out -covermode=atomic ./...
+      run: go test -mod=mod -v -coverprofile=coverage.out -covermode=atomic ./...
 
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v4
@@ -100,6 +101,7 @@ jobs:
       uses: actions/setup-go@v6
       with:
         go-version: '1.26'
+        cache-dependency-path: go.sum
 
     - name: Download dependencies
       run: go mod download
@@ -108,10 +110,10 @@ jobs:
       run: go mod verify
 
     - name: Build CLI
-      run: go build -v -o lookout ./cmd/cli
+      run: go build -mod=mod -v -o lookout ./cmd/cli
 
     - name: Build UI
-      run: go build -v -o lookout-ui ./cmd/ui
+      run: go build -mod=mod -v -o lookout-ui ./cmd/ui
 
     - name: Upload CLI artifact
       uses: actions/upload-artifact@v4
@@ -136,6 +138,15 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v6
+
+    - name: Set up Go
+      uses: actions/setup-go@v6
+      with:
+        go-version: '1.26'
+        cache-dependency-path: go.sum
+
+    - name: Download dependencies
+      run: go mod download
 
     - name: Run Gosec Security Scanner
       uses: securego/gosec@master
