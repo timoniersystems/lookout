@@ -23,6 +23,14 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v6
 
+    - name: Compute source hash for cache key
+      id: source_hash
+      run: |
+        # Create hash of source files to detect changes
+        SOURCE_HASH=$(find . -type f \( -name "*.go" -o -name "go.mod" -o -name "go.sum" \) -exec sha256sum {} \; | sort | sha256sum | cut -d' ' -f1 | cut -c1-8)
+        echo "hash=${SOURCE_HASH}" >> $GITHUB_OUTPUT
+        echo "Source hash: ${SOURCE_HASH}"
+
     - name: Set up QEMU
       uses: docker/setup-qemu-action@v3
 
@@ -60,8 +68,10 @@ jobs:
         push: ${{ github.event_name != 'pull_request' }}
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
-        cache-from: type=gha,scope=${{ github.ref_name }}
-        cache-to: type=gha,mode=max,scope=${{ github.ref_name }}
+        # Use source hash in cache key to invalidate on code changes
+        # This ensures fresh builds when source files change
+        cache-from: type=gha,scope=${{ github.ref_name }}-${{ steps.source_hash.outputs.hash }}
+        cache-to: type=gha,mode=max,scope=${{ github.ref_name }}-${{ steps.source_hash.outputs.hash }}
         no-cache: false
         pull: true
         build-args: |
