@@ -1,4 +1,4 @@
-module lookout
+module github.com/timoniersystems/lookout
 
 go 1.26
 

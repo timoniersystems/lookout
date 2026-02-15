@@ -23,16 +23,17 @@ RUN TRIVY_VER="${TRIVY_VERSION}" && \
 
 WORKDIR /app
 
-# Set Go environment to prevent fetching modules from internet
-ENV GOPROXY=direct
-ENV GOSUMDB=off
+# Copy go module files
+COPY go.mod go.sum ./
 
-# Copy everything including vendored dependencies
+# Download dependencies
+RUN go mod download
+
+# Copy source code
 COPY . .
 
-# Build static binary using vendored dependencies
-# -mod=vendor tells Go to use the vendor directory instead of module cache
-RUN CGO_ENABLED=0 go build -mod=vendor -ldflags="-w -s" -o lookout-ui ./cmd/ui
+# Build static binary
+RUN CGO_ENABLED=0 go build -ldflags="-w -s" -o lookout-ui ./cmd/ui
 
 # Runtime stage - distroless for minimal attack surface
 FROM gcr.io/distroless/static-debian12:nonroot
