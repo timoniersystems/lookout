@@ -68,7 +68,8 @@
       "Bash(golangci-lint migrate:*)",
       "Bash(golangci-lint config:*)",
       "WebFetch(domain:golangci-lint.run)",
-      "Bash(docker build:*)"
+      "Bash(docker build:*)",
+      "Bash(git push:*)"
     ]
   }
 }

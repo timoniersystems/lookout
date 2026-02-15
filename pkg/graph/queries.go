@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/timoniersystems/lookout/pkg/logging"
+	"timonier.systems/lookout/pkg/logging"
 )
 
 // QueryBuilder builds Dgraph queries

@@ -1,8 +1,8 @@
 package handler
 
 import (
-	"github.com/timoniersystems/lookout/pkg/common/nvd"
-	"github.com/timoniersystems/lookout/pkg/ui/dgraph"
+	"timonier.systems/lookout/pkg/common/nvd"
+	"timonier.systems/lookout/pkg/ui/dgraph"
 	"sync"
 	"time"
 )

@@ -7,8 +7,8 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/timoniersystems/lookout/pkg/common/cyclonedx"
-	"github.com/timoniersystems/lookout/pkg/ui/dgraph"
+	"timonier.systems/lookout/pkg/common/cyclonedx"
+	"timonier.systems/lookout/pkg/ui/dgraph"
 )
 
 // HTTPClient defines an interface for making HTTP requests

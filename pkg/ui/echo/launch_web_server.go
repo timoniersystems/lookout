@@ -14,11 +14,11 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/timoniersystems/lookout/assets"
-	"github.com/timoniersystems/lookout/pkg/common/handler"
-	"github.com/timoniersystems/lookout/pkg/repository"
-	"github.com/timoniersystems/lookout/pkg/service"
-	"github.com/timoniersystems/lookout/pkg/ui/dgraph"
+	"timonier.systems/lookout/assets"
+	"timonier.systems/lookout/pkg/common/handler"
+	"timonier.systems/lookout/pkg/repository"
+	"timonier.systems/lookout/pkg/service"
+	"timonier.systems/lookout/pkg/ui/dgraph"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
