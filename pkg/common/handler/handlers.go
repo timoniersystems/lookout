@@ -1,22 +1,31 @@
 package handler
 
 import (
+	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"os"
-	"path/filepath"
 	"sort"
 	"strings"
 
 	"lookout/pkg/common/cyclonedx"
+	"lookout/pkg/common/fileutil"
 	"lookout/pkg/common/nvd"
 	"lookout/pkg/common/processor"
 	"lookout/pkg/common/trivy"
+	"lookout/pkg/logging"
+	"lookout/pkg/repository"
+	"lookout/pkg/service"
 	"lookout/pkg/ui/dgraph"
 
 	"github.com/labstack/echo/v4"
 )
+
+// HandlerDependencies holds the dependencies needed by HTTP handlers
+type HandlerDependencies struct {
+	VulnService *service.VulnerabilityService
+	Repo        *repository.DgraphRepository
+}
 
 type TemplateData struct {
 	CVEs []nvd.CVEPURLPair
@@ -56,19 +65,19 @@ func filterBySeverity(pair nvd.CVEPURLPair, severityFilters []string) bool {
 
 			// If severity is "N/A" and user selected all severities, include it
 			if severity == "N/A" && allSeveritiesSelected {
-				log.Printf("[DEBUG] CVE %s has N/A severity, including because all severities selected", vuln.CVE.ID)
+				logging.Debug(" CVE %s has N/A severity, including because all severities selected", vuln.CVE.ID)
 				return true
 			}
 
 			// Check if severity matches the selected filters
 			if severityMap[severity] {
-				log.Printf("[DEBUG] CVE %s (severity=%s) MATCHED filter", vuln.CVE.ID, severity)
+				logging.Debug(" CVE %s (severity=%s) MATCHED filter", vuln.CVE.ID, severity)
 				return true
 			}
 		} else {
 			// No CVSS v3.1 metrics available
 			if allSeveritiesSelected {
-				log.Printf("[DEBUG] CVE %s has no CvssMetricV31 data, including because all severities selected", vuln.CVE.ID)
+				logging.Debug(" CVE %s has no CvssMetricV31 data, including because all severities selected", vuln.CVE.ID)
 				return true
 			}
 		}
@@ -145,7 +154,7 @@ func CVES(c echo.Context) error {
 	if cveID != "" {
 		data, err := nvd.FetchCVEData(cveID)
 		if err != nil {
-			log.Printf("Error fetching CVE data: %v", err)
+			logging.Error("Error fetching CVE data for %s: %v", cveID, err)
 			return c.JSON(http.StatusInternalServerError, map[string]interface{}{
 				"error": "Failed to fetch CVE data",
 			})
@@ -155,34 +164,19 @@ func CVES(c echo.Context) error {
 
 	file, err := c.FormFile("file")
 	if err == nil && file != nil {
-		src, err := file.Open()
+		// Use fileutil to handle temporary file creation
+		tempFileHandle, err := fileutil.CreateTempFromFormFile(c, "file")
 		if err != nil {
-			log.Printf("Failed to open the uploaded file: %v", err)
-			return err
+			logging.Error("Failed to create temporary file: %v", err)
+			return c.JSON(http.StatusInternalServerError, map[string]interface{}{
+				"error": "Failed to process uploaded file",
+			})
 		}
-		defer src.Close()
+		defer tempFileHandle.Cleanup()
 
-		tempFile, err := os.CreateTemp("", "upload-*"+filepath.Ext(file.Filename))
+		cveIDs, err := processor.ProcessFileInputForCVEs(tempFileHandle.Path)
 		if err != nil {
-			log.Printf("Failed to create a temporary file: %v", err)
-			return err
-		}
-		defer os.Remove(tempFile.Name())
-
-		_, err = io.Copy(tempFile, src)
-		if err != nil {
-			log.Printf("Failed to copy the uploaded file to the temporary file: %v", err)
-			return err
-		}
-
-		if err := tempFile.Close(); err != nil {
-			log.Printf("Failed to close the temporary file: %v", err)
-			return err
-		}
-
-		cveIDs, err := processor.ProcessFileInputForCVEs(tempFile.Name())
-		if err != nil {
-			log.Printf("Failed to extract CVE IDs from the uploaded file: %v", err)
+			logging.Error("Failed to extract CVE IDs from uploaded file: %v", err)
 			return c.JSON(http.StatusInternalServerError, map[string]interface{}{
 				"error": "Failed to extract CVE IDs",
 			})
@@ -202,9 +196,8 @@ func ProcessCVE(c echo.Context) error {
 	cveID := c.FormValue("cveID")
 
 	data, err := nvd.FetchCVEData(cveID)
-
 	if err != nil {
-		log.Printf("Error fetching CVE data: %v", err)
+		logging.Error("Error fetching CVE data for %s: %v", cveID, err)
 		return c.JSON(http.StatusInternalServerError, map[string]interface{}{
 			"error": "Failed to fetch CVE data",
 		})
@@ -214,45 +207,21 @@ func ProcessCVE(c echo.Context) error {
 }
 
 func UploadAndProcess(c echo.Context) error {
-	file, err := c.FormFile("file")
+	// Use fileutil to handle temporary file creation
+	tempFileHandle, err := fileutil.CreateTempFromFormFile(c, "file")
 	if err != nil {
-		log.Printf("Failed to retrieve the file from request: %v", err)
+		logging.Error("Failed to create temporary file: %v", err)
 		return c.JSON(http.StatusBadRequest, map[string]interface{}{
 			"error": "Failed to retrieve the file",
 		})
 	}
+	defer tempFileHandle.Cleanup()
 
-	src, err := file.Open()
+	logging.Debug("Processing uploaded file at: %s", tempFileHandle.Path)
+
+	cvePurlMap, err := processor.ProcessFileInput(tempFileHandle.Path)
 	if err != nil {
-		log.Printf("Failed to open the uploaded file: %v", err)
-		return err
-	}
-	defer src.Close()
-
-	ext := filepath.Ext(file.Filename)
-	tempFile, err := os.CreateTemp("", "upload-*"+ext)
-	if err != nil {
-		log.Printf("Failed to create a temporary file: %v", err)
-		return err
-	}
-	tempFilePath := tempFile.Name()
-	log.Printf("Uploaded file saved to: %s", tempFilePath)
-	defer os.Remove(tempFilePath)
-
-	_, err = io.Copy(tempFile, src)
-	if err != nil {
-		log.Printf("Failed to copy the uploaded file to the temporary file: %v", err)
-		return err
-	}
-
-	if err := tempFile.Close(); err != nil {
-		log.Printf("Failed to close the temporary file: %v", err)
-		return err
-	}
-
-	cvePurlMap, err := processor.ProcessFileInput(tempFilePath)
-	if err != nil {
-		log.Printf("Failed to process the uploaded file at %s: %v", tempFilePath, err)
+		logging.Error("Failed to process uploaded file at %s: %v", tempFileHandle.Path, err)
 		return c.JSON(http.StatusInternalServerError, map[string]interface{}{
 			"error": "Failed to process uploaded file",
 		})
@@ -273,8 +242,10 @@ func UploadAndProcess(c echo.Context) error {
 
 func RunTrivyAndProcess(c echo.Context) error {
 	if !trivy.CheckTrivyInstalled() {
-		log.Println("Please install Trivy before running this application.")
-		return c.JSON(http.StatusBadRequest, "error: Please install Trivy before running the application.")
+		logging.Warn("Trivy is not installed")
+		return c.JSON(http.StatusBadRequest, map[string]interface{}{
+			"error": "Please install Trivy before running the application",
+		})
 	}
 
 	// Get severity filters from form
@@ -283,47 +254,23 @@ func RunTrivyAndProcess(c echo.Context) error {
 		// Default to HIGH and CRITICAL if none selected
 		severityFilters = []string{"CRITICAL", "HIGH"}
 	}
-	log.Printf("Severity filters: %v", severityFilters)
+	logging.Debug("Severity filters: %v", severityFilters)
 
-	file, err := c.FormFile("sbom-file")
+	// Use fileutil to handle temporary file creation
+	tempFileHandle, err := fileutil.CreateTempFromFormFile(c, "sbom-file")
 	if err != nil {
-		log.Printf("Failed to retrieve the file from request: %v", err)
+		logging.Error("Failed to create temporary file: %v", err)
 		return c.JSON(http.StatusBadRequest, map[string]interface{}{
 			"error": "Failed to retrieve the file",
 		})
 	}
+	defer tempFileHandle.Cleanup()
 
-	src, err := file.Open()
+	logging.Info("Running Trivy on uploaded file: %s", tempFileHandle.Path)
+
+	trivyResults, err := trivy.RunTrivy(tempFileHandle.Path)
 	if err != nil {
-		log.Printf("Failed to open the uploaded file: %v", err)
-		return err
-	}
-	defer src.Close()
-
-	ext := filepath.Ext(file.Filename)
-	tempFile, err := os.CreateTemp("", "upload-*"+ext)
-	if err != nil {
-		log.Printf("Failed to create a temporary file: %v", err)
-		return err
-	}
-	tempFilePath := tempFile.Name()
-	log.Printf("Uploaded file saved to: %s", tempFilePath)
-	defer os.Remove(tempFilePath)
-
-	_, err = io.Copy(tempFile, src)
-	if err != nil {
-		log.Printf("Failed to copy the uploaded file to the temporary file: %v", err)
-		return err
-	}
-
-	if err := tempFile.Close(); err != nil {
-		log.Printf("Failed to close the temporary file: %v", err)
-		return err
-	}
-
-	trivyResults, err := trivy.RunTrivy(tempFilePath)
-	if err != nil {
-		log.Printf("Failed to run Trivy on %s: %v", tempFilePath, err)
+		logging.Error("Failed to run Trivy on %s: %v", tempFileHandle.Path, err)
 		return c.JSON(http.StatusInternalServerError, map[string]interface{}{
 			"error": "Failed to run Trivy scanner",
 		})
@@ -331,7 +278,7 @@ func RunTrivyAndProcess(c echo.Context) error {
 
 	cvePurlMap, err := processor.ProcessFileInput(trivyResults)
 	if err != nil {
-		log.Printf("Failed to process the uploaded file at %s: %v", tempFilePath, err)
+		logging.Error("Failed to process Trivy results: %v", err)
 		return c.JSON(http.StatusInternalServerError, map[string]interface{}{
 			"error": "Failed to process uploaded file",
 		})
@@ -348,220 +295,225 @@ func RunTrivyAndProcess(c echo.Context) error {
 	}
 
 	return c.Render(http.StatusOK, "cve_results.html", pageData)
-
 }
 
-func UploadBOMAndInsertData(c echo.Context) error {
-	// Get severity filters from form
-	severityFilters := c.Request().Form["severity"]
-	if len(severityFilters) == 0 {
-		// Default to HIGH and CRITICAL if none selected
-		severityFilters = []string{"CRITICAL", "HIGH"}
-	}
-	log.Printf("Severity filters: %v", severityFilters)
+// UploadBOMAndInsertData handles BOM file upload and vulnerability analysis
+// This function requires HandlerDependencies to be injected
+func UploadBOMAndInsertData(deps *HandlerDependencies) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		ctx := c.Request().Context()
 
-	client := dgraph.DgraphClient()
-	if err := dgraph.DropAllData(client); err != nil {
-		log.Printf("Failed to drop existing data: %v", err)
-		return c.JSON(http.StatusInternalServerError, map[string]interface{}{
-			"error": "Failed to clear database",
-		})
-	}
+		// Get severity filters from form
+		severityFilters := c.Request().Form["severity"]
+		if len(severityFilters) == 0 {
+			// Default to HIGH and CRITICAL if none selected
+			severityFilters = []string{"CRITICAL", "HIGH"}
+		}
+		logging.Debug("Severity filters: %v", severityFilters)
 
-	// Re-setup schema after dropping all data
-	if err := dgraph.SetupSchema(client); err != nil {
-		log.Printf("Failed to setup schema: %v", err)
-		return c.JSON(http.StatusInternalServerError, map[string]interface{}{
-			"error": "Failed to initialize database schema",
-		})
-	}
-
-	file, err := c.FormFile("cyclonedx-bom-file")
-	if err != nil {
-		log.Printf("Failed to retrieve the BOM file from request: %v", err)
-		return c.JSON(http.StatusBadRequest, map[string]interface{}{
-			"error": "Failed to retrieve the BOM file",
-		})
-	}
-
-	src, err := file.Open()
-	if err != nil {
-		log.Printf("Failed to open the uploaded BOM file: %v", err)
-		return err
-	}
-	defer src.Close()
-
-	tempFile, err := os.CreateTemp("", "bom-*"+filepath.Ext(file.Filename))
-	if err != nil {
-		log.Printf("Failed to create a temporary file for the BOM: %v", err)
-		return err
-	}
-	defer os.Remove(tempFile.Name())
-
-	_, err = io.Copy(tempFile, src)
-	if err != nil {
-		log.Printf("Failed to copy the BOM file to the temporary file: %v", err)
-		return err
-	}
-
-	if err := tempFile.Close(); err != nil {
-		log.Printf("Failed to close the temporary BOM file: %v", err)
-		return err
-	}
-
-	bom, err := cyclonedx.ParseBOM(tempFile.Name())
-	if err != nil {
-		log.Printf("Failed to parse BOM file: %v", err)
-		return c.JSON(http.StatusInternalServerError, map[string]interface{}{
-			"error": "Failed to parse BOM file",
-		})
-	}
-
-	if err := dgraph.InsertComponentsAndDependencies(dgraph.DgraphClient(), bom); err != nil {
-		log.Printf("Failed to insert BOM data into Dgraph: %v", err)
-		return c.JSON(http.StatusInternalServerError, map[string]interface{}{
-			"error": "Failed to insert BOM data into Dgraph",
-		})
-	}
-
-	trivyResults, err := trivy.RunTrivy(tempFile.Name())
-	if err != nil {
-		log.Printf("Failed to run Trivy on %s: %v", tempFile.Name(), err)
-		return c.JSON(http.StatusInternalServerError, map[string]interface{}{
-			"error": "Failed to run Trivy scanner",
-		})
-	}
-
-	cvePurlMap, err := processor.ProcessFileInput(trivyResults)
-	if err != nil {
-		log.Printf("Failed to process the uploaded file at %s: %v", tempFile.Name(), err)
-		return c.JSON(http.StatusInternalServerError, map[string]interface{}{
-			"error": "Failed to process uploaded file",
-		})
-	}
-
-	dgraph.QueryAndUpdatePurl(cvePurlMap)
-	aggregatedData := nvd.AggregateCVEData(cvePurlMap)
-
-	resultMap, err := dgraph.RetrieveVulnerablePURLs(cvePurlMap)
-	if err != nil {
-		log.Printf("Failed to retrieve vulnerable PURLs: %v", err)
-		return c.JSON(http.StatusInternalServerError, map[string]interface{}{
-			"error": "Failed to retrieve vulnerability data",
-		})
-	}
-
-	var pageData nvd.ResultsPageData
-
-	for _, data := range aggregatedData {
-		// Filter by severity
-		if !filterBySeverity(data, severityFilters) {
-			continue
+		// Drop existing data and setup schema
+		if err := deps.Repo.DropAllData(ctx); err != nil {
+			logging.Error("Failed to drop existing data: %v", err)
+			return c.JSON(http.StatusInternalServerError, map[string]interface{}{
+				"error": "Failed to clear database",
+			})
 		}
 
-		purl := strings.TrimSpace(strings.ToLower(data.PURL))
+		// Re-setup schema after dropping all data
+		client := dgraph.DgraphClient()
+		if err := dgraph.SetupSchema(client); err != nil {
+			logging.Error("Failed to setup schema: %v", err)
+			return c.JSON(http.StatusInternalServerError, map[string]interface{}{
+				"error": "Failed to initialize database schema",
+			})
+		}
 
-		for _, component := range resultMap {
-			componentPurl := strings.TrimSpace(strings.ToLower(component.Purl))
-			if componentPurl == purl {
-				data.DgraphData = component
-				break
+		// Use fileutil to handle temporary file creation
+		tempFileHandle, err := fileutil.CreateTempFromFormFile(c, "cyclonedx-bom-file")
+		if err != nil {
+			logging.Error("Failed to create temporary file: %v", err)
+			return c.JSON(http.StatusBadRequest, map[string]interface{}{
+				"error": "Failed to retrieve the BOM file",
+			})
+		}
+		defer tempFileHandle.Cleanup()
+
+		logging.Info("Processing BOM file: %s", tempFileHandle.Path)
+
+		bom, err := cyclonedx.ParseBOM(tempFileHandle.Path)
+		if err != nil {
+			logging.Error("Failed to parse BOM file: %v", err)
+			return c.JSON(http.StatusInternalServerError, map[string]interface{}{
+				"error": "Failed to parse BOM file",
+			})
+		}
+
+		if err := deps.Repo.InsertComponents(ctx, bom); err != nil {
+			logging.Error("Failed to insert BOM data into Dgraph: %v", err)
+			return c.JSON(http.StatusInternalServerError, map[string]interface{}{
+				"error": "Failed to insert BOM data into Dgraph",
+			})
+		}
+
+		trivyResults, err := trivy.RunTrivy(tempFileHandle.Path)
+		if err != nil {
+			logging.Error("Failed to run Trivy on %s: %v", tempFileHandle.Path, err)
+			return c.JSON(http.StatusInternalServerError, map[string]interface{}{
+				"error": "Failed to run Trivy scanner",
+			})
+		}
+
+		cvePurlMap, err := processor.ProcessFileInput(trivyResults)
+		if err != nil {
+			logging.Error("Failed to process Trivy results: %v", err)
+			return c.JSON(http.StatusInternalServerError, map[string]interface{}{
+				"error": "Failed to process uploaded file",
+			})
+		}
+
+		if err := deps.Repo.UpdateVulnerabilities(ctx, cvePurlMap); err != nil {
+			logging.Warn("Failed to update vulnerabilities: %v", err)
+		}
+
+		aggregatedData := nvd.AggregateCVEData(cvePurlMap)
+
+		resultMap, err := deps.Repo.RetrieveVulnerablePURLs(ctx, cvePurlMap)
+		if err != nil {
+			logging.Error("Failed to retrieve vulnerable PURLs: %v", err)
+			return c.JSON(http.StatusInternalServerError, map[string]interface{}{
+				"error": "Failed to retrieve vulnerability data",
+			})
+		}
+
+		var pageData nvd.ResultsPageData
+		for _, data := range aggregatedData {
+			// Filter by severity
+			if !filterBySeverity(data, severityFilters) {
+				continue
 			}
+
+			purl := strings.TrimSpace(strings.ToLower(data.PURL))
+
+			for _, component := range resultMap {
+				componentPurl := strings.TrimSpace(strings.ToLower(component.Purl))
+				if componentPurl == purl {
+					data.DgraphData = component
+					break
+				}
+			}
+			pageData.CVEPURLPairs = append(pageData.CVEPURLPairs, data)
 		}
-		pageData.CVEPURLPairs = append(pageData.CVEPURLPairs, data)
 
+		return c.Render(http.StatusOK, "cve_vulnerability_results.html", pageData)
 	}
-
-	return c.Render(http.StatusOK, "cve_vulnerability_results.html", pageData)
 }
 
-func PurlTraversal(c echo.Context) error {
-	pURL := c.QueryParam("pURL")
-	if pURL == "" {
-		log.Println("Error: pURL is required")
-		return c.JSON(http.StatusBadRequest, map[string]interface{}{
-			"error": "pURL is required",
-		})
-	}
-	log.Printf("Received pURL: %s", pURL)
+// PurlTraversal handles PURL traversal requests
+// This function requires HandlerDependencies to be injected
+func PurlTraversal(deps *HandlerDependencies) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		ctx := c.Request().Context()
 
-	// Read request body
-	body, err := io.ReadAll(c.Request().Body)
+		pURL := c.QueryParam("pURL")
+		if pURL == "" {
+			logging.Error("pURL parameter is required but not provided")
+			return c.JSON(http.StatusBadRequest, map[string]interface{}{
+				"error": "pURL is required",
+			})
+		}
+		logging.Info("Processing PURL traversal for: %s", pURL)
+
+		// Create temporary file from request body
+		tempFileHandle, err := CreateTempFromRequestBody(c, ".json")
+		if err != nil {
+			logging.Error("Failed to create temporary file from request body: %v", err)
+			return c.JSON(http.StatusBadRequest, map[string]interface{}{
+				"error": "Invalid request body",
+			})
+		}
+		defer tempFileHandle.Cleanup()
+
+		// Drop existing data and setup schema
+		if err := deps.Repo.DropAllData(ctx); err != nil {
+			logging.Error("Error clearing data: %v", err)
+			return c.JSON(http.StatusInternalServerError, map[string]interface{}{
+				"error": "Failed to clear database",
+			})
+		}
+
+		// Re-setup schema after dropping all data
+		client := dgraph.DgraphClient()
+		if err := dgraph.SetupSchema(client); err != nil {
+			logging.Error("Failed to setup schema: %v", err)
+			return c.JSON(http.StatusInternalServerError, map[string]interface{}{
+				"error": "Failed to initialize database schema",
+			})
+		}
+
+		bom, err := cyclonedx.ParseBOM(tempFileHandle.Path)
+		if err != nil {
+			logging.Error("Failed to parse BOM file: %v", err)
+			return c.JSON(http.StatusInternalServerError, map[string]interface{}{
+				"error": "Failed to parse BOM file",
+			})
+		}
+
+		if err := deps.Repo.InsertComponents(ctx, bom); err != nil {
+			logging.Error("Failed to insert BOM data into Dgraph: %v", err)
+			return c.JSON(http.StatusInternalServerError, map[string]interface{}{
+				"error": "Failed to insert BOM data into Dgraph",
+			})
+		}
+
+		resultMap, err := deps.Repo.RetrievePURL(ctx, pURL)
+		if err != nil {
+			logging.Error("Error retrieving component for pURL %s: %v", pURL, err)
+			return c.JSON(http.StatusInternalServerError, map[string]interface{}{
+				"error": "Failed to retrieve component data",
+			})
+		}
+
+		logging.Debug("Retrieved data for pURL %s: %+v", pURL, resultMap)
+
+		return c.JSON(http.StatusOK, resultMap)
+	}
+}
+
+// CreateTempFromRequestBody creates a temporary file from the request body
+func CreateTempFromRequestBody(c echo.Context, fileExtension string) (*fileutil.TempFileResult, error) {
+	if c.Request().Body == nil {
+		return nil, fmt.Errorf("request body is nil")
+	}
+
+	tempFile, err := os.CreateTemp("", "upload-*"+fileExtension)
 	if err != nil {
-		log.Printf("Failed to read request body: %v", err)
-		return c.JSON(http.StatusBadRequest, map[string]interface{}{
-			"error": "Invalid request body",
-		})
+		return nil, fmt.Errorf("failed to create temporary file: %w", err)
 	}
 
-	// Create temporary file for BOM
-	tempFile, err := os.CreateTemp("", "upload-*.json")
+	bytesWritten, err := io.Copy(tempFile, c.Request().Body)
 	if err != nil {
-		log.Printf("Failed to create temporary file: %v", err)
-		return c.JSON(http.StatusInternalServerError, map[string]interface{}{
-			"error": "Failed to create temporary file",
-		})
+		tempFile.Close()
+		os.Remove(tempFile.Name())
+		return nil, fmt.Errorf("failed to copy request body: %w", err)
 	}
-	defer os.Remove(tempFile.Name())
 
-	if _, err := tempFile.Write(body); err != nil {
-		log.Printf("Failed to write to temporary file: %v", err)
-		return c.JSON(http.StatusInternalServerError, map[string]interface{}{
-			"error": "Failed to write JSON to file",
-		})
+	if bytesWritten == 0 {
+		tempFile.Close()
+		os.Remove(tempFile.Name())
+		return nil, fmt.Errorf("request body is empty")
 	}
 
 	if err := tempFile.Close(); err != nil {
-		log.Printf("Failed to close temporary file: %v", err)
-		return c.JSON(http.StatusInternalServerError, map[string]interface{}{
-			"error": "Failed to close temporary file",
-		})
+		os.Remove(tempFile.Name())
+		return nil, fmt.Errorf("failed to close temporary file: %w", err)
 	}
 
-	// Use service layer for processing
-	// Note: In a real application, the service should be injected as a dependency
-	// For now, we'll create it here for backward compatibility
-	client := dgraph.DgraphClient()
-	err = dgraph.DropAllData(client)
-	if err != nil {
-		log.Printf("Error clearing data: %v", err)
-		return c.JSON(http.StatusInternalServerError, map[string]interface{}{
-			"error": "Failed to clear database",
-		})
+	cleanup := func() error {
+		return os.Remove(tempFile.Name())
 	}
 
-	// Re-setup schema after dropping all data
-	if err := dgraph.SetupSchema(client); err != nil {
-		log.Printf("Failed to setup schema: %v", err)
-		return c.JSON(http.StatusInternalServerError, map[string]interface{}{
-			"error": "Failed to initialize database schema",
-		})
-	}
-
-	bom, err := cyclonedx.ParseBOM(tempFile.Name())
-	if err != nil {
-		log.Printf("Failed to parse BOM file: %v", err)
-		return c.JSON(http.StatusInternalServerError, map[string]interface{}{
-			"error": "Failed to parse BOM file",
-		})
-	}
-
-	if err := dgraph.InsertComponentsAndDependencies(dgraph.DgraphClient(), bom); err != nil {
-		log.Printf("Failed to insert BOM data into Dgraph: %v", err)
-		return c.JSON(http.StatusInternalServerError, map[string]interface{}{
-			"error": "Failed to insert BOM data into Dgraph",
-		})
-	}
-
-	resultMap, err := dgraph.RetrievePURL(pURL)
-	if err != nil {
-		log.Printf("Error retrieving component for pURL %s: %v", pURL, err)
-		return c.JSON(http.StatusInternalServerError, map[string]interface{}{
-			"error": "Failed to retrieve component data",
-		})
-	}
-
-	log.Printf("Final retrieved data for pURL %s: %v", pURL, resultMap)
-
-	return c.JSON(http.StatusOK, resultMap)
+	return &fileutil.TempFileResult{
+		Path:    tempFile.Name(),
+		Cleanup: cleanup,
+	}, nil
 }

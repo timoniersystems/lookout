@@ -16,6 +16,9 @@ import (
 
 	"lookout/assets"
 	"lookout/pkg/common/handler"
+	"lookout/pkg/repository"
+	"lookout/pkg/service"
+	"lookout/pkg/ui/dgraph"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -140,12 +143,22 @@ func LaunchWebServer() {
 	e.GET("/ready", ReadyCheck)
 	e.GET("/healthz", HealthCheck) // Kubernetes convention
 
+	// Initialize dependencies for handlers that require them
+	clientManager := dgraph.GetGlobalClientManager()
+	repo := repository.NewDgraphRepository(clientManager)
+	vulnService := service.NewVulnerabilityService(repo)
+
+	deps := &handler.HandlerDependencies{
+		VulnService: vulnService,
+		Repo:        repo,
+	}
+
 	// Application routes
 	e.GET("/", HomePage)
 	e.POST("/process", handler.ProcessCVE)
 	e.POST("/upload", handler.UploadAndProcess)
 	e.POST("/upload-cyclonedx-bom", handler.UploadBOMWithProgress) // Async SBOM analysis with SSE
-	e.POST("/purl-traversal", handler.PurlTraversal)
+	e.POST("/purl-traversal", handler.PurlTraversal(deps))
 
 	// Progress tracking routes
 	e.GET("/progress/:sessionId", handler.ProgressSSE)

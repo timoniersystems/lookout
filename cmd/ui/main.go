@@ -1,8 +1,8 @@
 package main
 
 import (
-	"lookout/pkg/gui/dgraph"
-	"lookout/pkg/gui/echo"
+	"lookout/pkg/ui/dgraph"
+	"lookout/pkg/ui/echo"
 )
 
 func main() {
