@@ -1,12 +1,14 @@
 # Kubernetes Quick Reference
 
+> **⚠️ NOTE:** This guide contains ArgoCD references. ArgoCD is not currently deployed in the cluster due to resource constraints. For current deployment instructions, see [KIND_DEPLOYMENT.md](KIND_DEPLOYMENT.md).
+
 Fast reference for common operations on the Kind cluster.
 
 ## Access
 
 ```bash
 # SSH to EC2
-ssh ubuntu@10.0.3.142
+ssh ubuntu@<EC2_INSTANCE_IP>
 
 # Set kubeconfig context
 export KUBECONFIG=~/.kube/config
@@ -22,7 +24,7 @@ kubectl config use-context kind-lookout
 **Access UI:**
 ```bash
 # From your local machine
-ssh -L 8080:localhost:8080 ubuntu@10.0.3.142 \
+ssh -L 8080:localhost:8080 ubuntu@<EC2_INSTANCE_IP> \
   'kubectl port-forward svc/argocd-server -n argocd 8080:443'
 
 # Open browser to: https://localhost:8080
@@ -120,9 +122,9 @@ EOF
 
 | Environment | HTTP | HTTPS | Access |
 |-------------|------|-------|--------|
-| Production  | 80   | 443   | http://10.0.3.142 |
-| Staging     | 10080| 10443 | http://10.0.3.142:10080 |
-| Docker-Compose | 7080 | 7443 | https://10.0.3.142:7443 |
+| Production  | 80   | 443   | http://<EC2_INSTANCE_IP> |
+| Staging     | 10080| 10443 | http://<EC2_INSTANCE_IP>:10080 |
+| Docker-Compose | 7080 | 7443 | https://<EC2_INSTANCE_IP>:7443 |
 
 ## Common Tasks
 

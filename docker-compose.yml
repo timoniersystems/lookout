@@ -69,6 +69,8 @@ services:
       - DGRAPH_HOST=dgraph-alpha
       - DGRAPH_PORT=9080
       - NVD_API_KEY=${NVD_API_KEY}
+    volumes:
+      - lookout-data:/app
     # Note: distroless doesn't support shell-based healthchecks
     # Health is monitored via nginx reverse proxy healthcheck
 
@@ -121,4 +123,8 @@ services:
 
 networks:
   lookout-net:
-    driver: bridge 
+    driver: bridge
+
+volumes:
+  lookout-data:
+    driver: local 

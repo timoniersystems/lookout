@@ -105,7 +105,7 @@ body {
 
 /* Logo Link */
 .logo-link {
-    text-decoration: none;
+    text-decoration: none !important;
     background: var(--gradient-primary);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -114,6 +114,7 @@ body {
 }
 
 .logo-link:hover {
+    text-decoration: none !important;
     filter: brightness(1.2);
     cursor: pointer;
 }

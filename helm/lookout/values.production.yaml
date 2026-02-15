@@ -39,7 +39,7 @@ lookout-app:
   replicaCount: 3  # High availability
 
   image:
-    repository: ghcr.io/timoniersystems/lookout
+    repository: registry:5000/lookout
     pullPolicy: IfNotPresent
     tag: "latest"  # Pin to specific version in production
 

@@ -1,10 +1,12 @@
 # Kubernetes Setup with Kind and ArgoCD
 
+> **⚠️ NOTE:** This guide contains ArgoCD setup instructions. ArgoCD is not currently deployed in the cluster due to resource constraints. For current deployment instructions, see [KIND_DEPLOYMENT.md](KIND_DEPLOYMENT.md).
+
 Complete guide for the Kind cluster running on EC2 with Envoy Gateway and ArgoCD for GitOps.
 
 ## Environment Overview
 
-**EC2 Instance:** `10.0.3.142`
+**EC2 Instance:** `<EC2_INSTANCE_IP>`
 - OS: Ubuntu 24.04 (Linux 6.14.0-1018-aws)
 - RAM: 7.6GB
 - Disk: 234GB available
@@ -14,11 +16,11 @@ Complete guide for the Kind cluster running on EC2 with Envoy Gateway and ArgoCD
 
 ```
 ┌──────────────────────────────────────────────────────────┐
-│  EC2 Instance (10.0.3.142)                               │
+│  EC2 Instance (<EC2_INSTANCE_IP>)                               │
 │                                                          │
 │  ┌────────────────────────────────────────────────────┐ │
 │  │ Docker Compose (existing - runs in parallel)       │ │
-│  │  - Production Lookout: https://10.0.3.142:7443     │ │
+│  │  - Production Lookout: https://<EC2_INSTANCE_IP>:7443     │ │
 │  │  - Dgraph: 8080, 9080                              │ │
 │  └────────────────────────────────────────────────────┘ │
 │                                                          │
@@ -40,10 +42,10 @@ Complete guide for the Kind cluster running on EC2 with Envoy Gateway and ArgoCD
 
 | Service | Environment | Kind Port | Host Port | URL |
 |---------|------------|-----------|-----------|-----|
-| HTTP | Production | 80 | 80 | http://10.0.3.142 |
-| HTTPS | Production | 443 | 443 | https://10.0.3.142 |
-| HTTP | Staging | 8080 | 10080 | http://10.0.3.142:10080 |
-| HTTPS | Staging | 8443 | 10443 | https://10.0.3.142:10443 |
+| HTTP | Production | 80 | 80 | http://<EC2_INSTANCE_IP> |
+| HTTPS | Production | 443 | 443 | https://<EC2_INSTANCE_IP> |
+| HTTP | Staging | 8080 | 10080 | http://<EC2_INSTANCE_IP>:10080 |
+| HTTPS | Staging | 8443 | 10443 | https://<EC2_INSTANCE_IP>:10443 |
 | ArgoCD | - | - | - | Port-forward required |
 
 **Existing Docker Compose ports:**
@@ -58,7 +60,7 @@ Kubernetes in Docker - lightweight K8s cluster for local/testing environments.
 
 ```bash
 # Check cluster
-ssh ubuntu@10.0.3.142 'kind get clusters'
+ssh ubuntu@<EC2_INSTANCE_IP> 'kind get clusters'
 # Expected: lookout
 ```
 
@@ -67,7 +69,7 @@ Kubernetes CLI tool.
 
 ```bash
 # Check version
-ssh ubuntu@10.0.3.142 'kubectl version --client'
+ssh ubuntu@<EC2_INSTANCE_IP> 'kubectl version --client'
 ```
 
 ### 3. Gateway API v1.2.1
@@ -75,7 +77,7 @@ Official Kubernetes ingress replacement (future-proof, ingress-nginx is retiring
 
 ```bash
 # Check Gateway API CRDs
-ssh ubuntu@10.0.3.142 'kubectl get crd | grep gateway'
+ssh ubuntu@<EC2_INSTANCE_IP> 'kubectl get crd | grep gateway'
 ```
 
 ### 4. Envoy Gateway v1.3.0
@@ -85,8 +87,8 @@ Modern ingress controller implementing Gateway API standard.
 
 ```bash
 # Check Envoy Gateway
-ssh ubuntu@10.0.3.142 'kubectl get gatewayclass'
-ssh ubuntu@10.0.3.142 'kubectl get pods -n envoy-gateway-system'
+ssh ubuntu@<EC2_INSTANCE_IP> 'kubectl get gatewayclass'
+ssh ubuntu@<EC2_INSTANCE_IP> 'kubectl get pods -n envoy-gateway-system'
 ```
 
 ### 5. ArgoCD (Latest Stable)
@@ -98,7 +100,7 @@ GitOps continuous delivery tool.
 
 ```bash
 # Access ArgoCD UI (port-forward from local machine)
-ssh -L 8080:localhost:8080 ubuntu@10.0.3.142 \
+ssh -L 8080:localhost:8080 ubuntu@<EC2_INSTANCE_IP> \
   'kubectl port-forward svc/argocd-server -n argocd 8080:443'
 # Then open: https://localhost:8080
 ```
@@ -109,7 +111,7 @@ ssh -L 8080:localhost:8080 ubuntu@10.0.3.142 \
 
 ```bash
 # SSH to EC2
-ssh ubuntu@10.0.3.142
+ssh ubuntu@<EC2_INSTANCE_IP>
 
 # Check cluster status
 kubectl cluster-info
@@ -178,7 +180,7 @@ spec:
 
 From your local machine:
 ```bash
-ssh -L 8080:localhost:8080 ubuntu@10.0.3.142 \
+ssh -L 8080:localhost:8080 ubuntu@<EC2_INSTANCE_IP> \
   'kubectl port-forward svc/argocd-server -n argocd 8080:443'
 ```
 
@@ -290,7 +292,7 @@ Generate self-signed certificates for testing or use cert-manager for Let's Encr
 
 ```bash
 # Generate self-signed cert for staging
-ssh ubuntu@10.0.3.142 'openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+ssh ubuntu@<EC2_INSTANCE_IP> 'openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
   -keyout /tmp/staging.key -out /tmp/staging.crt \
   -subj "/CN=staging.lookout.local"
 
@@ -305,7 +307,7 @@ kubectl create secret tls lookout-tls \
 Store encrypted secrets in Git safely:
 
 ```bash
-ssh ubuntu@10.0.3.142 'kubectl apply -f \
+ssh ubuntu@<EC2_INSTANCE_IP> 'kubectl apply -f \
   https://github.com/bitnami-labs/sealed-secrets/releases/download/v0.24.0/controller.yaml'
 
 # Install kubeseal CLI locally
@@ -318,7 +320,7 @@ brew install kubeseal  # macOS
 Automatic Let's Encrypt certificates:
 
 ```bash
-ssh ubuntu@10.0.3.142 'kubectl apply -f \
+ssh ubuntu@<EC2_INSTANCE_IP> 'kubectl apply -f \
   https://github.com/cert-manager/cert-manager/releases/download/v1.13.0/cert-manager.yaml'
 ```
 
@@ -386,7 +388,7 @@ spec:
 ### Check Cluster Status
 
 ```bash
-ssh ubuntu@10.0.3.142 '
+ssh ubuntu@<EC2_INSTANCE_IP> '
   echo "=== Cluster Info ===" && kubectl cluster-info
   echo && echo "=== Nodes ===" && kubectl get nodes
   echo && echo "=== Namespaces ===" && kubectl get ns
@@ -399,23 +401,23 @@ ssh ubuntu@10.0.3.142 '
 ### View Gateway Status
 
 ```bash
-ssh ubuntu@10.0.3.142 'kubectl get gateway lookout-production -n production -o yaml'
+ssh ubuntu@<EC2_INSTANCE_IP> 'kubectl get gateway lookout-production -n production -o yaml'
 ```
 
 ### Check Envoy Proxy Logs
 
 ```bash
 # Production
-ssh ubuntu@10.0.3.142 'kubectl logs -n envoy-gateway-system -l gateway.envoyproxy.io/owning-gateway-name=lookout-production'
+ssh ubuntu@<EC2_INSTANCE_IP> 'kubectl logs -n envoy-gateway-system -l gateway.envoyproxy.io/owning-gateway-name=lookout-production'
 
 # Staging
-ssh ubuntu@10.0.3.142 'kubectl logs -n envoy-gateway-system -l gateway.envoyproxy.io/owning-gateway-name=lookout-staging'
+ssh ubuntu@<EC2_INSTANCE_IP> 'kubectl logs -n envoy-gateway-system -l gateway.envoyproxy.io/owning-gateway-name=lookout-staging'
 ```
 
 ### Restart Kind Cluster
 
 ```bash
-ssh ubuntu@10.0.3.142 '
+ssh ubuntu@<EC2_INSTANCE_IP> '
   kind delete cluster --name lookout
   kind create cluster --config /tmp/kind-cluster-config-simple.yaml
 '
@@ -487,4 +489,4 @@ kubectl logs -n production lookout-app-xxx-yyy -f
 
 **Setup Date:** 2026-02-15
 **Cluster:** lookout (Kind v0.27.0, K8s v1.32.2)
-**Location:** EC2 instance 10.0.3.142
+**Location:** EC2 instance <EC2_INSTANCE_IP>

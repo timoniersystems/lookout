@@ -38,13 +38,14 @@ FROM gcr.io/distroless/static-debian12:nonroot
 # Copy CA certificates from builder
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 
-# Copy Trivy binary from builder
-COPY --from=builder /usr/local/bin/trivy /usr/local/bin/trivy
+# Copy Trivy binary from builder with correct ownership
+COPY --from=builder --chown=65532:65532 /usr/local/bin/trivy /usr/local/bin/trivy
 
-# Copy UI binary from builder
-COPY --from=builder /app/lookout-ui /app/lookout-ui
-
+# Set working directory first
 WORKDIR /app
+
+# Copy UI binary from builder with correct ownership for nonroot user
+COPY --from=builder --chown=65532:65532 /app/lookout-ui /app/lookout-ui
 
 # Expose application port
 EXPOSE 3000

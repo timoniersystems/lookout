@@ -24,7 +24,7 @@ gateway:
 httproute:
   enabled: true
   hostnames:
-    - "staging.lookout.example.com"  # Staging subdomain
+    - "lookout-stg.timonier.io"  # Staging subdomain
   rules:
     - matches:
         - path:
@@ -36,10 +36,10 @@ httproute:
 
 lookout-app:
   enabled: true
-  replicaCount: 2  # Lower for staging
+  replicaCount: 1  # Single replica for kind cluster
 
   image:
-    repository: ghcr.io/timoniersystems/lookout
+    repository: registry:5000/lookout
     pullPolicy: Always  # Always pull latest in staging
     tag: "latest"
 
@@ -49,10 +49,10 @@ lookout-app:
 
   resources:
     limits:
-      cpu: 500m
+      cpu: 250m
       memory: 512Mi
     requests:
-      cpu: 250m
+      cpu: 100m
       memory: 256Mi
 
   autoscaling:
@@ -79,10 +79,10 @@ dgraph:
 
     resources:
       limits:
-        cpu: 500m
+        cpu: 250m
         memory: 512Mi
       requests:
-        cpu: 250m
+        cpu: 100m
         memory: 256Mi
 
     persistence:
@@ -101,11 +101,11 @@ dgraph:
 
     resources:
       limits:
-        cpu: 1000m
-        memory: 2Gi
-      requests:
         cpu: 500m
-        memory: 1Gi
+        memory: 1536Mi
+      requests:
+        cpu: 200m
+        memory: 768Mi
 
     persistence:
       enabled: true
@@ -123,8 +123,8 @@ dgraph:
 
     resources:
       limits:
-        cpu: 200m
+        cpu: 100m
         memory: 256Mi
       requests:
-        cpu: 100m
+        cpu: 50m
         memory: 128Mi
