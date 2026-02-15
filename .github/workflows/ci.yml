@@ -10,6 +10,8 @@ jobs:
   test:
     name: Test
     runs-on: ubuntu-latest
+    env:
+      GO111MODULE: on
     strategy:
       matrix:
         go-version: ['1.25', '1.26']
@@ -128,6 +130,8 @@ jobs:
   security:
     name: Security Scan
     runs-on: ubuntu-latest
+    env:
+      GO111MODULE: on
 
     steps:
     - name: Checkout code
