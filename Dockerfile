@@ -23,14 +23,11 @@ RUN TRIVY_VER="${TRIVY_VERSION}" && \
 
 WORKDIR /app
 
-# Copy go module files
-COPY go.mod go.sum ./
+# Copy everything
+COPY . .
 
 # Download dependencies
 RUN go mod download
-
-# Copy source code
-COPY . .
 
 # Build static binary
 RUN CGO_ENABLED=0 go build -ldflags="-w -s" -o lookout-ui ./cmd/ui
