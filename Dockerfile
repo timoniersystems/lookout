@@ -27,16 +27,12 @@ WORKDIR /app
 ENV GOPROXY=direct
 ENV GOSUMDB=off
 
-# Copy dependency files first for better caching
-COPY go.mod go.sum ./
-RUN go mod download
-
-# Copy source code
+# Copy everything including vendored dependencies
 COPY . .
 
-# Build static binary for native platform
-# CGO_ENABLED=0 creates a fully static binary compatible with distroless
-RUN CGO_ENABLED=0 go build -ldflags="-w -s" -o lookout-ui ./cmd/ui
+# Build static binary using vendored dependencies
+# -mod=vendor tells Go to use the vendor directory instead of module cache
+RUN CGO_ENABLED=0 go build -mod=vendor -ldflags="-w -s" -o lookout-ui ./cmd/ui
 
 # Runtime stage - distroless for minimal attack surface
 FROM gcr.io/distroless/static-debian12:nonroot

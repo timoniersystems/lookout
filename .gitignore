@@ -29,9 +29,6 @@ outputs/
 exported_*.json
 exported_bom.json
 
-# Dependency directories
-vendor/
-
 # IDE and editor files
 .vscode/
 .idea/
