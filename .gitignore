@@ -72,3 +72,7 @@ nginx/certs/*.key
 nginx/certs/*.crt
 
 nginx/auth/.htpasswd
+
+# Helm secrets (never commit!)
+helm/**/values*.secrets.yaml
+helm/**/values*.secret.yaml

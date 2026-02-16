@@ -11,6 +11,7 @@ Complete guide for deploying Lookout on Kubernetes with kind cluster, Gateway AP
 - [Chapter 3: ArgoCD GitOps Setup](#chapter-3-argocd-gitops-setup)
   - [3.10 ArgoCD Image Updater for Auto-Deploy](#310-argocd-image-updater-for-auto-deploy)
 - [Chapter 4: AWS ALB Integration](#chapter-4-aws-alb-integration)
+- [Chapter 5: Secrets Management with External Secrets Operator](#chapter-5-secrets-management-with-external-secrets-operator)
 - [Operations Guide](#operations-guide)
 - [Troubleshooting](#troubleshooting)
 
@@ -1509,6 +1510,540 @@ kubectl apply -f k8s/argocd/staging-application.yaml
                 │  └──────────────────────────┘  │
                 └─────────────────────────────────┘
 ```
+
+---
+
+## Chapter 5: Secrets Management with External Secrets Operator
+
+This chapter explains how to securely manage secrets (like API keys) using AWS Secrets Manager and External Secrets Operator.
+
+### 5.1 Overview
+
+Lookout uses External Secrets Operator (ESO) to sync secrets from AWS Secrets Manager to Kubernetes:
+
+#### Secret Sync Flow
+
+```
+┌──────────────────────┐
+│ AWS Secrets Manager  │  ← Centralized secret storage
+│  lookout/staging/    │
+│  └─ nvd-api-key      │
+└──────────┬───────────┘
+           │
+           │ External Secrets Operator (running in cluster)
+           │ Syncs every 1 hour
+           ▼
+┌──────────────────────┐
+│ Kubernetes Secret    │  ← Auto-created/updated
+│  lookout-staging-    │
+│  lookout-app         │
+└──────────┬───────────┘
+           │
+           │ Mounted as env vars
+           ▼
+┌──────────────────────┐
+│ Lookout Pod          │
+│  env:                │
+│    NVD_API_KEY=***   │
+└──────────────────────┘
+```
+
+#### GitOps Integration
+
+```
+AWS Secrets Manager               Kubernetes Cluster
+┌────────────────┐               ┌──────────────────┐
+│ lookout/       │               │ External Secrets │
+│ staging/       │◄──────────────┤ Operator (ESO)   │
+│ nvd-api-key    │   Syncs       │                  │
+└────────────────┘   every 1h    └────────┬─────────┘
+                                          │
+                                          │ Creates/Updates
+                                          ▼
+                                 ┌────────────────┐
+                                 │ K8s Secret     │
+                                 │ lookout-...    │
+                                 └────────┬───────┘
+                                          │
+ArgoCD (GitOps)                           │ Mounts as env
+┌────────────────┐                        │
+│ Git Repository │                        ▼
+│ ┌────────────┐ │             ┌────────────────────┐
+│ │Helm Chart  │ │   Deploys   │ Lookout Pod        │
+│ │values.yaml │ │────────────►│ containers:        │
+│ │templates/  │ │             │   env:             │
+│ └────────────┘ │             │   - NVD_API_KEY    │
+└────────────────┘             └────────────────────┘
+      │
+      │ Config only
+      │ (no secrets!)
+      ▼
+   Fully GitOps-friendly
+   - App config in Git
+   - Secrets in AWS
+   - ESO syncs automatically
+```
+
+**Benefits:**
+- ✅ Secrets never in Git
+- ✅ Centralized management in AWS
+- ✅ Automatic rotation support
+- ✅ Audit trail via CloudTrail
+- ✅ GitOps-friendly (config in Git, secrets in AWS)
+- ✅ No SSH or GitHub Actions needed
+
+### 5.2 Quick Start
+
+#### Option 1: Automated Setup (Recommended)
+
+The easiest way to set everything up:
+
+```bash
+cd ~/lookout
+./scripts/setup-external-secrets.sh
+```
+
+This script will:
+1. Install External Secrets Operator
+2. Create IAM policy for Secrets Manager access
+3. Attach policy to EC2 instance role
+4. Create secret in AWS Secrets Manager
+5. Create SecretStore and ExternalSecret resources
+6. Verify the setup
+
+#### Option 2: Manual Setup
+
+If you prefer manual setup:
+
+**A. Install External Secrets Operator**
+
+```bash
+helm repo add external-secrets https://charts.external-secrets.io
+helm repo update
+
+helm install external-secrets \
+  external-secrets/external-secrets \
+  --namespace external-secrets-system \
+  --create-namespace \
+  --set installCRDs=true
+```
+
+**B. Create IAM Policy**
+
+```bash
+cat > secrets-policy.json <<EOF
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": [
+                "secretsmanager:GetSecretValue",
+                "secretsmanager:DescribeSecret"
+            ],
+            "Resource": "arn:aws:secretsmanager:us-west-2:*:secret:lookout/*"
+        }
+    ]
+}
+EOF
+
+aws iam create-policy \
+  --policy-name LookoutSecretsManagerAccess \
+  --policy-document file://secrets-policy.json
+```
+
+**C. Attach Policy to EC2 Instance Role**
+
+```bash
+# Get EC2 instance role name
+ROLE_NAME=$(aws ec2 describe-instances \
+  --instance-ids $(ec2-metadata --instance-id | cut -d ' ' -f 2) \
+  --query 'Reservations[0].Instances[0].IamInstanceProfile.Arn' \
+  --output text | cut -d'/' -f2)
+
+# Attach policy
+aws iam attach-role-policy \
+  --role-name "${ROLE_NAME}" \
+  --policy-arn "arn:aws:iam::$(aws sts get-caller-identity --query Account --output text):policy/LookoutSecretsManagerAccess"
+```
+
+**D. Create Secret in AWS Secrets Manager**
+
+```bash
+aws secretsmanager create-secret \
+  --name "lookout/staging/nvd-api-key" \
+  --description "NVD API key for Lookout staging" \
+  --secret-string '{"NVD_API_KEY":"your-api-key-here"}' \
+  --region us-west-2
+```
+
+**E. Deploy via ArgoCD (GitOps)**
+
+The SecretStore and ExternalSecret are already configured in the Helm chart:
+
+```bash
+# Push changes to Git
+git add .
+git commit -m "Enable External Secrets Operator"
+git push
+
+# ArgoCD will auto-sync
+kubectl wait --for=condition=Synced application/lookout-staging -n argocd
+```
+
+### 5.3 Configuration
+
+#### Helm Values
+
+In `values.staging.yaml`:
+
+```yaml
+lookout-app:
+  externalSecrets:
+    enabled: true
+    refreshInterval: "1h"  # How often to sync from AWS
+    aws:
+      region: "us-west-2"
+      role: ""  # Empty = use EC2 instance role
+    secretStore:
+      name: "aws-secrets-manager"
+    secrets:
+      - secretKey: NVD_API_KEY  # Key in Kubernetes secret
+        remoteKey: "lookout/staging/nvd-api-key"  # AWS secret name
+        property: NVD_API_KEY  # JSON property in AWS secret
+```
+
+#### AWS Secret Format
+
+AWS Secrets Manager secret should be in JSON format:
+
+```json
+{
+  "NVD_API_KEY": "your-actual-api-key-here"
+}
+```
+
+### 5.4 Managing Secrets
+
+#### View Secret in AWS
+
+```bash
+aws secretsmanager get-secret-value \
+  --secret-id "lookout/staging/nvd-api-key" \
+  --region us-west-2 \
+  --query 'SecretString' \
+  --output text | jq .
+```
+
+#### Update Secret
+
+```bash
+aws secretsmanager update-secret \
+  --secret-id "lookout/staging/nvd-api-key" \
+  --secret-string '{"NVD_API_KEY":"new-api-key"}' \
+  --region us-west-2
+```
+
+Secret will automatically sync to Kubernetes within 1 hour (or whatever `refreshInterval` is set to).
+
+#### Force Immediate Sync
+
+```bash
+# Delete the Kubernetes secret (it will be recreated immediately)
+kubectl delete secret lookout-staging-lookout-app -n staging
+
+# Or restart the External Secrets Operator
+kubectl rollout restart deployment external-secrets -n external-secrets-system
+```
+
+#### Rotate Secret
+
+```bash
+# 1. Get new API key from NVD
+# 2. Update in AWS Secrets Manager
+aws secretsmanager update-secret \
+  --secret-id "lookout/staging/nvd-api-key" \
+  --secret-string '{"NVD_API_KEY":"new-key"}' \
+  --region us-west-2
+
+# 3. Wait for sync (1 hour) or force sync
+kubectl delete secret lookout-staging-lookout-app -n staging
+
+# 4. Restart pods to pick up new value
+kubectl rollout restart deployment/lookout-staging-lookout-app -n staging
+```
+
+### 5.5 Verification
+
+#### Check External Secrets Operator
+
+```bash
+# Is ESO running?
+kubectl get pods -n external-secrets-system
+
+# Check ESO logs
+kubectl logs -n external-secrets-system -l app.kubernetes.io/name=external-secrets
+```
+
+#### Check SecretStore
+
+```bash
+# View SecretStore
+kubectl get secretstore -n staging
+
+# Check status
+kubectl describe secretstore aws-secrets-manager -n staging
+```
+
+#### Check ExternalSecret
+
+```bash
+# View ExternalSecret
+kubectl get externalsecret -n staging
+
+# Check sync status
+kubectl describe externalsecret lookout-staging-lookout-app-external -n staging
+
+# View conditions
+kubectl get externalsecret lookout-staging-lookout-app-external -n staging -o jsonpath='{.status.conditions}'
+```
+
+#### Verify Kubernetes Secret Exists
+
+```bash
+# Check secret exists
+kubectl get secret lookout-staging-lookout-app -n staging
+
+# View secret keys (not values)
+kubectl describe secret lookout-staging-lookout-app -n staging
+
+# Decode secret value (for debugging)
+kubectl get secret lookout-staging-lookout-app -n staging \
+  -o jsonpath='{.data.NVD_API_KEY}' | base64 -d
+```
+
+#### Verify Pod Has Secret
+
+```bash
+# Check env vars in pod
+kubectl exec -it deployment/lookout-staging-lookout-app -n staging -- env | grep NVD
+
+# Should show: NVD_API_KEY=***
+```
+
+### 5.6 Troubleshooting
+
+#### Secret Not Syncing
+
+**Check ExternalSecret status:**
+```bash
+kubectl describe externalsecret lookout-staging-lookout-app-external -n staging
+```
+
+**Common issues:**
+- IAM permissions missing → Check EC2 instance role has the policy attached
+- AWS secret doesn't exist → Create it in Secrets Manager
+- Wrong region → Ensure secret is in us-west-2
+- Wrong secret format → Must be valid JSON with the expected key
+
+#### IAM Permission Errors
+
+**Error:** `AccessDeniedException: User is not authorized to perform secretsmanager:GetSecretValue`
+
+**Fix:**
+```bash
+# Verify instance has IAM role
+aws ec2 describe-instances \
+  --instance-ids $(ec2-metadata --instance-id | cut -d ' ' -f 2) \
+  --query 'Reservations[0].Instances[0].IamInstanceProfile'
+
+# Attach policy to role
+aws iam attach-role-policy \
+  --role-name YOUR_INSTANCE_ROLE \
+  --policy-arn arn:aws:iam::ACCOUNT_ID:policy/LookoutSecretsManagerAccess
+```
+
+#### Secret Not Appearing in Pod
+
+**Check deployment references secret:**
+```bash
+kubectl get deployment lookout-staging-lookout-app -n staging -o yaml | grep -A5 secretRef
+```
+
+**Should show:**
+```yaml
+envFrom:
+- configMapRef:
+    name: lookout-staging-lookout-app
+- secretRef:
+    name: lookout-staging-lookout-app
+```
+
+**Restart deployment:**
+```bash
+kubectl rollout restart deployment/lookout-staging-lookout-app -n staging
+```
+
+#### External Secrets Operator Not Installed
+
+```bash
+# Check if installed
+kubectl get namespace external-secrets-system
+
+# If not, install
+helm install external-secrets \
+  external-secrets/external-secrets \
+  --namespace external-secrets-system \
+  --create-namespace \
+  --set installCRDs=true
+```
+
+### 5.7 Adding More Secrets
+
+#### Step 1: Add to AWS Secrets Manager
+
+```bash
+# Create new secret
+aws secretsmanager create-secret \
+  --name "lookout/staging/my-new-secret" \
+  --secret-string '{"MY_SECRET":"value"}' \
+  --region us-west-2
+
+# Or update existing secret with new key
+aws secretsmanager update-secret \
+  --secret-id "lookout/staging/nvd-api-key" \
+  --secret-string '{"NVD_API_KEY":"key","MY_SECRET":"value"}' \
+  --region us-west-2
+```
+
+#### Step 2: Update Helm Values
+
+Edit `values.staging.yaml`:
+
+```yaml
+lookout-app:
+  externalSecrets:
+    enabled: true
+    secrets:
+      - secretKey: NVD_API_KEY
+        remoteKey: "lookout/staging/nvd-api-key"
+        property: NVD_API_KEY
+      - secretKey: MY_SECRET  # Add new secret
+        remoteKey: "lookout/staging/my-new-secret"
+        property: MY_SECRET
+```
+
+#### Step 3: Deploy
+
+```bash
+# Via GitOps (push to Git and ArgoCD will sync)
+git add helm/lookout/values.staging.yaml
+git commit -m "Add MY_SECRET to external secrets"
+git push
+```
+
+### 5.8 Production Setup
+
+For production environment:
+
+#### Create Production Secret
+
+```bash
+aws secretsmanager create-secret \
+  --name "lookout/production/nvd-api-key" \
+  --description "NVD API key for Lookout production" \
+  --secret-string '{"NVD_API_KEY":"production-key"}' \
+  --region us-west-2
+```
+
+#### Update Production Values
+
+In `values.production.yaml`:
+
+```yaml
+lookout-app:
+  externalSecrets:
+    enabled: true
+    refreshInterval: "30m"  # More frequent sync for production
+    secrets:
+      - secretKey: NVD_API_KEY
+        remoteKey: "lookout/production/nvd-api-key"  # Different path
+        property: NVD_API_KEY
+```
+
+### 5.9 Security Best Practices
+
+✅ **DO:**
+- Use separate secrets for staging/production
+- Enable AWS CloudTrail for audit logging
+- Use IAM instance roles (not access keys)
+- Rotate secrets regularly (every 90 days)
+- Set up CloudWatch alarms for secret access
+- Use least-privilege IAM policies
+- Enable secret versioning in Secrets Manager
+
+❌ **DON'T:**
+- Hardcode secrets in Helm values
+- Commit secrets to Git
+- Use the same secret across environments
+- Share secrets via chat/email
+- Grant broader IAM permissions than needed
+- Disable CloudTrail logging
+
+### 5.10 Cost Considerations
+
+**AWS Secrets Manager Pricing (us-west-2):**
+- $0.40 per secret per month
+- $0.05 per 10,000 API calls
+
+**Example for Lookout staging:**
+- 1 secret = $0.40/month
+- Synced every 1 hour = ~720 API calls/month = $0.004
+- **Total: ~$0.41/month**
+
+**Optimization:**
+- Increase `refreshInterval` if secrets don't change often
+- Store multiple values in one secret (JSON format)
+
+### 5.11 Monitoring
+
+#### CloudWatch Metrics
+
+Set up alerts for secret access:
+
+```bash
+aws cloudwatch put-metric-alarm \
+  --alarm-name lookout-secrets-access-spike \
+  --alarm-description "Alert on unusual secret access" \
+  --metric-name GetSecretValue \
+  --namespace AWS/SecretsManager \
+  --statistic Sum \
+  --period 300 \
+  --evaluation-periods 1 \
+  --threshold 100 \
+  --comparison-operator GreaterThanThreshold
+```
+
+#### ExternalSecret Status
+
+Monitor ExternalSecret sync status:
+
+```bash
+# Get sync status
+kubectl get externalsecret -n staging \
+  -o custom-columns=NAME:.metadata.name,STATUS:.status.conditions[0].type,REASON:.status.conditions[0].reason
+
+# Should show:
+# NAME                                         STATUS  REASON
+# lookout-staging-lookout-app-external        Ready   SecretSynced
+```
+
+### 5.12 References
+
+- [External Secrets Operator Documentation](https://external-secrets.io/)
+- [AWS Secrets Manager Documentation](https://docs.aws.amazon.com/secretsmanager/)
+- [Kubernetes Secrets](https://kubernetes.io/docs/concepts/configuration/secret/)
+- [IAM Roles for EC2](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/iam-roles-for-amazon-ec2.html)
 
 ---
 

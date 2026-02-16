@@ -37,6 +37,22 @@ env:
 secrets:
   NVD_API_KEY: ""
 
+# External Secrets configuration
+externalSecrets:
+  enabled: false
+  refreshInterval: "1h"
+  aws:
+    region: "us-west-2"
+    role: ""  # Leave empty to use EC2 instance role
+  secretStore:
+    name: "aws-secrets-manager"
+  serviceAccount:
+    name: "default"
+  secrets:
+    - secretKey: NVD_API_KEY
+      remoteKey: "lookout/staging/nvd-api-key"
+      property: NVD_API_KEY
+
 # Pod security context
 podSecurityContext:
   runAsNonRoot: true

@@ -40,7 +40,7 @@ spec:
         envFrom:
         - configMapRef:
             name: {{ include "lookout-app.fullname" . }}
-        {{- if .Values.secrets.NVD_API_KEY }}
+        {{- if or .Values.secrets.NVD_API_KEY .Values.externalSecrets.enabled }}
         - secretRef:
             name: {{ include "lookout-app.fullname" . }}
         {{- end }}

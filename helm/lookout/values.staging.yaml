@@ -75,7 +75,20 @@ lookout-app:
     DGRAPH_PORT: "9080"
 
   secrets:
-    NVD_API_KEY: ""  # Optional for staging
+    NVD_API_KEY: ""  # Managed by External Secrets
+
+  externalSecrets:
+    enabled: true
+    refreshInterval: "1h"
+    aws:
+      region: "us-west-2"
+      role: ""  # Uses EC2 instance role
+    secretStore:
+      name: "aws-secrets-manager"
+    secrets:
+      - secretKey: NVD_API_KEY
+        remoteKey: "lookout/staging/nvd-api-key"
+        property: NVD_API_KEY
 
 dgraph:
   enabled: true
