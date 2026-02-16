@@ -100,7 +100,7 @@ jobs:
         severity: 'CRITICAL,HIGH'
         exit-code: '1'
 
-  docker compose:
+  docker-compose:
     name: Test Docker Compose
     runs-on: ubuntu-latest
 
