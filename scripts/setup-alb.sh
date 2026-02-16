@@ -116,7 +116,7 @@ aws ec2 authorize-security-group-ingress \
 # Create HTTP Target Group
 echo "🎯 Creating HTTP target group..."
 HTTP_TG_ARN=$(aws elbv2 create-target-group \
-    --name lookout-stg-http-tg \
+    --name lookout-http-tg \
     --protocol HTTP \
     --port 32080 \
     --vpc-id $VPC_ID \
@@ -131,7 +131,7 @@ HTTP_TG_ARN=$(aws elbv2 create-target-group \
     --query 'TargetGroups[0].TargetGroupArn' \
     --output text 2>/dev/null || \
     aws elbv2 describe-target-groups \
-        --names lookout-stg-http-tg \
+        --names lookout-http-tg \
         --region $AWS_REGION \
         --query 'TargetGroups[0].TargetGroupArn' \
         --output text)
@@ -157,7 +157,7 @@ echo "🎯 Creating HTTPS target group for staging..."
 
 # Check if target group exists and has wrong protocol
 EXISTING_TG_PROTOCOL=$(aws elbv2 describe-target-groups \
-    --names lookout-stg-https-tg \
+    --names lookout-https-tg \
     --region $AWS_REGION \
     --query 'TargetGroups[0].Protocol' \
     --output text 2>/dev/null)
@@ -165,7 +165,7 @@ EXISTING_TG_PROTOCOL=$(aws elbv2 describe-target-groups \
 if [ "$EXISTING_TG_PROTOCOL" == "HTTP" ]; then
     echo -e "${YELLOW}⚠ Existing target group has wrong protocol (HTTP). Deleting...${NC}"
     EXISTING_TG_ARN=$(aws elbv2 describe-target-groups \
-        --names lookout-stg-https-tg \
+        --names lookout-https-tg \
         --region $AWS_REGION \
         --query 'TargetGroups[0].TargetGroupArn' \
         --output text)
@@ -177,7 +177,7 @@ if [ "$EXISTING_TG_PROTOCOL" == "HTTP" ]; then
 fi
 
 HTTPS_TG_ARN=$(aws elbv2 create-target-group \
-    --name lookout-stg-https-tg \
+    --name lookout-https-tg \
     --protocol HTTPS \
     --port 32443 \
     --vpc-id $VPC_ID \
@@ -192,7 +192,7 @@ HTTPS_TG_ARN=$(aws elbv2 create-target-group \
     --query 'TargetGroups[0].TargetGroupArn' \
     --output text 2>/dev/null || \
     aws elbv2 describe-target-groups \
-        --names lookout-stg-https-tg \
+        --names lookout-https-tg \
         --region $AWS_REGION \
         --query 'TargetGroups[0].TargetGroupArn' \
         --output text)
@@ -568,8 +568,8 @@ echo "  HTTP Listener: Port 80 → Redirect to HTTPS (301)"
 echo "  HTTPS Listener: Port 443 → Forward to HTTPS targets (Protocol=HTTPS, Port=32443)"
 if [ "$ENABLE_PROD" == "true" ]; then
     echo "  Target Groups:"
-    echo "    - HTTP: lookout-stg-http-tg (32080)"
-    echo "    - HTTPS Staging: lookout-stg-https-tg (32443)"
+    echo "    - HTTP: lookout-http-tg (32080)"
+    echo "    - HTTPS Staging: lookout-https-tg (32443)"
     echo "    - HTTPS Production: lookout-prod-https-tg (32443)"
     echo "  Host-Based Routing:"
     echo "    - lookout-stg.timonier.io → staging target group"
