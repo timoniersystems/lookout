@@ -79,7 +79,7 @@ func validateBOM(bom *Bom) error {
 	}
 	bom.Dependencies = filteredDependencies
 
-	if err := ExportBOM(bom, "exported_bom.json"); err != nil {
+	if err := ExportBOM(bom, "/tmp/exported_bom.json"); err != nil {
 		fmt.Printf("Error exporting BOM: %v\n", err)
 		return err
 	}
