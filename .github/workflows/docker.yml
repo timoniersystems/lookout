@@ -20,11 +20,13 @@ env:
 
 jobs:
   build:
-    name: Build and Push Docker Image
+    name: Build Docker Image
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      packages: write
+    outputs:
+      image-id: ${{ steps.docker_build.outputs.imageid }}
+      tags: ${{ steps.meta.outputs.tags }}
 
     steps:
     - name: Checkout code
@@ -43,14 +45,6 @@ jobs:
 
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
-
-    - name: Log in to Container Registry
-      if: github.event_name != 'pull_request'
-      uses: docker/login-action@v3
-      with:
-        registry: ${{ env.REGISTRY }}
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Extract metadata
       id: meta
@@ -72,11 +66,10 @@ jobs:
       with:
         context: .
         platforms: linux/amd64  # linux/arm64 commented out for performance
-        load: true  # Load to local Docker for Trivy scanning
+        load: true  # Load to local Docker for scanning
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
         # Use source hash in cache key to invalidate on code changes
-        # This ensures fresh builds when source files change
         cache-from: type=gha,scope=${{ github.ref_name }}-${{ steps.source_hash.outputs.hash }}
         cache-to: type=gha,mode=max,scope=${{ github.ref_name }}-${{ steps.source_hash.outputs.hash }}
         no-cache: false
@@ -85,58 +78,108 @@ jobs:
           GO_VERSION=1.26.0
           TRIVY_VERSION=0.69.1
 
-    - name: List loaded images
+    - name: Export Docker image
       run: |
-        echo "Listing Docker images:"
-        docker images | grep -E "(lookout|REPOSITORY)"
+        # Save image to tar for upload
+        docker save ${{ steps.docker_build.outputs.imageid }} -o /tmp/image.tar
+        gzip /tmp/image.tar
 
-    - name: Run Trivy vulnerability scanner on image (SARIF)
-      uses: aquasecurity/trivy-action@0.30.0
+    - name: Upload Docker image
+      uses: actions/upload-artifact@v4
       with:
-        image-ref: ${{ steps.docker_build.outputs.imageid }}
-        format: 'sarif'
-        output: 'trivy-results.sarif'
-        severity: 'CRITICAL,HIGH,MEDIUM'
+        name: docker-image-${{ github.sha }}
+        path: /tmp/image.tar.gz
+        retention-days: 1
+
+  scan:
+    name: Trivy Scan (${{ matrix.format }})
+    runs-on: ubuntu-latest
+    needs: build
+    permissions:
+      contents: read
+      security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - format: sarif
+            severity: CRITICAL,HIGH,MEDIUM
+            upload-security: true
+          - format: json
+            severity: CRITICAL,HIGH,MEDIUM,LOW
+            upload-artifact: true
+          - format: table
+            severity: CRITICAL,HIGH
+            continue-on-error: true
+
+    steps:
+    - name: Download Docker image
+      uses: actions/download-artifact@v4
+      with:
+        name: docker-image-${{ github.sha }}
+        path: /tmp
+
+    - name: Load Docker image
+      run: |
+        gunzip /tmp/image.tar.gz
+        docker load -i /tmp/image.tar
+
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@0.30.0
+      continue-on-error: ${{ matrix.continue-on-error == true }}
+      with:
+        image-ref: ${{ needs.build.outputs.image-id }}
+        format: ${{ matrix.format }}
+        output: trivy-results.${{ matrix.format }}
+        severity: ${{ matrix.severity }}
 
     - name: Upload Trivy results to GitHub Security
+      if: matrix.upload-security
       uses: github/codeql-action/upload-sarif@v4
-      if: always()
       continue-on-error: true  # Repository doesn't have GitHub Advanced Security
       with:
-        sarif_file: 'trivy-results.sarif'
+        sarif_file: trivy-results.${{ matrix.format }}
 
-    - name: Run Trivy vulnerability scanner on image (JSON)
-      uses: aquasecurity/trivy-action@0.30.0
-      if: always()
-      continue-on-error: true
-      with:
-        image-ref: ${{ steps.docker_build.outputs.imageid }}
-        format: 'json'
-        output: 'trivy-results.json'
-        severity: 'CRITICAL,HIGH,MEDIUM,LOW'
-
-    - name: Upload Trivy JSON report
+    - name: Upload Trivy artifact
+      if: matrix.upload-artifact
       uses: actions/upload-artifact@v4
-      if: always()
       with:
         name: trivy-report-${{ github.sha }}
-        path: trivy-results.json
+        path: trivy-results.${{ matrix.format }}
         retention-days: 30
 
-    - name: Run Trivy vulnerability scanner on image (Table)
-      uses: aquasecurity/trivy-action@0.30.0
-      if: always()
-      continue-on-error: true  # Don't fail workflow on vulnerabilities
+  push:
+    name: Push Docker Image
+    runs-on: ubuntu-latest
+    needs: [build, scan]
+    if: github.event_name != 'pull_request'
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+    - name: Download Docker image
+      uses: actions/download-artifact@v4
       with:
-        image-ref: ${{ steps.docker_build.outputs.imageid }}
-        format: 'table'
-        severity: 'CRITICAL,HIGH'
+        name: docker-image-${{ github.sha }}
+        path: /tmp
+
+    - name: Load Docker image
+      run: |
+        gunzip /tmp/image.tar.gz
+        docker load -i /tmp/image.tar
+
+    - name: Log in to Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Push Docker image to registry
-      if: github.event_name != 'pull_request'
       run: |
         # Push all tags to registry
-        for tag in $(echo "${{ steps.meta.outputs.tags }}" | tr ',' '\n'); do
+        for tag in $(echo "${{ needs.build.outputs.tags }}" | tr ',' '\n'); do
           echo "Pushing $tag"
           docker push "$tag"
         done
