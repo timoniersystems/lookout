@@ -14,7 +14,6 @@ gateway:
       group: gateway.envoyproxy.io
       kind: EnvoyProxy
       name: custom-proxy-config
-      namespace: envoy-gateway-system
   listeners:
     http:
       port: 8080  # Different port for staging

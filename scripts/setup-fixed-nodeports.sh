@@ -6,8 +6,10 @@ set -e
 
 HTTP_NODEPORT="${HTTP_NODEPORT:-32080}"
 HTTPS_NODEPORT="${HTTPS_NODEPORT:-32443}"
+NAMESPACE="${NAMESPACE:-staging}"
 
 echo "🔧 Configuring fixed NodePorts for Envoy Gateway..."
+echo "   Namespace: ${NAMESPACE}"
 echo "   HTTP NodePort: ${HTTP_NODEPORT}"
 echo "   HTTPS NodePort: ${HTTPS_NODEPORT}"
 
@@ -24,7 +26,7 @@ apiVersion: gateway.envoyproxy.io/v1alpha1
 kind: EnvoyProxy
 metadata:
   name: custom-proxy-config
-  namespace: envoy-gateway-system
+  namespace: ${NAMESPACE}
 spec:
   provider:
     type: Kubernetes
