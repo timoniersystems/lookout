@@ -111,7 +111,7 @@ for i in {1..30}; do
 
     if [ $i -eq 1 ]; then
         echo "First attempt to discover APIs..."
-        RAW_API=$(kubectl get --raw /apis/external-secrets.io/v1beta1 2>&1)
+        RAW_API=$(kubectl get --raw /apis/external-secrets.io/v1 2>&1)
         echo "DEBUG: Raw API response: $RAW_API" | head -n 5
     fi
 
@@ -256,7 +256,7 @@ kubectl explain secretstore --recursive=false 2>&1 | head -n 10 || echo "CANNOT 
 echo ""
 echo "Attempting to create SecretStore with --server-side flag..."
 if ! kubectl apply --server-side -f - <<EOF
-apiVersion: external-secrets.io/v1beta1
+apiVersion: external-secrets.io/v1
 kind: SecretStore
 metadata:
   name: aws-secrets-manager
@@ -274,7 +274,7 @@ EOF
 then
     echo -e "${YELLOW}⚠ Server-side apply failed, trying with --force-conflicts${NC}"
     kubectl apply --server-side --force-conflicts -f - <<EOF
-apiVersion: external-secrets.io/v1beta1
+apiVersion: external-secrets.io/v1
 kind: SecretStore
 metadata:
   name: aws-secrets-manager
@@ -300,7 +300,7 @@ kubectl api-resources --api-group=external-secrets.io | grep ExternalSecret || e
 echo ""
 echo "Attempting to create ExternalSecret with --server-side flag..."
 if ! kubectl apply --server-side -f - <<EOF
-apiVersion: external-secrets.io/v1beta1
+apiVersion: external-secrets.io/v1
 kind: ExternalSecret
 metadata:
   name: lookout-nvd-api-key
@@ -326,7 +326,7 @@ EOF
 then
     echo -e "${YELLOW}⚠ Server-side apply failed, trying with --force-conflicts${NC}"
     kubectl apply --server-side --force-conflicts -f - <<EOF
-apiVersion: external-secrets.io/v1beta1
+apiVersion: external-secrets.io/v1
 kind: ExternalSecret
 metadata:
   name: lookout-nvd-api-key
