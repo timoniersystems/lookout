@@ -39,9 +39,12 @@ lookout-app:
   replicaCount: 1  # Single replica for kind cluster
 
   image:
-    repository: registry:5000/lookout
+    repository: ghcr.io/timoniersystems/lookout
     pullPolicy: Always  # Always pull latest in staging
-    tag: "latest"
+    tag: "main"
+
+  imagePullSecrets:
+    - name: ghcr-secret
 
   service:
     type: ClusterIP
