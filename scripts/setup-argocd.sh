@@ -27,6 +27,10 @@ kubectl create namespace argocd --dry-run=client -o yaml | kubectl apply -f -
 echo "📥 Installing ArgoCD..."
 kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
 
+# Fix applicationsets CRD annotation size issue with server-side apply
+echo "🔧 Fixing ApplicationSets CRD (using server-side apply to avoid annotation size limits)..."
+kubectl apply --server-side -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/crds/applicationset-crd.yaml
+
 # Wait for ArgoCD to be ready
 echo "⏳ Waiting for ArgoCD to be ready..."
 kubectl wait --for=condition=available --timeout=300s \
