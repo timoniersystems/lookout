@@ -342,73 +342,11 @@ fi
 echo -e "${GREEN}✓ HTTPS Listener: $HTTPS_LISTENER_ARN${NC}"
 
 # Configure Host-Based Routing (Virtual Hosts)
-# Set default production hostname if not provided
-if [ -z "$PROD_HOSTNAME" ]; then
-    PROD_HOSTNAME="lookout-prod.timonier.io"
-fi
-
-# Check if multi-environment support is enabled
+# Same target groups handle all environments - routing is done via listener rules
 if [ "$ENABLE_PROD" == "true" ]; then
     echo ""
     echo "🔀 Configuring host-based routing for multiple environments..."
-
-    # Create HTTPS target group for prod (if it doesn't exist)
-    echo "🎯 Creating HTTPS target group for production..."
-
-    # Check if prod target group exists with wrong protocol
-    EXISTING_PROD_TG_PROTOCOL=$(aws elbv2 describe-target-groups \
-        --names lookout-prod-https-tg \
-        --region $AWS_REGION \
-        --query 'TargetGroups[0].Protocol' \
-        --output text 2>/dev/null)
-
-    if [ "$EXISTING_PROD_TG_PROTOCOL" == "HTTP" ]; then
-        echo -e "${YELLOW}⚠ Existing prod target group has wrong protocol (HTTP). Deleting...${NC}"
-        EXISTING_PROD_TG_ARN=$(aws elbv2 describe-target-groups \
-            --names lookout-prod-https-tg \
-            --region $AWS_REGION \
-            --query 'TargetGroups[0].TargetGroupArn' \
-            --output text)
-        aws elbv2 delete-target-group \
-            --target-group-arn $EXISTING_PROD_TG_ARN \
-            --region $AWS_REGION
-        echo -e "${GREEN}✓ Deleted old prod target group${NC}"
-        sleep 2
-    fi
-
-    PROD_TG_ARN=$(aws elbv2 create-target-group \
-        --name lookout-prod-https-tg \
-        --protocol HTTPS \
-        --port 32443 \
-        --vpc-id $VPC_ID \
-        --health-check-protocol HTTPS \
-        --health-check-path /health \
-        --health-check-interval-seconds 10 \
-        --health-check-timeout-seconds 5 \
-        --healthy-threshold-count 2 \
-        --unhealthy-threshold-count 2 \
-        --matcher HttpCode=200 \
-        --region $AWS_REGION \
-        --query 'TargetGroups[0].TargetGroupArn' \
-        --output text 2>/dev/null || \
-        aws elbv2 describe-target-groups \
-            --names lookout-prod-https-tg \
-            --region $AWS_REGION \
-            --query 'TargetGroups[0].TargetGroupArn' \
-            --output text)
-
-    echo -e "${GREEN}✓ Prod HTTPS Target Group: $PROD_TG_ARN${NC}"
-
-    # Register EC2 instance with prod target group
-    aws elbv2 deregister-targets \
-        --target-group-arn $PROD_TG_ARN \
-        --targets Id=$EC2_INSTANCE_ID \
-        --region $AWS_REGION 2>/dev/null || true
-
-    aws elbv2 register-targets \
-        --target-group-arn $PROD_TG_ARN \
-        --targets Id=$EC2_INSTANCE_ID,Port=32443 \
-        --region $AWS_REGION
+    echo "   Using shared target groups - routing based on hostname"
 
     # Create listener rules for host-based routing
     echo "🔀 Creating host-based routing rules..."
@@ -449,30 +387,31 @@ if [ "$ENABLE_PROD" == "true" ]; then
             --listener-arn $HTTPS_LISTENER_ARN \
             --priority 2 \
             --conditions Field=host-header,Values=lookout-prod.timonier.io,lookout.timonier.io \
-            --actions Type=forward,TargetGroupArn=$PROD_TG_ARN \
+            --actions Type=forward,TargetGroupArn=$HTTPS_TG_ARN \
             --region $AWS_REGION > /dev/null
         echo -e "${GREEN}✓ Created routing rule for production (lookout-prod.timonier.io, lookout.timonier.io)${NC}"
     else
         aws elbv2 modify-rule \
             --rule-arn $PROD_RULE \
             --conditions Field=host-header,Values=lookout-prod.timonier.io,lookout.timonier.io \
-            --actions Type=forward,TargetGroupArn=$PROD_TG_ARN \
+            --actions Type=forward,TargetGroupArn=$HTTPS_TG_ARN \
             --region $AWS_REGION > /dev/null
         echo -e "${GREEN}✓ Updated routing rule for production (lookout-prod.timonier.io, lookout.timonier.io)${NC}"
     fi
 
     echo ""
     echo -e "${GREEN}✅ Host-based routing configured!${NC}"
-    echo "  Staging: lookout-stg.timonier.io → Port 32443 (staging target group)"
-    echo "  Production: lookout-prod.timonier.io, lookout.timonier.io → Port 32443 (prod target group)"
+    echo "  All hostnames use the same target groups"
+    echo "  - lookout-stg.timonier.io → lookout-https-tg"
+    echo "  - lookout-prod.timonier.io, lookout.timonier.io → lookout-https-tg"
 else
     echo ""
-    echo -e "${YELLOW}ℹ Single environment mode (staging only)${NC}"
+    echo -e "${YELLOW}ℹ Single environment mode${NC}"
     echo "  To enable multi-environment support with host-based routing:"
     echo "  export ENABLE_PROD=true"
     echo "  This will configure:"
-    echo "    - lookout-stg.timonier.io → staging"
-    echo "    - lookout-prod.timonier.io, lookout.timonier.io → production"
+    echo "    - lookout-stg.timonier.io"
+    echo "    - lookout-prod.timonier.io, lookout.timonier.io"
 fi
 
 # Create Route53 A record
@@ -522,32 +461,15 @@ HTTPS_HEALTH=$(aws elbv2 describe-target-health \
     --query 'TargetHealthDescriptions[0].TargetHealth.State' \
     --output text)
 
-echo "  HTTP Target Group (staging): $HTTP_HEALTH"
-echo "  HTTPS Target Group (staging): $HTTPS_HEALTH"
+echo "  HTTP Target Group: $HTTP_HEALTH"
+echo "  HTTPS Target Group: $HTTPS_HEALTH"
 
-if [ "$ENABLE_PROD" == "true" ]; then
-    PROD_HTTPS_HEALTH=$(aws elbv2 describe-target-health \
-        --target-group-arn $PROD_TG_ARN \
-        --region $AWS_REGION \
-        --query 'TargetHealthDescriptions[0].TargetHealth.State' \
-        --output text)
-    echo "  HTTPS Target Group (prod): $PROD_HTTPS_HEALTH"
-
-    if [ "$HTTP_HEALTH" == "healthy" ] && [ "$HTTPS_HEALTH" == "healthy" ] && [ "$PROD_HTTPS_HEALTH" == "healthy" ]; then
-        echo -e "${GREEN}✓ All targets healthy${NC}"
-    elif [ "$HTTP_HEALTH" == "initial" ] || [ "$HTTPS_HEALTH" == "initial" ] || [ "$PROD_HTTPS_HEALTH" == "initial" ]; then
-        echo -e "${YELLOW}⚠ Targets in 'initial' state. This is normal and they should become healthy in ~30 seconds${NC}"
-    else
-        echo -e "${YELLOW}⚠ Some targets not yet healthy. Check security groups and Gateway configuration${NC}"
-    fi
+if [ "$HTTP_HEALTH" == "healthy" ] && [ "$HTTPS_HEALTH" == "healthy" ]; then
+    echo -e "${GREEN}✓ All targets healthy${NC}"
+elif [ "$HTTP_HEALTH" == "initial" ] || [ "$HTTPS_HEALTH" == "initial" ]; then
+    echo -e "${YELLOW}⚠ Targets in 'initial' state. This is normal and they should become healthy in ~30 seconds${NC}"
 else
-    if [ "$HTTP_HEALTH" == "healthy" ] && [ "$HTTPS_HEALTH" == "healthy" ]; then
-        echo -e "${GREEN}✓ All targets healthy${NC}"
-    elif [ "$HTTP_HEALTH" == "initial" ] || [ "$HTTPS_HEALTH" == "initial" ]; then
-        echo -e "${YELLOW}⚠ Targets in 'initial' state. This is normal and they should become healthy in ~30 seconds${NC}"
-    else
-        echo -e "${YELLOW}⚠ Targets not yet healthy. Check security groups and Gateway configuration${NC}"
-    fi
+    echo -e "${YELLOW}⚠ Targets not yet healthy. Check security groups and Gateway configuration${NC}"
 fi
 
 # Summary
@@ -566,16 +488,13 @@ else
 fi
 echo "  HTTP Listener: Port 80 → Redirect to HTTPS (301)"
 echo "  HTTPS Listener: Port 443 → Forward to HTTPS targets (Protocol=HTTPS, Port=32443)"
+echo "  Target Groups (shared across all environments):"
+echo "    - HTTP: lookout-http-tg (32080)"
+echo "    - HTTPS: lookout-https-tg (32443)"
 if [ "$ENABLE_PROD" == "true" ]; then
-    echo "  Target Groups:"
-    echo "    - HTTP: lookout-http-tg (32080)"
-    echo "    - HTTPS Staging: lookout-https-tg (32443)"
-    echo "    - HTTPS Production: lookout-prod-https-tg (32443)"
-    echo "  Host-Based Routing:"
-    echo "    - lookout-stg.timonier.io → staging target group"
-    echo "    - lookout-prod.timonier.io, lookout.timonier.io → prod target group"
-else
-    echo "  Target Groups: HTTP (32080), HTTPS (32443)"
+    echo "  Host-Based Routing (same target groups):"
+    echo "    - lookout-stg.timonier.io → lookout-https-tg"
+    echo "    - lookout-prod.timonier.io, lookout.timonier.io → lookout-https-tg"
 fi
 echo ""
 echo "🔍 Next steps:"
