@@ -69,6 +69,15 @@ for i in {1..30}; do
     sleep 2
 done
 
+# Force kubectl to refresh its API schema cache
+echo "Refreshing kubectl API cache..."
+rm -rf ~/.kube/cache/ ~/.kube/http-cache/ 2>/dev/null || true
+kubectl api-resources | grep externalsecrets &> /dev/null || {
+    echo "Forcing API discovery refresh..."
+    kubectl get --raw /apis/external-secrets.io/v1beta1 > /dev/null 2>&1 || true
+    sleep 2
+}
+
 echo -e "${GREEN}✓ External Secrets Operator ready${NC}\n"
 
 # Step 2: Create IAM policy for Secrets Manager access
