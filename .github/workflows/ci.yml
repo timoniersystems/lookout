@@ -16,7 +16,7 @@ jobs:
       GOSUMDB: off
     strategy:
       matrix:
-        go-version: ['1.25', '1.26']
+        go-version: ['1.26']
 
     steps:
     - name: Checkout code
