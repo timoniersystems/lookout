@@ -72,11 +72,31 @@ done
 # Force kubectl to refresh its API schema cache
 echo "Refreshing kubectl API cache..."
 rm -rf ~/.kube/cache/ ~/.kube/http-cache/ 2>/dev/null || true
-kubectl api-resources | grep externalsecrets &> /dev/null || {
-    echo "Forcing API discovery refresh..."
-    kubectl get --raw /apis/external-secrets.io/v1beta1 > /dev/null 2>&1 || true
+
+# Wait for API server to fully register the CRDs
+echo "Waiting for API server to register CRDs..."
+for i in {1..30}; do
+    if kubectl api-resources --api-group=external-secrets.io 2>/dev/null | grep -q SecretStore; then
+        echo -e "${GREEN}✓ API resources registered${NC}"
+        break
+    fi
+    if [ $i -eq 1 ]; then
+        echo "First attempt to discover APIs..."
+        kubectl get --raw /apis/external-secrets.io/v1beta1 &> /dev/null || true
+    fi
+    echo "Waiting for API registration... ($i/30)"
     sleep 2
-}
+done
+
+# Final verification
+echo "Verifying SecretStore API is available..."
+if ! kubectl explain secretstore.external-secrets.io &> /dev/null; then
+    echo -e "${YELLOW}⚠ Warning: SecretStore API not fully available yet${NC}"
+    echo "Attempting one more cache clear and API refresh..."
+    rm -rf ~/.kube/cache ~/.kube/http-cache 2>/dev/null || true
+    kubectl api-resources --api-group=external-secrets.io || true
+    sleep 5
+fi
 
 echo -e "${GREEN}✓ External Secrets Operator ready${NC}\n"
 
@@ -167,7 +187,7 @@ echo ""
 
 # Step 5: Create SecretStore
 echo -e "${YELLOW}🏪 Step 5: Creating SecretStore${NC}"
-kubectl apply -f - <<EOF
+kubectl apply --server-side -f - <<EOF
 apiVersion: external-secrets.io/v1beta1
 kind: SecretStore
 metadata:
@@ -187,7 +207,7 @@ echo -e "${GREEN}✓ SecretStore created${NC}\n"
 
 # Step 6: Create ExternalSecret
 echo -e "${YELLOW}🔄 Step 6: Creating ExternalSecret${NC}"
-kubectl apply -f - <<EOF
+kubectl apply --server-side -f - <<EOF
 apiVersion: external-secrets.io/v1beta1
 kind: ExternalSecret
 metadata:
