@@ -169,6 +169,15 @@ jobs:
         gunzip /tmp/image.tar.gz
         docker load -i /tmp/image.tar
 
+    - name: Tag Docker image
+      run: |
+        # Tag the loaded image with all required tags
+        IMAGE_ID="${{ needs.build.outputs.image-id }}"
+        for tag in $(echo "${{ needs.build.outputs.tags }}" | tr ',' '\n'); do
+          echo "Tagging ${IMAGE_ID} as ${tag}"
+          docker tag "${IMAGE_ID}" "${tag}"
+        done
+
     - name: Log in to Container Registry
       uses: docker/login-action@v3
       with:
