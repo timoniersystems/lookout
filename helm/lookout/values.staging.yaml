@@ -39,6 +39,9 @@ httproute:
       backendRefs:
         - name: lookout-staging-lookout-app
           port: 3000
+      timeouts:
+        request: "600s"  # 10 minutes for long-running SBOM processing
+        backendRequest: "600s"
 
 lookout-app:
   enabled: true

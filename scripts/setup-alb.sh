@@ -259,6 +259,14 @@ ALB_ARN=$(aws elbv2 create-load-balancer \
 
 echo -e "${GREEN}✓ ALB ARN: $ALB_ARN${NC}"
 
+# Set ALB idle timeout to 600 seconds (10 minutes) for long-running requests
+echo "🔧 Configuring ALB idle timeout..."
+aws elbv2 modify-load-balancer-attributes \
+    --load-balancer-arn $ALB_ARN \
+    --attributes Key=idle_timeout.timeout_seconds,Value=600 \
+    --region $AWS_REGION > /dev/null
+echo -e "${GREEN}✓ ALB idle timeout set to 600 seconds${NC}"
+
 # Update ALB security groups (in case they changed)
 echo "🔧 Updating ALB security groups..."
 aws elbv2 set-security-groups \

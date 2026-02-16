@@ -21,5 +21,9 @@ spec:
     {{- toYaml .matches | nindent 4 }}
     backendRefs:
     {{- toYaml .backendRefs | nindent 4 }}
+    {{- if .timeouts }}
+    timeouts:
+      {{- toYaml .timeouts | nindent 6 }}
+    {{- end }}
   {{- end }}
 {{- end }}
