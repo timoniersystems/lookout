@@ -1,0 +1,58 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: lookout-staging
+  namespace: argocd
+  annotations:
+    # ArgoCD Image Updater configuration
+    argocd-image-updater.argoproj.io/image-list: lookout=ghcr.io/timoniersystems/lookout:main
+    argocd-image-updater.argoproj.io/lookout.update-strategy: latest
+    argocd-image-updater.argoproj.io/lookout.force-update: "true"
+    argocd-image-updater.argoproj.io/lookout.pull-secret: pullsecret:staging/ghcr-secret
+    argocd-image-updater.argoproj.io/write-back-method: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+
+  source:
+    repoURL: https://github.com/timoniersystems/lookout.git
+    targetRevision: main
+    path: helm/lookout
+    helm:
+      valueFiles:
+        - values.staging.yaml
+      parameters:
+        - name: lookout-app.image.repository
+          value: ghcr.io/timoniersystems/lookout
+        - name: lookout-app.image.tag
+          value: main
+        - name: lookout-app.imagePullSecrets[0].name
+          value: ghcr-secret
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: staging
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+      allowEmpty: false
+    syncOptions:
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
+      - PruneLast=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
+
+  # Ignore differences in certain fields that ArgoCD shouldn't manage
+  ignoreDifferences:
+    - group: apps
+      kind: Deployment
+      jsonPointers:
+        - /spec/replicas
