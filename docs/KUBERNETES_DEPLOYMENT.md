@@ -780,9 +780,42 @@ If you already have an SSL certificate:
 
 ### 4.7 AWS CLI Alternative
 
-For automation, use these AWS CLI commands instead of the Console:
+For automation, use the provided script or run these AWS CLI commands manually.
 
-#### Set Variables
+#### Quick Setup with Script
+
+Use the automated script ([`scripts/setup-alb.sh`](../scripts/setup-alb.sh)):
+
+```bash
+# Set required environment variables
+export AWS_REGION=us-east-1
+export VPC_ID=vpc-xxxxx
+export EC2_INSTANCE_ID=i-xxxxx
+export SUBNET_1=subnet-xxxxx
+export SUBNET_2=subnet-xxxxx
+export CERTIFICATE_ARN=arn:aws:acm:us-east-1:xxxxx:certificate/xxxxx
+export HOSTED_ZONE_ID=Z0xxxxx
+
+# Run the script
+./scripts/setup-alb.sh
+```
+
+The script will:
+- ✅ Verify fixed NodePorts are configured
+- ✅ Create ALB and target security groups
+- ✅ Create HTTP and HTTPS target groups (ports 32080, 32443)
+- ✅ Register EC2 instance with target groups
+- ✅ Create Application Load Balancer
+- ✅ Configure HTTP→HTTPS redirect listener
+- ✅ Configure HTTPS listener with ACM certificate
+- ✅ Create Route53 A record (alias)
+- ✅ Verify target health
+
+#### Manual Setup (Individual Commands)
+
+Alternatively, run these commands individually:
+
+##### Set Variables
 
 ```bash
 # Configuration
@@ -1035,30 +1068,17 @@ aws elbv2 describe-target-health \
 
 #### Complete Script
 
-Save all commands to a script for easy execution:
+All commands above are available in the automated script: [`scripts/setup-alb.sh`](../scripts/setup-alb.sh)
 
-```bash
-#!/bin/bash
-# save as: scripts/setup-alb.sh
+The script includes:
+- Error handling and validation
+- Idempotent operations (safe to re-run)
+- Color-coded output
+- Progress indicators
+- Health check verification
+- Helpful summary with next steps
 
-set -e
-
-# Configuration - UPDATE THESE VALUES
-export AWS_REGION=us-east-1
-export VPC_ID=vpc-xxxxx
-export EC2_INSTANCE_ID=i-xxxxx
-export SUBNET_1=subnet-xxxxx
-export SUBNET_2=subnet-xxxxx
-export CERTIFICATE_ARN=arn:aws:acm:us-east-1:xxxxx:certificate/xxxxx
-export HOSTED_ZONE_ID=Z0xxxxx
-
-echo "🚀 Setting up ALB for Lookout Staging..."
-
-# ... (paste all commands above)
-
-echo "✅ ALB setup complete!"
-echo "🌐 Access your application at: https://lookout-stg.timonier.io"
-```
+See the [Quick Setup with Script](#quick-setup-with-script) section above for usage instructions.
 
 ### 4.8 Step 6: Verify the Setup
 
