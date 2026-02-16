@@ -778,6 +778,288 @@ If you already have an SSL certificate:
    - Routing policy: Simple routing
    - Click "Create records"
 
+### 4.7 AWS CLI Alternative
+
+For automation, use these AWS CLI commands instead of the Console:
+
+#### Set Variables
+
+```bash
+# Configuration
+export AWS_REGION=us-east-1
+export VPC_ID=vpc-xxxxx  # Your VPC ID
+export EC2_INSTANCE_ID=i-xxxxx  # Your EC2 instance ID
+export SUBNET_1=subnet-xxxxx  # Public subnet in AZ 1
+export SUBNET_2=subnet-xxxxx  # Public subnet in AZ 2
+export CERTIFICATE_ARN=arn:aws:acm:us-east-1:xxxxx:certificate/xxxxx  # Your ACM certificate ARN
+export HOSTED_ZONE_ID=Z0xxxxx  # Your Route53 hosted zone ID
+```
+
+#### Create Security Groups
+
+```bash
+# Create ALB security group
+ALB_SG_ID=$(aws ec2 create-security-group \
+  --group-name lookout-alb-sg \
+  --description "Security group for Lookout ALB" \
+  --vpc-id $VPC_ID \
+  --region $AWS_REGION \
+  --output text --query 'GroupId')
+
+echo "ALB Security Group ID: $ALB_SG_ID"
+
+# Add inbound rules to ALB security group
+aws ec2 authorize-security-group-ingress \
+  --group-id $ALB_SG_ID \
+  --ip-permissions \
+    IpProtocol=tcp,FromPort=80,ToPort=80,IpRanges='[{CidrIp=0.0.0.0/0,Description="Allow HTTP from anywhere"}]' \
+    IpProtocol=tcp,FromPort=443,ToPort=443,IpRanges='[{CidrIp=0.0.0.0/0,Description="Allow HTTPS from anywhere"}]' \
+  --region $AWS_REGION
+
+# Get EC2 instance security group ID
+EC2_SG_ID=$(aws ec2 describe-instances \
+  --instance-ids $EC2_INSTANCE_ID \
+  --region $AWS_REGION \
+  --query 'Reservations[0].Instances[0].SecurityGroups[0].GroupId' \
+  --output text)
+
+echo "EC2 Security Group ID: $EC2_SG_ID"
+
+# Add inbound rules to EC2 security group (allow traffic from ALB)
+aws ec2 authorize-security-group-ingress \
+  --group-id $EC2_SG_ID \
+  --ip-permissions \
+    IpProtocol=tcp,FromPort=32080,ToPort=32080,UserIdGroupPairs="[{GroupId=$ALB_SG_ID,Description='Allow HTTP from ALB'}]" \
+    IpProtocol=tcp,FromPort=32443,ToPort=32443,UserIdGroupPairs="[{GroupId=$ALB_SG_ID,Description='Allow HTTPS from ALB'}]" \
+  --region $AWS_REGION
+```
+
+#### Create Target Groups
+
+```bash
+# Create HTTP target group
+HTTP_TG_ARN=$(aws elbv2 create-target-group \
+  --name lookout-staging-http-tg \
+  --protocol HTTP \
+  --port 32080 \
+  --vpc-id $VPC_ID \
+  --health-check-protocol HTTP \
+  --health-check-path /health \
+  --health-check-interval-seconds 10 \
+  --health-check-timeout-seconds 5 \
+  --healthy-threshold-count 2 \
+  --unhealthy-threshold-count 2 \
+  --matcher HttpCode=200 \
+  --region $AWS_REGION \
+  --query 'TargetGroups[0].TargetGroupArn' \
+  --output text)
+
+echo "HTTP Target Group ARN: $HTTP_TG_ARN"
+
+# Create HTTPS target group
+HTTPS_TG_ARN=$(aws elbv2 create-target-group \
+  --name lookout-staging-https-tg \
+  --protocol HTTP \
+  --port 32443 \
+  --vpc-id $VPC_ID \
+  --health-check-protocol HTTP \
+  --health-check-path /health \
+  --health-check-interval-seconds 10 \
+  --health-check-timeout-seconds 5 \
+  --healthy-threshold-count 2 \
+  --unhealthy-threshold-count 2 \
+  --matcher HttpCode=200 \
+  --region $AWS_REGION \
+  --query 'TargetGroups[0].TargetGroupArn' \
+  --output text)
+
+echo "HTTPS Target Group ARN: $HTTPS_TG_ARN"
+
+# Register EC2 instance with both target groups
+aws elbv2 register-targets \
+  --target-group-arn $HTTP_TG_ARN \
+  --targets Id=$EC2_INSTANCE_ID,Port=32080 \
+  --region $AWS_REGION
+
+aws elbv2 register-targets \
+  --target-group-arn $HTTPS_TG_ARN \
+  --targets Id=$EC2_INSTANCE_ID,Port=32443 \
+  --region $AWS_REGION
+```
+
+#### Create Application Load Balancer
+
+```bash
+# Create ALB
+ALB_ARN=$(aws elbv2 create-load-balancer \
+  --name lookout-staging-alb \
+  --subnets $SUBNET_1 $SUBNET_2 \
+  --security-groups $ALB_SG_ID \
+  --scheme internet-facing \
+  --type application \
+  --ip-address-type ipv4 \
+  --region $AWS_REGION \
+  --query 'LoadBalancers[0].LoadBalancerArn' \
+  --output text)
+
+echo "ALB ARN: $ALB_ARN"
+
+# Get ALB DNS name
+ALB_DNS=$(aws elbv2 describe-load-balancers \
+  --load-balancer-arns $ALB_ARN \
+  --region $AWS_REGION \
+  --query 'LoadBalancers[0].DNSName' \
+  --output text)
+
+echo "ALB DNS: $ALB_DNS"
+
+# Get ALB Hosted Zone ID (for Route53 alias)
+ALB_ZONE_ID=$(aws elbv2 describe-load-balancers \
+  --load-balancer-arns $ALB_ARN \
+  --region $AWS_REGION \
+  --query 'LoadBalancers[0].CanonicalHostedZoneId' \
+  --output text)
+
+echo "ALB Hosted Zone ID: $ALB_ZONE_ID"
+```
+
+#### Create Listeners
+
+```bash
+# Create HTTP listener with redirect to HTTPS
+HTTP_LISTENER_ARN=$(aws elbv2 create-listener \
+  --load-balancer-arn $ALB_ARN \
+  --protocol HTTP \
+  --port 80 \
+  --default-actions Type=redirect,RedirectConfig='{Protocol=HTTPS,Port=443,StatusCode=HTTP_301}' \
+  --region $AWS_REGION \
+  --query 'Listeners[0].ListenerArn' \
+  --output text)
+
+echo "HTTP Listener ARN: $HTTP_LISTENER_ARN"
+
+# Create HTTPS listener
+HTTPS_LISTENER_ARN=$(aws elbv2 create-listener \
+  --load-balancer-arn $ALB_ARN \
+  --protocol HTTPS \
+  --port 443 \
+  --certificates CertificateArn=$CERTIFICATE_ARN \
+  --default-actions Type=forward,TargetGroupArn=$HTTPS_TG_ARN \
+  --region $AWS_REGION \
+  --query 'Listeners[0].ListenerArn' \
+  --output text)
+
+echo "HTTPS Listener ARN: $HTTPS_LISTENER_ARN"
+```
+
+#### Configure Route53
+
+```bash
+# Create Route53 A record (alias to ALB)
+cat > /tmp/route53-change.json <<EOF
+{
+  "Changes": [
+    {
+      "Action": "UPSERT",
+      "ResourceRecordSet": {
+        "Name": "lookout-stg.timonier.io",
+        "Type": "A",
+        "AliasTarget": {
+          "HostedZoneId": "$ALB_ZONE_ID",
+          "DNSName": "$ALB_DNS",
+          "EvaluateTargetHealth": true
+        }
+      }
+    }
+  ]
+}
+EOF
+
+aws route53 change-resource-record-sets \
+  --hosted-zone-id $HOSTED_ZONE_ID \
+  --change-batch file:///tmp/route53-change.json \
+  --region $AWS_REGION
+
+rm /tmp/route53-change.json
+
+echo "Route53 record created for lookout-stg.timonier.io"
+```
+
+#### Request ACM Certificate (Optional)
+
+If you don't have a certificate yet:
+
+```bash
+# Request ACM certificate
+CERT_ARN=$(aws acm request-certificate \
+  --domain-name lookout-stg.timonier.io \
+  --validation-method DNS \
+  --region $AWS_REGION \
+  --query 'CertificateArn' \
+  --output text)
+
+echo "Certificate ARN: $CERT_ARN"
+
+# Get DNS validation records
+aws acm describe-certificate \
+  --certificate-arn $CERT_ARN \
+  --region $AWS_REGION \
+  --query 'Certificate.DomainValidationOptions[0].ResourceRecord'
+
+# Add the CNAME record to Route53 for validation
+# (Copy the Name and Value from the output above)
+
+# Check certificate status
+aws acm describe-certificate \
+  --certificate-arn $CERT_ARN \
+  --region $AWS_REGION \
+  --query 'Certificate.Status' \
+  --output text
+```
+
+#### Verify Target Health
+
+```bash
+# Check HTTP target group health
+aws elbv2 describe-target-health \
+  --target-group-arn $HTTP_TG_ARN \
+  --region $AWS_REGION
+
+# Check HTTPS target group health
+aws elbv2 describe-target-health \
+  --target-group-arn $HTTPS_TG_ARN \
+  --region $AWS_REGION
+
+# Both should show State: healthy
+```
+
+#### Complete Script
+
+Save all commands to a script for easy execution:
+
+```bash
+#!/bin/bash
+# save as: scripts/setup-alb.sh
+
+set -e
+
+# Configuration - UPDATE THESE VALUES
+export AWS_REGION=us-east-1
+export VPC_ID=vpc-xxxxx
+export EC2_INSTANCE_ID=i-xxxxx
+export SUBNET_1=subnet-xxxxx
+export SUBNET_2=subnet-xxxxx
+export CERTIFICATE_ARN=arn:aws:acm:us-east-1:xxxxx:certificate/xxxxx
+export HOSTED_ZONE_ID=Z0xxxxx
+
+echo "🚀 Setting up ALB for Lookout Staging..."
+
+# ... (paste all commands above)
+
+echo "✅ ALB setup complete!"
+echo "🌐 Access your application at: https://lookout-stg.timonier.io"
+```
+
 ### 4.8 Step 6: Verify the Setup
 
 ```bash
