@@ -11,6 +11,7 @@ import (
 	"github.com/timoniersystems/lookout/pkg/common/nvd"
 	"github.com/timoniersystems/lookout/pkg/common/processor"
 	"github.com/timoniersystems/lookout/pkg/common/progress"
+	"github.com/timoniersystems/lookout/pkg/common/spdx"
 	"github.com/timoniersystems/lookout/pkg/common/trivy"
 	"github.com/timoniersystems/lookout/pkg/logging"
 	"github.com/timoniersystems/lookout/pkg/ui/dgraph"
@@ -52,8 +53,9 @@ func UploadBOMWithProgress(c echo.Context) error {
 	tempFilePath := tempFileHandle.Path
 	// Note: We DON'T defer cleanup here because processSBOMWithProgress will handle it
 
-	// Validate that the uploaded file is a CycloneDX BOM
-	if err := validation.ValidateCycloneDXBOM(tempFilePath); err != nil {
+	// Detect BOM format (CycloneDX or SPDX) and validate
+	bomFormat, err := validation.DetectBOMFormat(tempFilePath)
+	if err != nil {
 		logging.Warn("[Session %s] SBOM validation failed: %v", sessionID, err)
 		os.Remove(tempFilePath)
 		return c.JSON(http.StatusBadRequest, map[string]interface{}{
@@ -61,12 +63,31 @@ func UploadBOMWithProgress(c echo.Context) error {
 		})
 	}
 
+	switch bomFormat {
+	case "cyclonedx":
+		if err := validation.ValidateCycloneDXBOM(tempFilePath); err != nil {
+			logging.Warn("[Session %s] SBOM validation failed: %v", sessionID, err)
+			os.Remove(tempFilePath)
+			return c.JSON(http.StatusBadRequest, map[string]interface{}{
+				"error": err.Error(),
+			})
+		}
+	case "spdx":
+		if err := validation.ValidateSPDXBOM(tempFilePath); err != nil {
+			logging.Warn("[Session %s] SBOM validation failed: %v", sessionID, err)
+			os.Remove(tempFilePath)
+			return c.JSON(http.StatusBadRequest, map[string]interface{}{
+				"error": err.Error(),
+			})
+		}
+	}
+
 	// Create tracker BEFORE rendering page to avoid race condition
 	tracker := progress.NewTracker(sessionID)
 	tracker.SendProgress("upload", progress.StatusComplete, "SBOM file uploaded successfully", 10)
 
-	// Start async processing with the temp file path and severity filters
-	go processSBOMWithProgress(sessionID, tempFilePath, severityFilters, tracker)
+	// Start async processing with the temp file path, severity filters, and detected format
+	go processSBOMWithProgress(sessionID, tempFilePath, severityFilters, tracker, bomFormat)
 
 	// Render progress page AFTER tracker is created and first update sent
 	if err := c.Render(http.StatusOK, "progress.html", map[string]interface{}{
@@ -81,7 +102,7 @@ func UploadBOMWithProgress(c echo.Context) error {
 	return nil
 }
 
-func processSBOMWithProgress(sessionID string, tempFilePath string, severityFilters []string, tracker *progress.Tracker) {
+func processSBOMWithProgress(sessionID string, tempFilePath string, severityFilters []string, tracker *progress.Tracker, bomFormat string) {
 	defer tracker.Close()
 	defer os.Remove(tempFilePath)
 
@@ -90,7 +111,14 @@ func processSBOMWithProgress(sessionID string, tempFilePath string, severityFilt
 	// Step 2: Parse BOM
 	tracker.SendProgress("parse", progress.StatusActive, "Parsing SBOM and extracting components...", 15)
 
-	bom, err := cyclonedx.ParseBOM(tempFilePath)
+	var bom *cyclonedx.Bom
+	var err error
+	switch bomFormat {
+	case "spdx":
+		bom, err = spdx.ParseBOM(tempFilePath)
+	default:
+		bom, err = cyclonedx.ParseBOM(tempFilePath)
+	}
 	if err != nil {
 		logging.Error("Failed to parse BOM file: %v", err)
 		tracker.SendError(fmt.Sprintf("Failed to parse BOM file: %v", err))

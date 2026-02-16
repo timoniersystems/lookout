@@ -1,0 +1,100 @@
+{
+  "SPDXID": "SPDXRef-DOCUMENT",
+  "spdxVersion": "SPDX-2.3",
+  "creationInfo": {
+    "created": "2024-01-15T10:00:00Z",
+    "creators": ["Tool: syft-1.0.0"],
+    "licenseListVersion": "3.22"
+  },
+  "name": "debian-slim-example",
+  "dataLicense": "CC0-1.0",
+  "documentDescribes": ["SPDXRef-debian-slim"],
+  "documentNamespace": "https://example.com/spdx/debian-slim-example",
+  "packages": [
+    {
+      "SPDXID": "SPDXRef-debian-slim",
+      "name": "debian-slim",
+      "versionInfo": "12.4",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "supplier": "Organization: Debian Project"
+    },
+    {
+      "SPDXID": "SPDXRef-adduser",
+      "name": "adduser",
+      "versionInfo": "3.134",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "GPL-2.0-only",
+      "licenseDeclared": "GPL-2.0-only",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE_MANAGER",
+          "referenceLocator": "pkg:deb/debian/adduser@3.134?arch=all&distro=debian-12",
+          "referenceType": "purl"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-apt",
+      "name": "apt",
+      "versionInfo": "2.6.1",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "GPL-2.0-only",
+      "licenseDeclared": "GPL-2.0-only",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE_MANAGER",
+          "referenceLocator": "pkg:deb/debian/apt@2.6.1?arch=amd64&distro=debian-12",
+          "referenceType": "purl"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-bash",
+      "name": "bash",
+      "versionInfo": "5.2.15",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "GPL-3.0-or-later",
+      "licenseDeclared": "GPL-3.0-or-later",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE_MANAGER",
+          "referenceLocator": "pkg:deb/debian/bash@5.2.15?arch=amd64&distro=debian-12",
+          "referenceType": "purl"
+        }
+      ]
+    }
+  ],
+  "relationships": [
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-debian-slim"
+    },
+    {
+      "spdxElementId": "SPDXRef-debian-slim",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-adduser"
+    },
+    {
+      "spdxElementId": "SPDXRef-debian-slim",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-apt"
+    },
+    {
+      "spdxElementId": "SPDXRef-debian-slim",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-bash"
+    },
+    {
+      "spdxElementId": "SPDXRef-apt",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-adduser"
+    }
+  ]
+}

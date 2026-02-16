@@ -13,6 +13,7 @@ import (
 	"github.com/timoniersystems/lookout/pkg/common/fileutil"
 	"github.com/timoniersystems/lookout/pkg/common/nvd"
 	"github.com/timoniersystems/lookout/pkg/common/processor"
+	"github.com/timoniersystems/lookout/pkg/common/spdx"
 	"github.com/timoniersystems/lookout/pkg/common/trivy"
 	"github.com/timoniersystems/lookout/pkg/logging"
 	"github.com/timoniersystems/lookout/pkg/repository"
@@ -380,15 +381,39 @@ func UploadBOMAndInsertData(deps *HandlerDependencies) echo.HandlerFunc {
 
 		logging.Info("Processing BOM file: %s", tempFileHandle.Path)
 
-		// Validate that the uploaded file is a CycloneDX BOM
-		if err := validation.ValidateCycloneDXBOM(tempFileHandle.Path); err != nil {
+		// Detect BOM format and validate
+		bomFormat, err := validation.DetectBOMFormat(tempFileHandle.Path)
+		if err != nil {
 			logging.Warn("SBOM validation failed: %v", err)
 			return c.JSON(http.StatusBadRequest, map[string]interface{}{
 				"error": err.Error(),
 			})
 		}
 
-		bom, err := cyclonedx.ParseBOM(tempFileHandle.Path)
+		switch bomFormat {
+		case "cyclonedx":
+			if err := validation.ValidateCycloneDXBOM(tempFileHandle.Path); err != nil {
+				logging.Warn("SBOM validation failed: %v", err)
+				return c.JSON(http.StatusBadRequest, map[string]interface{}{
+					"error": err.Error(),
+				})
+			}
+		case "spdx":
+			if err := validation.ValidateSPDXBOM(tempFileHandle.Path); err != nil {
+				logging.Warn("SBOM validation failed: %v", err)
+				return c.JSON(http.StatusBadRequest, map[string]interface{}{
+					"error": err.Error(),
+				})
+			}
+		}
+
+		var bom *cyclonedx.Bom
+		switch bomFormat {
+		case "spdx":
+			bom, err = spdx.ParseBOM(tempFileHandle.Path)
+		default:
+			bom, err = cyclonedx.ParseBOM(tempFileHandle.Path)
+		}
 		if err != nil {
 			logging.Error("Failed to parse BOM file: %v", err)
 			return c.JSON(http.StatusInternalServerError, map[string]interface{}{

@@ -353,6 +353,132 @@ func TestValidateCycloneDXBOM(t *testing.T) {
 	}
 }
 
+func TestValidateSPDXBOM(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	writeFile := func(name, content string) string {
+		path := filepath.Join(tmpDir, name)
+		if err := os.WriteFile(path, []byte(content), 0644); err != nil {
+			t.Fatalf("Failed to create test file: %v", err)
+		}
+		return path
+	}
+
+	tests := []struct {
+		name    string
+		path    string
+		wantErr bool
+		errMsg  string
+	}{
+		{
+			"Valid SPDX BOM",
+			writeFile("valid.json", `{"spdxVersion": "SPDX-2.3", "SPDXID": "SPDXRef-DOCUMENT", "packages": [{"name": "test"}]}`),
+			false, "",
+		},
+		{
+			"Missing spdxVersion",
+			writeFile("no_version.json", `{"SPDXID": "SPDXRef-DOCUMENT", "packages": [{"name": "test"}]}`),
+			true, "spdxVersion",
+		},
+		{
+			"Wrong spdxVersion prefix",
+			writeFile("wrong_version.json", `{"spdxVersion": "NOT-SPDX", "packages": [{"name": "test"}]}`),
+			true, "expected to start with 'SPDX-'",
+		},
+		{
+			"Missing packages",
+			writeFile("no_packages.json", `{"spdxVersion": "SPDX-2.3", "SPDXID": "SPDXRef-DOCUMENT"}`),
+			true, "packages",
+		},
+		{
+			"Empty packages",
+			writeFile("empty_packages.json", `{"spdxVersion": "SPDX-2.3", "packages": []}`),
+			true, "empty",
+		},
+		{
+			"Invalid JSON",
+			writeFile("invalid.json", `not json`),
+			true, "not valid JSON",
+		},
+		{
+			"Non-existent file",
+			filepath.Join(tmpDir, "nonexistent.json"),
+			true, "failed to read",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := ValidateSPDXBOM(tt.path)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("ValidateSPDXBOM() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			if tt.wantErr && err != nil && tt.errMsg != "" {
+				if !contains(err.Error(), tt.errMsg) {
+					t.Errorf("ValidateSPDXBOM() error = %v, want error containing %q", err, tt.errMsg)
+				}
+			}
+		})
+	}
+}
+
+func TestDetectBOMFormat(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	writeFile := func(name, content string) string {
+		path := filepath.Join(tmpDir, name)
+		if err := os.WriteFile(path, []byte(content), 0644); err != nil {
+			t.Fatalf("Failed to create test file: %v", err)
+		}
+		return path
+	}
+
+	tests := []struct {
+		name       string
+		path       string
+		wantFormat string
+		wantErr    bool
+	}{
+		{
+			"Detect CycloneDX",
+			writeFile("cdx.json", `{"bomFormat": "CycloneDX", "specVersion": "1.4", "components": []}`),
+			"cyclonedx", false,
+		},
+		{
+			"Detect SPDX",
+			writeFile("spdx.json", `{"spdxVersion": "SPDX-2.3", "packages": []}`),
+			"spdx", false,
+		},
+		{
+			"Unknown format",
+			writeFile("unknown.json", `{"foo": "bar"}`),
+			"", true,
+		},
+		{
+			"Invalid JSON",
+			writeFile("invalid.json", `not json`),
+			"", true,
+		},
+		{
+			"Non-existent file",
+			filepath.Join(tmpDir, "nonexistent.json"),
+			"", true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			format, err := DetectBOMFormat(tt.path)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("DetectBOMFormat() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			if format != tt.wantFormat {
+				t.Errorf("DetectBOMFormat() = %v, want %v", format, tt.wantFormat)
+			}
+		})
+	}
+}
+
 func contains(s, substr string) bool {
 	return len(s) >= len(substr) && searchString(s, substr)
 }

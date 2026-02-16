@@ -214,6 +214,69 @@ func ValidateCycloneDXBOM(filePath string) error {
 	return nil
 }
 
+// ValidateSPDXBOM validates that a file is an SPDX BOM (JSON format).
+func ValidateSPDXBOM(filePath string) error {
+	data, err := os.ReadFile(filePath)
+	if err != nil {
+		return fmt.Errorf("failed to read file: %w", err)
+	}
+
+	var parsed map[string]interface{}
+	if err := json.Unmarshal(data, &parsed); err != nil {
+		return fmt.Errorf("invalid SBOM: not valid JSON (%v)", err)
+	}
+
+	spdxVersion, ok := parsed["spdxVersion"]
+	if !ok {
+		return fmt.Errorf("invalid SBOM: does not appear to be an SPDX BOM (missing 'spdxVersion' field)")
+	}
+
+	versionStr := fmt.Sprintf("%v", spdxVersion)
+	if !strings.HasPrefix(versionStr, "SPDX-") {
+		return fmt.Errorf("invalid SBOM: spdxVersion is '%v', expected to start with 'SPDX-'", spdxVersion)
+	}
+
+	packages, ok := parsed["packages"]
+	if !ok {
+		return fmt.Errorf("invalid SBOM: does not appear to be an SPDX BOM (missing 'packages' field)")
+	}
+
+	pkgArray, ok := packages.([]interface{})
+	if !ok || len(pkgArray) == 0 {
+		return fmt.Errorf("invalid SBOM: 'packages' field is empty or not an array")
+	}
+
+	return nil
+}
+
+// DetectBOMFormat detects whether a JSON file is CycloneDX or SPDX.
+// Returns "cyclonedx", "spdx", or empty string if neither.
+func DetectBOMFormat(filePath string) (string, error) {
+	data, err := os.ReadFile(filePath)
+	if err != nil {
+		return "", fmt.Errorf("failed to read file: %w", err)
+	}
+
+	var parsed map[string]interface{}
+	if err := json.Unmarshal(data, &parsed); err != nil {
+		return "", fmt.Errorf("invalid SBOM: not valid JSON (%v)", err)
+	}
+
+	if bomFormat, ok := parsed["bomFormat"]; ok {
+		if fmt.Sprintf("%v", bomFormat) == "CycloneDX" {
+			return "cyclonedx", nil
+		}
+	}
+
+	if spdxVersion, ok := parsed["spdxVersion"]; ok {
+		if strings.HasPrefix(fmt.Sprintf("%v", spdxVersion), "SPDX-") {
+			return "spdx", nil
+		}
+	}
+
+	return "", fmt.Errorf("invalid SBOM: unrecognized format (expected CycloneDX or SPDX)")
+}
+
 // truncate shortens a string to maxLen characters, appending "..." if truncated.
 func truncate(s string, maxLen int) string {
 	if len(s) <= maxLen {
