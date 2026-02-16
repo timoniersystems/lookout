@@ -242,7 +242,7 @@ echo -e "${GREEN}✓ Targets registered${NC}"
 # Create Application Load Balancer
 echo "⚖️  Creating Application Load Balancer..."
 ALB_ARN=$(aws elbv2 create-load-balancer \
-    --name lookout-staging-alb \
+    --name lookout-alb \
     --subnets $SUBNET_1 $SUBNET_2 $SUBNET_3 \
     --security-groups $ALB_SG_ID \
     --scheme internet-facing \
@@ -252,7 +252,7 @@ ALB_ARN=$(aws elbv2 create-load-balancer \
     --query 'LoadBalancers[0].LoadBalancerArn' \
     --output text 2>/dev/null || \
     aws elbv2 describe-load-balancers \
-        --names lookout-staging-alb \
+        --names lookout-alb \
         --region $AWS_REGION \
         --query 'LoadBalancers[0].LoadBalancerArn' \
         --output text)

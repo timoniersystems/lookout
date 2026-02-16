@@ -825,7 +825,7 @@ If you already have an SSL certificate:
 2. **Choose Load Balancer Type:** Application Load Balancer
 
 3. **Basic Configuration:**
-   - Load balancer name: `lookout-staging-alb`
+   - Load balancer name: `lookout-alb`
    - Scheme: `Internet-facing`
    - IP address type: `IPv4`
 
@@ -867,7 +867,7 @@ If you already have an SSL certificate:
    - Route traffic to:
      - Alias to Application and Classic Load Balancer
      - Region: Select your region
-     - Load balancer: Select `lookout-staging-alb`
+     - Load balancer: Select `lookout-alb`
    - Routing policy: Simple routing
    - Click "Create records"
 
@@ -1029,7 +1029,7 @@ aws elbv2 register-targets \
 ```bash
 # Create ALB
 ALB_ARN=$(aws elbv2 create-load-balancer \
-  --name lookout-staging-alb \
+  --name lookout-alb \
   --subnets $SUBNET_1 $SUBNET_2 \
   --security-groups $ALB_SG_ID \
   --scheme internet-facing \
