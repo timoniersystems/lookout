@@ -71,7 +71,14 @@
       "Bash(docker build:*)",
       "Bash(git push:*)",
       "Bash(GOPROXY=direct GOSUMDB=off go build:*)",
-      "Bash(GOPROXY=direct GOSUMDB=off go test:*)"
+      "Bash(GOPROXY=direct GOSUMDB=off go test:*)",
+      "Bash(go version:*)",
+      "Bash(go mod vendor:*)",
+      "Bash(git restore:*)",
+      "Bash(docker-compose config:*)",
+      "Bash(docker compose:*)",
+      "Bash(docker compose build:*)",
+      "Bash(docker system prune:*)"
     ]
   }
 }

@@ -39,7 +39,7 @@ Shows current test coverage percentage with color coding:
 - 🔴 Red: <60%
 
 ### 🐳 Docker Workflow (`docker.yml`)
-**Triggers:** Push to `main`, version tags, pull requests
+**Triggers:** Push to `main` and version tags (not pull requests)
 
 **Jobs:**
 1. **Build** - Multi-platform Docker image

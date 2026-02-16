@@ -7,15 +7,13 @@ This document describes the organization of the Lookout repository.
 ```
 lookout/
 ├── docs/                       # All documentation
-│   ├── KIND_DEPLOYMENT.md      # Deployment guide for Kind cluster
-│   ├── ALB_SETUP.md            # AWS ALB configuration guide
-│   ├── KUBERNETES_SETUP.md     # Kubernetes setup (includes ArgoCD - not currently used)
-│   ├── KUBERNETES_QUICKSTART.md # Quick reference for kubectl commands
+│   ├── KUBERNETES_DEPLOYMENT.md # Complete K8s guide (Kind, Gateway, ArgoCD, ALB)
 │   ├── ARCHITECTURE.md         # System architecture
 │   ├── DEVELOPMENT.md          # Development guide
 │   ├── DOCKER_COMPOSE.md       # Docker Compose setup
 │   ├── TLS_SETUP.md            # TLS certificate setup
 │   ├── CI_CD.md                # CI/CD documentation
+│   ├── REPOSITORY_STRUCTURE.md # This file
 │   └── USAGE.md                # Usage guide
 │
 ├── scripts/                    # Automation scripts
@@ -53,8 +51,11 @@ lookout/
 ## Key Documentation
 
 ### Deployment & Operations
-- **[KIND_DEPLOYMENT.md](KIND_DEPLOYMENT.md)** - Primary deployment guide for Kind cluster
-- **[ALB_SETUP.md](ALB_SETUP.md)** - AWS Application Load Balancer configuration
+- **[KUBERNETES_DEPLOYMENT.md](KUBERNETES_DEPLOYMENT.md)** - **START HERE** - Complete guide covering:
+  - Chapter 1: Kind Cluster Setup
+  - Chapter 2: Gateway API Setup (with fixed NodePorts)
+  - Chapter 3: ArgoCD GitOps Setup
+  - Chapter 4: AWS ALB Integration
 - **[DOCKER_COMPOSE.md](DOCKER_COMPOSE.md)** - Local development with Docker Compose
 
 ### Development
@@ -63,8 +64,6 @@ lookout/
 - **[USAGE.md](USAGE.md)** - How to use Lookout (CLI and Web UI)
 
 ### Infrastructure
-- **[KUBERNETES_SETUP.md](KUBERNETES_SETUP.md)** - Kubernetes setup guide (includes ArgoCD info - not currently deployed)
-- **[KUBERNETES_QUICKSTART.md](KUBERNETES_QUICKSTART.md)** - Quick kubectl reference
 - **[TLS_SETUP.md](TLS_SETUP.md)** - TLS certificate configuration
 - **[CI_CD.md](CI_CD.md)** - Continuous integration and deployment
 
