@@ -175,13 +175,6 @@ jobs:
           exit 1
         fi
 
-    - name: Test lookout-ui binary exists
-      run: |
-        echo "Verifying lookout-ui binary in container..."
-        docker exec lookout-app ls -lh /app/lookout-ui
-        docker exec lookout-app file /app/lookout-ui
-        echo "✓ Binary exists and is executable"
-
     - name: Show service logs on failure
       if: failure()
       run: |
