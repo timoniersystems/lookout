@@ -109,7 +109,11 @@ echo ""
 # Step 3: Attach policy to EC2 instance role
 echo -e "${YELLOW}🔗 Step 3: Attaching policy to EC2 instance role${NC}"
 INSTANCE_ID=$(ec2-metadata --instance-id 2>/dev/null | cut -d ' ' -f 2 || aws ec2 describe-instances --filters "Name=tag:Name,Values=*kind*" --query 'Reservations[0].Instances[0].InstanceId' --output text --region ${AWS_REGION})
-ROLE_NAME=$(aws ec2 describe-instances --instance-ids ${INSTANCE_ID} --query 'Reservations[0].Instances[0].IamInstanceProfile.Arn' --output text --region ${AWS_REGION} | cut -d'/' -f2)
+
+# Get the instance profile ARN, extract the profile name, then get the role name from the profile
+PROFILE_ARN=$(aws ec2 describe-instances --instance-ids ${INSTANCE_ID} --query 'Reservations[0].Instances[0].IamInstanceProfile.Arn' --output text --region ${AWS_REGION})
+PROFILE_NAME=$(echo ${PROFILE_ARN} | cut -d'/' -f2)
+ROLE_NAME=$(aws iam get-instance-profile --instance-profile-name ${PROFILE_NAME} --query 'InstanceProfile.Roles[0].RoleName' --output text 2>/dev/null)
 
 if [ -n "$ROLE_NAME" ]; then
     # Check if policy is already attached
