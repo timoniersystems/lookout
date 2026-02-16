@@ -14,12 +14,29 @@ AWS_REGION="${AWS_REGION:-us-west-2}"
 SECRET_NAME="lookout/staging/nvd-api-key"
 NAMESPACE="staging"
 
+# Ensure namespace exists
+if ! kubectl get namespace ${NAMESPACE} &> /dev/null; then
+    echo "Creating namespace: ${NAMESPACE}"
+    kubectl create namespace ${NAMESPACE}
+fi
+
 # Step 1: Install External Secrets Operator
 echo -e "${YELLOW}📦 Step 1: Installing External Secrets Operator${NC}"
-if kubectl get namespace external-secrets-system &> /dev/null; then
-    echo "External Secrets Operator already installed"
+
+# Check if already installed via Helm
+if helm list -n external-secrets-system 2>/dev/null | grep -q external-secrets; then
+    echo "External Secrets Operator already installed (Helm release found)"
+    echo "Upgrading to ensure latest version..."
+    helm repo add external-secrets https://charts.external-secrets.io 2>/dev/null || true
+    helm repo update
+    helm upgrade external-secrets \
+        external-secrets/external-secrets \
+        --namespace external-secrets-system \
+        --set installCRDs=true \
+        --reuse-values
 else
-    helm repo add external-secrets https://charts.external-secrets.io
+    echo "Installing External Secrets Operator..."
+    helm repo add external-secrets https://charts.external-secrets.io 2>/dev/null || true
     helm repo update
 
     helm install external-secrets \
@@ -33,25 +50,24 @@ else
         -l app.kubernetes.io/name=external-secrets \
         -n external-secrets-system \
         --timeout=120s
-
-    echo "Waiting for CRDs to be available..."
-    for i in {1..30}; do
-        if kubectl get crd secretstores.external-secrets.io &> /dev/null && \
-           kubectl get crd externalsecrets.external-secrets.io &> /dev/null; then
-            echo "CRDs are ready"
-            break
-        fi
-        echo "Waiting for CRDs... ($i/30)"
-        sleep 2
-    done
 fi
 
 # Verify CRDs are installed
-if ! kubectl get crd secretstores.external-secrets.io &> /dev/null; then
-    echo -e "${YELLOW}⚠ CRDs not found. Installing manually...${NC}"
-    kubectl apply -f https://raw.githubusercontent.com/external-secrets/external-secrets/main/deploy/crds/bundle.yaml
-    sleep 5
-fi
+echo "Verifying CRDs are available..."
+for i in {1..30}; do
+    if kubectl get crd secretstores.external-secrets.io &> /dev/null && \
+       kubectl get crd externalsecrets.external-secrets.io &> /dev/null; then
+        echo -e "${GREEN}✓ CRDs are ready${NC}"
+        break
+    fi
+    if [ $i -eq 30 ]; then
+        echo -e "${YELLOW}⚠ CRDs not found after waiting. Installing manually...${NC}"
+        kubectl apply -f https://raw.githubusercontent.com/external-secrets/external-secrets/main/deploy/crds/bundle.yaml
+        sleep 5
+    fi
+    echo "Waiting for CRDs... ($i/30)"
+    sleep 2
+done
 
 echo -e "${GREEN}✓ External Secrets Operator ready${NC}\n"
 
@@ -96,9 +112,15 @@ INSTANCE_ID=$(ec2-metadata --instance-id 2>/dev/null | cut -d ' ' -f 2 || aws ec
 ROLE_NAME=$(aws ec2 describe-instances --instance-ids ${INSTANCE_ID} --query 'Reservations[0].Instances[0].IamInstanceProfile.Arn' --output text --region ${AWS_REGION} | cut -d'/' -f2)
 
 if [ -n "$ROLE_NAME" ]; then
-    aws iam attach-role-policy \
-        --role-name "${ROLE_NAME}" \
-        --policy-arn "${POLICY_ARN}" 2>/dev/null || echo "Policy already attached"
+    # Check if policy is already attached
+    if aws iam list-attached-role-policies --role-name "${ROLE_NAME}" --query "AttachedPolicies[?PolicyArn=='${POLICY_ARN}'].PolicyArn" --output text | grep -q "${POLICY_ARN}"; then
+        echo "Policy already attached to role: ${ROLE_NAME}"
+    else
+        echo "Attaching policy to role: ${ROLE_NAME}"
+        aws iam attach-role-policy \
+            --role-name "${ROLE_NAME}" \
+            --policy-arn "${POLICY_ARN}"
+    fi
     echo -e "${GREEN}✓ Policy attached to role: ${ROLE_NAME}${NC}"
 else
     echo -e "${YELLOW}⚠ No IAM role found on instance. You'll need to configure IRSA or use access keys${NC}"
