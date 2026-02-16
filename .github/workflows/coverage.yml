@@ -37,7 +37,8 @@ jobs:
 
     - name: Generate coverage badge
       uses: schneegans/dynamic-badges-action@v1.7.0
-      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      if: github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.GIST_SECRET != ''
+      continue-on-error: true
       with:
         auth: ${{ secrets.GIST_SECRET }}
         gistID: ${{ secrets.GIST_ID }}
