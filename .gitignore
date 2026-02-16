@@ -57,8 +57,11 @@ debug
 __debug_bin
 
 # Database files (local development)
-dgraph/
+/dgraph/
 *.db
+
+# Helm chart dependencies
+helm/*/charts/
 
 # TLS certificates (never commit!)
 nginx/certs/*.pem
