@@ -44,12 +44,29 @@ This guide explains how to set up ArgoCD on the kind cluster to automatically de
 
 - SSH access to EC2 instance at `10.0.3.142`
 - kubectl configured for kind-lookout cluster
-- GitHub Personal Access Token with `read:packages` scope
+- GitHub Personal Access Token with `read:packages` and `repo` scopes
 - Helm charts already exist in `helm/lookout/`
+- Envoy Gateway installed (for Gateway API support)
 
 ## Setup Steps
 
-### 1. Install ArgoCD
+### 1. Setup Gateway API and TLS (Optional but Recommended)
+
+If you want to use Gateway API with HTTPS support, run:
+
+```bash
+cd ~/lookout
+./scripts/setup-gateway.sh
+```
+
+This will:
+- Create the Envoy Gateway GatewayClass
+- Generate a self-signed TLS certificate
+- Create the `lookout-tls` secret in staging namespace
+
+See [GATEWAY_SETUP.md](GATEWAY_SETUP.md) for detailed Gateway configuration.
+
+### 2. Install ArgoCD
 
 SSH to the EC2 instance and run:
 
@@ -65,7 +82,7 @@ This will:
 
 Save the admin password shown in the output!
 
-### 2. Access ArgoCD UI (Optional)
+### 3. Access ArgoCD UI (Optional)
 
 From your local machine, create an SSH tunnel:
 
@@ -78,7 +95,7 @@ Then open https://localhost:8080 and login:
 - Username: `admin`
 - Password: (from setup step)
 
-### 3. Create GitHub Container Registry Secret
+### 4. Create GitHub Container Registry Secret
 
 On the EC2 instance, create a secret to pull images from ghcr.io:
 
@@ -97,7 +114,7 @@ export GITHUB_TOKEN=<your-github-token>
 3. Select scope: `read:packages`
 4. Copy the token
 
-### 4. Deploy ArgoCD Application
+### 5. Deploy ArgoCD Application
 
 Deploy the staging application configuration:
 
@@ -113,7 +130,7 @@ This creates an ArgoCD Application that:
 - Deploys to the `staging` namespace
 - Auto-syncs when changes are detected
 
-### 5. Install ArgoCD Image Updater (Optional)
+### 6. Install ArgoCD Image Updater (Optional)
 
 For automatic image updates when new images are pushed:
 
