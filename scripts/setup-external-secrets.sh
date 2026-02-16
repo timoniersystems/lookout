@@ -54,14 +54,29 @@ fi
 
 # Verify CRDs are installed
 echo "Verifying CRDs are available..."
+echo "DEBUG: Checking for External Secrets CRDs..."
+kubectl get crd | grep external-secrets || echo "No external-secrets CRDs found yet"
+echo ""
+
 for i in {1..30}; do
+    SECRETSTORE_CRD=$(kubectl get crd secretstores.external-secrets.io 2>&1)
+    EXTERNALSECRET_CRD=$(kubectl get crd externalsecrets.external-secrets.io 2>&1)
+
     if kubectl get crd secretstores.external-secrets.io &> /dev/null && \
        kubectl get crd externalsecrets.external-secrets.io &> /dev/null; then
         echo -e "${GREEN}✓ CRDs are ready${NC}"
+        echo "DEBUG: SecretStore CRD details:"
+        kubectl get crd secretstores.external-secrets.io -o yaml | grep -A 5 "^  names:"
+        echo ""
         break
     fi
+
     if [ $i -eq 30 ]; then
         echo -e "${YELLOW}⚠ CRDs not found after waiting. Installing manually...${NC}"
+        echo "DEBUG: Current state - SecretStore CRD:"
+        echo "$SECRETSTORE_CRD"
+        echo "DEBUG: Current state - ExternalSecret CRD:"
+        echo "$EXTERNALSECRET_CRD"
         kubectl apply -f https://raw.githubusercontent.com/external-secrets/external-secrets/main/deploy/crds/bundle.yaml
         sleep 5
     fi
@@ -69,34 +84,76 @@ for i in {1..30}; do
     sleep 2
 done
 
+echo "DEBUG: All external-secrets CRDs installed:"
+kubectl get crd | grep external-secrets
+echo ""
+
 # Force kubectl to refresh its API schema cache
 echo "Refreshing kubectl API cache..."
 rm -rf ~/.kube/cache/ ~/.kube/http-cache/ 2>/dev/null || true
 
 # Wait for API server to fully register the CRDs
 echo "Waiting for API server to register CRDs..."
+echo "DEBUG: Checking API resources for external-secrets.io group..."
+kubectl api-resources --api-group=external-secrets.io || echo "No API resources found yet"
+echo ""
+
 for i in {1..30}; do
-    if kubectl api-resources --api-group=external-secrets.io 2>/dev/null | grep -q SecretStore; then
+    API_RESOURCES=$(kubectl api-resources --api-group=external-secrets.io 2>&1)
+
+    if echo "$API_RESOURCES" | grep -q SecretStore; then
         echo -e "${GREEN}✓ API resources registered${NC}"
+        echo "DEBUG: Available external-secrets.io API resources:"
+        echo "$API_RESOURCES"
+        echo ""
         break
     fi
+
     if [ $i -eq 1 ]; then
         echo "First attempt to discover APIs..."
-        kubectl get --raw /apis/external-secrets.io/v1beta1 &> /dev/null || true
+        RAW_API=$(kubectl get --raw /apis/external-secrets.io/v1beta1 2>&1)
+        echo "DEBUG: Raw API response: $RAW_API" | head -n 5
     fi
-    echo "Waiting for API registration... ($i/30)"
+
+    echo "Waiting for API registration... ($i/30) - Current state:"
+    echo "$API_RESOURCES" | head -n 3
     sleep 2
 done
 
 # Final verification
 echo "Verifying SecretStore API is available..."
-if ! kubectl explain secretstore.external-secrets.io &> /dev/null; then
+EXPLAIN_OUTPUT=$(kubectl explain secretstore.external-secrets.io 2>&1)
+EXPLAIN_EXIT_CODE=$?
+
+if [ $EXPLAIN_EXIT_CODE -ne 0 ]; then
     echo -e "${YELLOW}⚠ Warning: SecretStore API not fully available yet${NC}"
+    echo "DEBUG: kubectl explain output:"
+    echo "$EXPLAIN_OUTPUT"
+    echo ""
     echo "Attempting one more cache clear and API refresh..."
     rm -rf ~/.kube/cache ~/.kube/http-cache 2>/dev/null || true
+    echo "DEBUG: Refreshing API resources..."
     kubectl api-resources --api-group=external-secrets.io || true
+    echo ""
     sleep 5
+
+    # Try explain again
+    echo "DEBUG: Trying kubectl explain again..."
+    kubectl explain secretstore.external-secrets.io || echo "Still not available"
+else
+    echo -e "${GREEN}✓ kubectl explain secretstore.external-secrets.io works${NC}"
 fi
+
+# Check if External Secrets pods are running
+echo ""
+echo "DEBUG: Checking External Secrets Operator pods..."
+kubectl get pods -n external-secrets-system
+echo ""
+
+# Show kubectl and server versions
+echo "DEBUG: kubectl and server versions:"
+kubectl version --short 2>&1 || kubectl version 2>&1
+echo ""
 
 echo -e "${GREEN}✓ External Secrets Operator ready${NC}\n"
 
@@ -187,7 +244,18 @@ echo ""
 
 # Step 5: Create SecretStore
 echo -e "${YELLOW}🏪 Step 5: Creating SecretStore${NC}"
-kubectl apply --server-side -f - <<EOF
+echo "DEBUG: Final verification before creating SecretStore..."
+echo "DEBUG: CRD exists?"
+kubectl get crd secretstores.external-secrets.io || echo "CRD NOT FOUND!"
+echo ""
+echo "DEBUG: API resource available?"
+kubectl api-resources --api-group=external-secrets.io | grep SecretStore || echo "API RESOURCE NOT AVAILABLE!"
+echo ""
+echo "DEBUG: Can we explain it?"
+kubectl explain secretstore --recursive=false 2>&1 | head -n 10 || echo "CANNOT EXPLAIN!"
+echo ""
+echo "Attempting to create SecretStore with --server-side flag..."
+if ! kubectl apply --server-side -f - <<EOF
 apiVersion: external-secrets.io/v1beta1
 kind: SecretStore
 metadata:
@@ -203,11 +271,35 @@ spec:
           serviceAccountRef:
             name: default
 EOF
+then
+    echo -e "${YELLOW}⚠ Server-side apply failed, trying with --force-conflicts${NC}"
+    kubectl apply --server-side --force-conflicts -f - <<EOF
+apiVersion: external-secrets.io/v1beta1
+kind: SecretStore
+metadata:
+  name: aws-secrets-manager
+  namespace: ${NAMESPACE}
+spec:
+  provider:
+    aws:
+      service: SecretsManager
+      region: ${AWS_REGION}
+      auth:
+        jwt:
+          serviceAccountRef:
+            name: default
+EOF
+fi
 echo -e "${GREEN}✓ SecretStore created${NC}\n"
 
 # Step 6: Create ExternalSecret
 echo -e "${YELLOW}🔄 Step 6: Creating ExternalSecret${NC}"
-kubectl apply --server-side -f - <<EOF
+echo "DEBUG: Verifying ExternalSecret CRD and API..."
+kubectl get crd externalsecrets.external-secrets.io || echo "ExternalSecret CRD NOT FOUND!"
+kubectl api-resources --api-group=external-secrets.io | grep ExternalSecret || echo "ExternalSecret API RESOURCE NOT AVAILABLE!"
+echo ""
+echo "Attempting to create ExternalSecret with --server-side flag..."
+if ! kubectl apply --server-side -f - <<EOF
 apiVersion: external-secrets.io/v1beta1
 kind: ExternalSecret
 metadata:
@@ -231,6 +323,33 @@ spec:
         key: ${SECRET_NAME}
         property: NVD_API_KEY
 EOF
+then
+    echo -e "${YELLOW}⚠ Server-side apply failed, trying with --force-conflicts${NC}"
+    kubectl apply --server-side --force-conflicts -f - <<EOF
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  name: lookout-nvd-api-key
+  namespace: ${NAMESPACE}
+spec:
+  refreshInterval: 1h
+  secretStoreRef:
+    name: aws-secrets-manager
+    kind: SecretStore
+  target:
+    name: lookout-staging-lookout-app
+    creationPolicy: Owner
+    template:
+      engineVersion: v2
+      data:
+        NVD_API_KEY: "{{ .NVD_API_KEY }}"
+  data:
+    - secretKey: NVD_API_KEY
+      remoteRef:
+        key: ${SECRET_NAME}
+        property: NVD_API_KEY
+EOF
+fi
 echo -e "${GREEN}✓ ExternalSecret created${NC}\n"
 
 # Step 7: Verify setup
