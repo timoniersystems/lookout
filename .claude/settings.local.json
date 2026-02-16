@@ -78,7 +78,11 @@
       "Bash(docker-compose config:*)",
       "Bash(docker compose:*)",
       "Bash(docker compose build:*)",
-      "Bash(docker system prune:*)"
+      "Bash(docker system prune:*)",
+      "Bash(aws elbv2 describe-target-groups:*)",
+      "Bash(aws elbv2 describe-target-health:*)",
+      "Bash(aws elbv2 modify-target-group:*)",
+      "Bash(aws elbv2 describe-listeners:*)"
     ]
   }
 }
