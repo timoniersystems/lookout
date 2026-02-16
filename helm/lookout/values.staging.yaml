@@ -82,7 +82,8 @@ lookout-app:
     refreshInterval: "1h"
     aws:
       region: "us-west-2"
-      role: ""  # Uses EC2 instance role
+      role: ""  # Set for EKS/IRSA
+      credentialsSecret: "aws-credentials"  # K8s secret with access-key-id and secret-access-key
     secretStore:
       name: "aws-secrets-manager"
     secrets:

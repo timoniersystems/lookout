@@ -126,29 +126,51 @@ else
 fi
 echo ""
 
-# Step 3: Attach policy to EC2 instance role
-echo -e "${YELLOW}🔗 Step 3: Attaching policy to EC2 instance role${NC}"
-INSTANCE_ID=$(ec2-metadata --instance-id 2>/dev/null | cut -d ' ' -f 2 || aws ec2 describe-instances --filters "Name=tag:Name,Values=*kind*" --query 'Reservations[0].Instances[0].InstanceId' --output text --region ${AWS_REGION})
+# Step 3: Create IAM user and K8s credentials secret
+echo -e "${YELLOW}🔗 Step 3: Setting up IAM user and K8s credentials${NC}"
+IAM_USER="lookout-external-secrets"
 
-# Get the instance profile ARN, extract the profile name, then get the role name from the profile
-PROFILE_ARN=$(aws ec2 describe-instances --instance-ids ${INSTANCE_ID} --query 'Reservations[0].Instances[0].IamInstanceProfile.Arn' --output text --region ${AWS_REGION})
-PROFILE_NAME=$(echo ${PROFILE_ARN} | cut -d'/' -f2)
-ROLE_NAME=$(aws iam get-instance-profile --instance-profile-name ${PROFILE_NAME} --query 'InstanceProfile.Roles[0].RoleName' --output text 2>/dev/null)
-
-if [ -n "$ROLE_NAME" ]; then
-    # Check if policy is already attached
-    if aws iam list-attached-role-policies --role-name "${ROLE_NAME}" --query "AttachedPolicies[?PolicyArn=='${POLICY_ARN}'].PolicyArn" --output text | grep -q "${POLICY_ARN}"; then
-        echo "Policy already attached to role: ${ROLE_NAME}"
-    else
-        echo "Attaching policy to role: ${ROLE_NAME}"
-        aws iam attach-role-policy \
-            --role-name "${ROLE_NAME}" \
-            --policy-arn "${POLICY_ARN}"
-    fi
-    echo -e "${GREEN}✓ Policy attached to role: ${ROLE_NAME}${NC}"
+# Create IAM user if it doesn't exist
+if aws iam get-user --user-name "${IAM_USER}" &> /dev/null; then
+    echo "IAM user ${IAM_USER} already exists"
 else
-    echo -e "${YELLOW}⚠ No IAM role found on instance. You'll need to configure IRSA or use access keys${NC}"
+    echo "Creating IAM user: ${IAM_USER}"
+    aws iam create-user --user-name "${IAM_USER}" > /dev/null
 fi
+
+# Attach policy to user
+if aws iam list-attached-user-policies --user-name "${IAM_USER}" --query "AttachedPolicies[?PolicyArn=='${POLICY_ARN}'].PolicyArn" --output text | grep -q "${POLICY_ARN}"; then
+    echo "Policy already attached to user: ${IAM_USER}"
+else
+    echo "Attaching policy to user: ${IAM_USER}"
+    aws iam attach-user-policy \
+        --user-name "${IAM_USER}" \
+        --policy-arn "${POLICY_ARN}"
+fi
+
+# Create access key if K8s secret doesn't exist
+if kubectl get secret aws-credentials -n ${NAMESPACE} &> /dev/null; then
+    echo "K8s secret aws-credentials already exists"
+else
+    echo "Creating access key for IAM user..."
+    ACCESS_KEY_JSON=$(aws iam create-access-key --user-name "${IAM_USER}")
+    ACCESS_KEY_ID=$(echo "$ACCESS_KEY_JSON" | python3 -c "import sys,json; print(json.load(sys.stdin)['AccessKey']['AccessKeyId'])")
+    SECRET_ACCESS_KEY=$(echo "$ACCESS_KEY_JSON" | python3 -c "import sys,json; print(json.load(sys.stdin)['AccessKey']['SecretAccessKey'])")
+
+    kubectl apply -f - <<CREDEOF
+apiVersion: v1
+kind: Secret
+metadata:
+  name: aws-credentials
+  namespace: ${NAMESPACE}
+type: Opaque
+stringData:
+  access-key-id: "${ACCESS_KEY_ID}"
+  secret-access-key: "${SECRET_ACCESS_KEY}"
+CREDEOF
+    echo -e "${GREEN}✓ AWS credentials secret created in K8s${NC}"
+fi
+echo -e "${GREEN}✓ IAM user and credentials configured${NC}"
 echo ""
 
 # Step 4: Create secret in AWS Secrets Manager
@@ -190,9 +212,13 @@ spec:
       service: SecretsManager
       region: ${AWS_REGION}
       auth:
-        jwt:
-          serviceAccountRef:
-            name: default
+        secretRef:
+          accessKeyIDSecretRef:
+            name: aws-credentials
+            key: access-key-id
+          secretAccessKeySecretRef:
+            name: aws-credentials
+            key: secret-access-key
 EOF
 echo -e "${GREEN}✓ SecretStore created${NC}\n"
 
