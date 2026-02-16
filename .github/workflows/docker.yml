@@ -78,10 +78,15 @@ jobs:
           GO_VERSION=1.26.0
           TRIVY_VERSION=0.69.1
 
+    - name: List loaded images
+      run: |
+        echo "Listing Docker images:"
+        docker images | grep -E "(lookout|REPOSITORY)"
+
     - name: Run Trivy vulnerability scanner on image (SARIF)
       uses: aquasecurity/trivy-action@0.30.0
       with:
-        image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+        image-ref: ${{ steps.docker_build.outputs.imageid }}
         format: 'sarif'
         output: 'trivy-results.sarif'
         severity: 'CRITICAL,HIGH,MEDIUM'
@@ -95,7 +100,7 @@ jobs:
     - name: Run Trivy vulnerability scanner on image (Table)
       uses: aquasecurity/trivy-action@0.30.0
       with:
-        image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+        image-ref: ${{ steps.docker_build.outputs.imageid }}
         format: 'table'
         severity: 'CRITICAL,HIGH'
         exit-code: '1'
