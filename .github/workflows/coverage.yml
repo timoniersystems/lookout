@@ -3,8 +3,22 @@ name: Test Coverage
 on:
   push:
     branches: [ main ]
+    paths:
+      - '**.go'
+      - 'go.mod'
+      - 'go.sum'
+      - '.github/workflows/coverage.yml'
+      - 'cmd/**'
+      - 'pkg/**'
   pull_request:
     branches: [ main ]
+    paths:
+      - '**.go'
+      - 'go.mod'
+      - 'go.sum'
+      - '.github/workflows/coverage.yml'
+      - 'cmd/**'
+      - 'pkg/**'
 
 jobs:
   coverage:
