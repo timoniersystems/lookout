@@ -57,8 +57,12 @@ spec:
         volumeMounts:
         - name: tmp
           mountPath: /tmp
+        - name: cache
+          mountPath: /home/nonroot/.cache
       volumes:
       - name: tmp
+        emptyDir: {}
+      - name: cache
         emptyDir: {}
       {{- with .Values.nodeSelector }}
       nodeSelector:
