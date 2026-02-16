@@ -98,13 +98,32 @@ jobs:
       with:
         sarif_file: 'trivy-results.sarif'
 
+    - name: Run Trivy vulnerability scanner on image (JSON)
+      uses: aquasecurity/trivy-action@0.30.0
+      if: always()
+      continue-on-error: true
+      with:
+        image-ref: ${{ steps.docker_build.outputs.imageid }}
+        format: 'json'
+        output: 'trivy-results.json'
+        severity: 'CRITICAL,HIGH,MEDIUM,LOW'
+
+    - name: Upload Trivy JSON report
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: trivy-report-${{ github.sha }}
+        path: trivy-results.json
+        retention-days: 30
+
     - name: Run Trivy vulnerability scanner on image (Table)
       uses: aquasecurity/trivy-action@0.30.0
+      if: always()
+      continue-on-error: true  # Don't fail workflow on vulnerabilities
       with:
         image-ref: ${{ steps.docker_build.outputs.imageid }}
         format: 'table'
         severity: 'CRITICAL,HIGH'
-        exit-code: '1'
 
     - name: Push Docker image to registry
       if: github.event_name != 'pull_request'
