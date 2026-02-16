@@ -14,6 +14,7 @@ import (
 	"github.com/timoniersystems/lookout/pkg/common/trivy"
 	"github.com/timoniersystems/lookout/pkg/logging"
 	"github.com/timoniersystems/lookout/pkg/ui/dgraph"
+	"github.com/timoniersystems/lookout/pkg/validation"
 
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
@@ -50,6 +51,15 @@ func UploadBOMWithProgress(c echo.Context) error {
 	}
 	tempFilePath := tempFileHandle.Path
 	// Note: We DON'T defer cleanup here because processSBOMWithProgress will handle it
+
+	// Validate that the uploaded file is a CycloneDX BOM
+	if err := validation.ValidateCycloneDXBOM(tempFilePath); err != nil {
+		logging.Warn("[Session %s] SBOM validation failed: %v", sessionID, err)
+		os.Remove(tempFilePath)
+		return c.JSON(http.StatusBadRequest, map[string]interface{}{
+			"error": err.Error(),
+		})
+	}
 
 	// Create tracker BEFORE rendering page to avoid race condition
 	tracker := progress.NewTracker(sessionID)

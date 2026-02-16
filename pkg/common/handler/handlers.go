@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"path/filepath"
 	"sort"
 	"strings"
 
@@ -17,6 +18,7 @@ import (
 	"github.com/timoniersystems/lookout/pkg/repository"
 	"github.com/timoniersystems/lookout/pkg/service"
 	"github.com/timoniersystems/lookout/pkg/ui/dgraph"
+	"github.com/timoniersystems/lookout/pkg/validation"
 
 	"github.com/labstack/echo/v4"
 )
@@ -174,6 +176,25 @@ func CVES(c echo.Context) error {
 		}
 		defer tempFileHandle.Cleanup()
 
+		// Validate file content based on extension
+		ext := strings.ToLower(filepath.Ext(tempFileHandle.Path))
+		switch ext {
+		case ".txt":
+			if err := validation.ValidateCVETextFile(tempFileHandle.Path); err != nil {
+				logging.Warn("Upload validation failed: %v", err)
+				return c.JSON(http.StatusBadRequest, map[string]interface{}{
+					"error": err.Error(),
+				})
+			}
+		case ".json":
+			if err := validation.ValidateTrivyJSON(tempFileHandle.Path); err != nil {
+				logging.Warn("Upload validation failed: %v", err)
+				return c.JSON(http.StatusBadRequest, map[string]interface{}{
+					"error": err.Error(),
+				})
+			}
+		}
+
 		cveIDs, err := processor.ProcessFileInputForCVEs(tempFileHandle.Path)
 		if err != nil {
 			logging.Error("Failed to extract CVE IDs from uploaded file: %v", err)
@@ -218,6 +239,25 @@ func UploadAndProcess(c echo.Context) error {
 	defer tempFileHandle.Cleanup()
 
 	logging.Debug("Processing uploaded file at: %s", tempFileHandle.Path)
+
+	// Validate file content based on extension
+	ext := strings.ToLower(filepath.Ext(tempFileHandle.Path))
+	switch ext {
+	case ".txt":
+		if err := validation.ValidateCVETextFile(tempFileHandle.Path); err != nil {
+			logging.Warn("Upload validation failed: %v", err)
+			return c.JSON(http.StatusBadRequest, map[string]interface{}{
+				"error": err.Error(),
+			})
+		}
+	case ".json":
+		if err := validation.ValidateTrivyJSON(tempFileHandle.Path); err != nil {
+			logging.Warn("Upload validation failed: %v", err)
+			return c.JSON(http.StatusBadRequest, map[string]interface{}{
+				"error": err.Error(),
+			})
+		}
+	}
 
 	cvePurlMap, err := processor.ProcessFileInput(tempFileHandle.Path)
 	if err != nil {
@@ -339,6 +379,14 @@ func UploadBOMAndInsertData(deps *HandlerDependencies) echo.HandlerFunc {
 		defer tempFileHandle.Cleanup()
 
 		logging.Info("Processing BOM file: %s", tempFileHandle.Path)
+
+		// Validate that the uploaded file is a CycloneDX BOM
+		if err := validation.ValidateCycloneDXBOM(tempFileHandle.Path); err != nil {
+			logging.Warn("SBOM validation failed: %v", err)
+			return c.JSON(http.StatusBadRequest, map[string]interface{}{
+				"error": err.Error(),
+			})
+		}
 
 		bom, err := cyclonedx.ParseBOM(tempFileHandle.Path)
 		if err != nil {
