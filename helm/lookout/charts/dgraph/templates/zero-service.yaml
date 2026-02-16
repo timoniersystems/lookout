@@ -1,0 +1,27 @@
+{{- if .Values.zero.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: dgraph-zero
+  labels:
+    app.kubernetes.io/name: dgraph
+    app.kubernetes.io/component: zero
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+spec:
+  type: {{ .Values.zero.service.type }}
+  clusterIP: None  # Headless service for StatefulSet
+  ports:
+  - name: grpc
+    port: {{ .Values.zero.service.ports.grpc }}
+    targetPort: grpc
+    protocol: TCP
+  - name: http
+    port: {{ .Values.zero.service.ports.http }}
+    targetPort: http
+    protocol: TCP
+  selector:
+    app.kubernetes.io/name: dgraph
+    app.kubernetes.io/component: zero
+    app.kubernetes.io/instance: {{ .Release.Name }}
+{{- end }}

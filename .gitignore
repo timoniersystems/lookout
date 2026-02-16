@@ -60,8 +60,11 @@ __debug_bin
 /dgraph/
 *.db
 
-# Helm chart dependencies
+# Helm chart dependencies (but allow our custom subcharts)
 helm/*/charts/
+!helm/lookout/charts/
+!helm/lookout/charts/dgraph/
+!helm/lookout/charts/lookout-app/
 
 # TLS certificates (never commit!)
 nginx/certs/*.pem

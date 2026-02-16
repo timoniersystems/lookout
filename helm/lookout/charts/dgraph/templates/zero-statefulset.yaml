@@ -1,0 +1,76 @@
+{{- if .Values.zero.enabled }}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: dgraph-zero
+  labels:
+    app.kubernetes.io/name: dgraph
+    app.kubernetes.io/component: zero
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+spec:
+  serviceName: dgraph-zero
+  replicas: {{ .Values.zero.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: dgraph
+      app.kubernetes.io/component: zero
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: dgraph
+        app.kubernetes.io/component: zero
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+      securityContext:
+        {{- toYaml .Values.zero.securityContext | nindent 8 }}
+      containers:
+      - name: zero
+        image: "{{ .Values.zero.image.repository }}:{{ .Values.zero.image.tag }}"
+        imagePullPolicy: {{ .Values.zero.image.pullPolicy }}
+        ports:
+        - name: grpc
+          containerPort: {{ .Values.zero.service.ports.grpc }}
+          protocol: TCP
+        - name: http
+          containerPort: {{ .Values.zero.service.ports.http }}
+          protocol: TCP
+        command:
+        - dgraph
+        - zero
+        - --my=dgraph-zero-0.dgraph-zero:{{ .Values.zero.service.ports.grpc }}
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: {{ .Values.zero.service.ports.http }}
+          initialDelaySeconds: 60
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: {{ .Values.zero.service.ports.http }}
+          initialDelaySeconds: 10
+          periodSeconds: 5
+        resources:
+          {{- toYaml .Values.zero.resources | nindent 12 }}
+        {{- if .Values.zero.persistence.enabled }}
+        volumeMounts:
+        - name: data
+          mountPath: /dgraph
+        {{- end }}
+  {{- if .Values.zero.persistence.enabled }}
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+    spec:
+      accessModes:
+        {{- toYaml .Values.zero.persistence.accessModes | nindent 8 }}
+      {{- if .Values.zero.persistence.storageClass }}
+      storageClassName: {{ .Values.zero.persistence.storageClass }}
+      {{- end }}
+      resources:
+        requests:
+          storage: {{ .Values.zero.persistence.size }}
+  {{- end }}
+{{- end }}
