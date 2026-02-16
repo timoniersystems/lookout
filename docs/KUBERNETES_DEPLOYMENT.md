@@ -743,15 +743,16 @@ You'll need **two target groups** - one for HTTP and one for HTTPS.
 
 Repeat the above steps with:
 - Target group name: `lookout-staging-https-tg`
-- Protocol: `HTTP` (ALB forwards unencrypted traffic to target)
+- **Protocol: `HTTPS`** (ALB re-encrypts traffic and forwards HTTPS to target)
 - Port: `32443` (fixed HTTPS NodePort - Envoy Gateway terminates TLS)
 - **Health check protocol: `HTTPS`** (Port 32443 uses TLS)
 - Health check path: `/health`
 - Register same EC2 instance on port `32443`
 
 **Important:**
-- Target group protocol is `HTTP` (ALB terminates TLS and forwards unencrypted to target)
+- Target group protocol is `HTTPS` (ALB terminates TLS from client, then re-encrypts for backend)
 - Health check protocol is `HTTPS` (because Envoy Gateway's port 32443 uses TLS)
+- This provides end-to-end encryption from client to Envoy Gateway
 
 ### 4.4 Step 2: Configure Security Groups
 
@@ -885,8 +886,12 @@ export VPC_ID=vpc-xxxxx
 export EC2_INSTANCE_ID=i-xxxxx
 export SUBNET_1=subnet-xxxxx
 export SUBNET_2=subnet-xxxxx
+export SUBNET_3=subnet-xxxxx
 export CERTIFICATE_ARN=arn:aws:acm:us-east-1:xxxxx:certificate/xxxxx
 export HOSTED_ZONE_ID=Z0xxxxx
+
+# Optional: Enable multi-environment support (staging + production)
+export ENABLE_PROD=true
 
 # Run the script
 ./scripts/setup-alb.sh
@@ -895,13 +900,20 @@ export HOSTED_ZONE_ID=Z0xxxxx
 The script will:
 - ✅ Verify fixed NodePorts are configured
 - ✅ Create ALB and target security groups
-- ✅ Create HTTP and HTTPS target groups (ports 32080, 32443)
+- ✅ Create HTTP and HTTPS target groups (ports 32080, 32443) with Protocol=HTTPS
+- ✅ Automatically fix misconfigured target groups (wrong protocol)
 - ✅ Register EC2 instance with target groups
 - ✅ Create Application Load Balancer
-- ✅ Configure HTTP→HTTPS redirect listener
-- ✅ Configure HTTPS listener with ACM certificate
-- ✅ Create Route53 A record (alias)
+- ✅ Configure HTTP→HTTPS redirect listener (301)
+- ✅ Configure HTTPS listener with ACM certificate and end-to-end encryption
+- ✅ Configure host-based routing (if ENABLE_PROD=true):
+  - `lookout-stg.timonier.io` → staging target group
+  - `lookout-prod.timonier.io`, `lookout.timonier.io` → production target group
 - ✅ Verify target health
+
+**Multi-Environment Support:**
+- With `ENABLE_PROD=true`: Creates separate target groups for staging and production with host-based routing
+- Without `ENABLE_PROD`: Single staging environment only
 
 #### Manual Setup (Individual Commands)
 
@@ -981,13 +993,13 @@ HTTP_TG_ARN=$(aws elbv2 create-target-group \
 
 echo "HTTP Target Group ARN: $HTTP_TG_ARN"
 
-# Create HTTPS target group
+# Create HTTPS target group (Protocol=HTTPS for end-to-end encryption)
 HTTPS_TG_ARN=$(aws elbv2 create-target-group \
   --name lookout-staging-https-tg \
-  --protocol HTTP \
+  --protocol HTTPS \
   --port 32443 \
   --vpc-id $VPC_ID \
-  --health-check-protocol HTTP \
+  --health-check-protocol HTTPS \
   --health-check-path /health \
   --health-check-interval-seconds 10 \
   --health-check-timeout-seconds 5 \
