@@ -10,6 +10,10 @@ metadata:
     app.kubernetes.io/managed-by: {{ .Release.Service }}
 spec:
   gatewayClassName: {{ .Values.global.gatewayAPI.gatewayClassName }}
+  {{- if .Values.gateway.infrastructure }}
+  infrastructure:
+    {{- toYaml .Values.gateway.infrastructure | nindent 4 }}
+  {{- end }}
   listeners:
   {{- if .Values.gateway.listeners.http }}
   - name: http
