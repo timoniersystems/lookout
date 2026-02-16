@@ -1606,9 +1606,9 @@ cd ~/lookout
 This script will:
 1. Install External Secrets Operator
 2. Create IAM policy for Secrets Manager access
-3. Attach policy to EC2 instance role
+3. Create a dedicated IAM user (`lookout-external-secrets`) with access keys, stored as a K8s secret (`aws-credentials`)
 4. Create secret in AWS Secrets Manager
-5. Create SecretStore and ExternalSecret resources
+5. Create SecretStore (using `secretRef` auth) and ExternalSecret resources
 6. Verify the setup
 
 #### Option 2: Manual Setup
@@ -1652,20 +1652,43 @@ aws iam create-policy \
   --policy-document file://secrets-policy.json
 ```
 
-**C. Attach Policy to EC2 Instance Role**
+**C. Create IAM User and Bootstrap Credentials**
+
+Since Kind-on-EC2 can't use IRSA (EKS-only) or IMDS (not accessible from Docker containers),
+we use a dedicated IAM user with static credentials:
 
 ```bash
-# Get EC2 instance role name
-ROLE_NAME=$(aws ec2 describe-instances \
-  --instance-ids $(ec2-metadata --instance-id | cut -d ' ' -f 2) \
-  --query 'Reservations[0].Instances[0].IamInstanceProfile.Arn' \
-  --output text | cut -d'/' -f2)
+# Create IAM user
+aws iam create-user --user-name lookout-external-secrets
 
-# Attach policy
-aws iam attach-role-policy \
-  --role-name "${ROLE_NAME}" \
+# Attach the SecretsManager policy
+aws iam attach-user-policy \
+  --user-name lookout-external-secrets \
   --policy-arn "arn:aws:iam::$(aws sts get-caller-identity --query Account --output text):policy/LookoutSecretsManagerAccess"
+
+# Create access keys
+aws iam create-access-key --user-name lookout-external-secrets
+# Save the AccessKeyId and SecretAccessKey from the output
+
+# Create K8s secret with the credentials (bootstrap step)
+kubectl apply -f - <<EOF
+apiVersion: v1
+kind: Secret
+metadata:
+  name: aws-credentials
+  namespace: staging
+type: Opaque
+stringData:
+  access-key-id: "YOUR_ACCESS_KEY_ID"
+  secret-access-key: "YOUR_SECRET_ACCESS_KEY"
+EOF
 ```
+
+> **Important:** The `aws-credentials` secret is a bootstrap dependency — it must exist
+> before the SecretStore can authenticate to AWS. This secret is NOT managed by External
+> Secrets (it IS the credentials for External Secrets). It only needs to be created once
+> per cluster setup. If the cluster is recreated, re-run the setup script or recreate
+> this secret manually.
 
 **D. Create Secret in AWS Secrets Manager**
 
@@ -1704,7 +1727,8 @@ lookout-app:
     refreshInterval: "1h"  # How often to sync from AWS
     aws:
       region: "us-west-2"
-      role: ""  # Empty = use EC2 instance role
+      role: ""  # Set for EKS/IRSA; leave empty for Kind-on-EC2
+      credentialsSecret: "aws-credentials"  # K8s secret with access-key-id and secret-access-key
     secretStore:
       name: "aws-secrets-manager"
     secrets:
@@ -1712,6 +1736,10 @@ lookout-app:
         remoteKey: "lookout/staging/nvd-api-key"  # AWS secret name
         property: NVD_API_KEY  # JSON property in AWS secret
 ```
+
+**Auth modes** (set one, leave the other empty):
+- `credentialsSecret`: Name of a K8s secret containing `access-key-id` and `secret-access-key` (for Kind-on-EC2)
+- `role`: IAM role ARN for IRSA (for EKS)
 
 #### AWS Secret Format
 
@@ -1841,10 +1869,12 @@ kubectl describe externalsecret lookout-staging-lookout-app-external -n staging
 ```
 
 **Common issues:**
-- IAM permissions missing → Check EC2 instance role has the policy attached
+- `aws-credentials` K8s secret missing → Run setup script or create manually (see 5.2 Quick Start, Step C)
+- IAM user doesn't have policy attached → Attach `LookoutSecretsManagerAccess` policy
 - AWS secret doesn't exist → Create it in Secrets Manager
 - Wrong region → Ensure secret is in us-west-2
 - Wrong secret format → Must be valid JSON with the expected key
+- Wrong API version → ESO v2.0+ uses `external-secrets.io/v1` (not `v1beta1`)
 
 #### IAM Permission Errors
 
@@ -1852,15 +1882,28 @@ kubectl describe externalsecret lookout-staging-lookout-app-external -n staging
 
 **Fix:**
 ```bash
-# Verify instance has IAM role
-aws ec2 describe-instances \
-  --instance-ids $(ec2-metadata --instance-id | cut -d ' ' -f 2) \
-  --query 'Reservations[0].Instances[0].IamInstanceProfile'
+# Verify IAM user has the policy
+aws iam list-attached-user-policies --user-name lookout-external-secrets
 
-# Attach policy to role
-aws iam attach-role-policy \
-  --role-name YOUR_INSTANCE_ROLE \
+# Attach policy if missing
+aws iam attach-user-policy \
+  --user-name lookout-external-secrets \
   --policy-arn arn:aws:iam::ACCOUNT_ID:policy/LookoutSecretsManagerAccess
+```
+
+#### SecretStore Shows InvalidProviderConfig
+
+**Error:** `an IAM role must be associated with service account` or `no EC2 IMDS role found`
+
+**Cause:** SecretStore is configured for IRSA/IMDS auth instead of `secretRef`.
+Kind-on-EC2 can't use IRSA (EKS-only) or IMDS (not accessible from Docker containers).
+
+**Fix:** Ensure `credentialsSecret` is set in Helm values and the `aws-credentials` K8s secret exists:
+```bash
+# Check if credentials secret exists
+kubectl get secret aws-credentials -n staging
+
+# If missing, create it (see 5.2 Quick Start, Step C)
 ```
 
 #### Secret Not Appearing in Pod
@@ -1965,30 +2008,38 @@ lookout-app:
   externalSecrets:
     enabled: true
     refreshInterval: "30m"  # More frequent sync for production
+    aws:
+      region: "us-west-2"
+      role: ""  # Set IAM role ARN here if using EKS/IRSA
+      credentialsSecret: "aws-credentials"  # Same bootstrap pattern as staging
     secrets:
       - secretKey: NVD_API_KEY
         remoteKey: "lookout/production/nvd-api-key"  # Different path
         property: NVD_API_KEY
 ```
 
+> **Note:** The `aws-credentials` K8s secret must be bootstrapped in the production
+> cluster as well, using the same setup script or manual process.
+
 ### 5.9 Security Best Practices
 
 ✅ **DO:**
 - Use separate secrets for staging/production
 - Enable AWS CloudTrail for audit logging
-- Use IAM instance roles (not access keys)
-- Rotate secrets regularly (every 90 days)
+- Use a dedicated IAM user with least-privilege policy (only `secretsmanager:GetSecretValue` and `DescribeSecret`)
+- Rotate IAM access keys and secrets regularly (every 90 days)
 - Set up CloudWatch alarms for secret access
-- Use least-privilege IAM policies
 - Enable secret versioning in Secrets Manager
+- Use IRSA instead of static credentials if migrating to EKS
 
 ❌ **DON'T:**
 - Hardcode secrets in Helm values
-- Commit secrets to Git
+- Commit secrets or AWS access keys to Git
 - Use the same secret across environments
 - Share secrets via chat/email
 - Grant broader IAM permissions than needed
 - Disable CloudTrail logging
+- Reuse the ESO IAM user credentials for other purposes
 
 ### 5.10 Cost Considerations
 
