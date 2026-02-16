@@ -718,7 +718,7 @@ You'll need **two target groups** - one for HTTP and one for HTTPS.
 
 2. **Basic Configuration:**
    - Target type: `Instances`
-   - Target group name: `lookout-staging-http-tg`
+   - Target group name: `lookout-stg-http-tg`
    - Protocol: `HTTP`
    - Port: `32080` (fixed HTTP NodePort)
    - VPC: Select the VPC where your EC2 instance is running
@@ -742,7 +742,7 @@ You'll need **two target groups** - one for HTTP and one for HTTPS.
 #### HTTPS Target Group
 
 Repeat the above steps with:
-- Target group name: `lookout-staging-https-tg`
+- Target group name: `lookout-stg-https-tg`
 - **Protocol: `HTTPS`** (ALB re-encrypts traffic and forwards HTTPS to target)
 - Port: `32443` (fixed HTTPS NodePort - Envoy Gateway terminates TLS)
 - **Health check protocol: `HTTPS`** (Port 32443 uses TLS)
@@ -852,7 +852,7 @@ If you already have an SSL certificate:
    - Protocol: HTTPS
    - Port: 443
    - Default SSL/TLS certificate: Select the certificate from Step 3
-   - Default action: Forward to `lookout-staging-https-tg`
+   - Default action: Forward to `lookout-stg-https-tg`
 
 7. **Review and Create**
 
@@ -976,7 +976,7 @@ aws ec2 authorize-security-group-ingress \
 ```bash
 # Create HTTP target group
 HTTP_TG_ARN=$(aws elbv2 create-target-group \
-  --name lookout-staging-http-tg \
+  --name lookout-stg-http-tg \
   --protocol HTTP \
   --port 32080 \
   --vpc-id $VPC_ID \
@@ -995,7 +995,7 @@ echo "HTTP Target Group ARN: $HTTP_TG_ARN"
 
 # Create HTTPS target group (Protocol=HTTPS for end-to-end encryption)
 HTTPS_TG_ARN=$(aws elbv2 create-target-group \
-  --name lookout-staging-https-tg \
+  --name lookout-stg-https-tg \
   --protocol HTTPS \
   --port 32443 \
   --vpc-id $VPC_ID \
@@ -1188,8 +1188,8 @@ See the [Quick Setup with Script](#quick-setup-with-script) section above for us
 
 ```bash
 # Check Target Health (AWS Console)
-# EC2 → Target Groups → lookout-staging-http-tg → Targets tab
-# EC2 → Target Groups → lookout-staging-https-tg → Targets tab
+# EC2 → Target Groups → lookout-stg-http-tg → Targets tab
+# EC2 → Target Groups → lookout-stg-https-tg → Targets tab
 # Both should show "healthy"
 
 # Test DNS Resolution
