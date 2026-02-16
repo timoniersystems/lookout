@@ -33,7 +33,26 @@ else
         -l app.kubernetes.io/name=external-secrets \
         -n external-secrets-system \
         --timeout=120s
+
+    echo "Waiting for CRDs to be available..."
+    for i in {1..30}; do
+        if kubectl get crd secretstores.external-secrets.io &> /dev/null && \
+           kubectl get crd externalsecrets.external-secrets.io &> /dev/null; then
+            echo "CRDs are ready"
+            break
+        fi
+        echo "Waiting for CRDs... ($i/30)"
+        sleep 2
+    done
 fi
+
+# Verify CRDs are installed
+if ! kubectl get crd secretstores.external-secrets.io &> /dev/null; then
+    echo -e "${YELLOW}⚠ CRDs not found. Installing manually...${NC}"
+    kubectl apply -f https://raw.githubusercontent.com/external-secrets/external-secrets/main/deploy/crds/bundle.yaml
+    sleep 5
+fi
+
 echo -e "${GREEN}✓ External Secrets Operator ready${NC}\n"
 
 # Step 2: Create IAM policy for Secrets Manager access
