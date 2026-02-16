@@ -1,9 +1,10 @@
 #!/bin/bash
-set -e
+# Note: Not using 'set -e' to allow idempotent re-runs
 
 # AWS Application Load Balancer Setup Script
 # This script automates the creation of an ALB for Lookout staging environment
 # Prerequisites: AWS CLI configured, kubectl access to Kind cluster
+# This script is idempotent and can be run multiple times safely
 
 # Colors for output
 RED='\033[0;31m'
@@ -12,6 +13,7 @@ YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
 echo "🚀 Setting up AWS Application Load Balancer for Lookout Staging"
+echo "   This script is idempotent and safe to re-run"
 echo ""
 
 # Configuration - UPDATE THESE VALUES
@@ -27,7 +29,7 @@ if [ -z "$VPC_ID" ]; then
 fi
 
 # Validate required variables
-REQUIRED_VARS=(VPC_ID EC2_INSTANCE_ID SUBNET_1 SUBNET_2 CERTIFICATE_ARN HOSTED_ZONE_ID)
+REQUIRED_VARS=(VPC_ID EC2_INSTANCE_ID SUBNET_1 SUBNET_2 SUBNET_3 CERTIFICATE_ARN HOSTED_ZONE_ID)
 for var in "${REQUIRED_VARS[@]}"; do
     if [ -z "${!var}" ]; then
         echo -e "${RED}ERROR: $var environment variable not set${NC}"
@@ -39,7 +41,7 @@ echo "Configuration:"
 echo "  AWS Region: $AWS_REGION"
 echo "  VPC ID: $VPC_ID"
 echo "  EC2 Instance: $EC2_INSTANCE_ID"
-echo "  Subnets: $SUBNET_1, $SUBNET_2"
+echo "  Subnets: $SUBNET_1, $SUBNET_2, $SUBNET_3"
 echo "  Certificate ARN: $CERTIFICATE_ARN"
 echo "  Hosted Zone ID: $HOSTED_ZONE_ID"
 echo ""
@@ -121,6 +123,20 @@ HTTP_TG_ARN=$(aws elbv2 create-target-group \
 
 echo -e "${GREEN}✓ HTTP Target Group: $HTTP_TG_ARN${NC}"
 
+# Ensure HTTP target group has correct settings
+echo "🔧 Updating HTTP target group health check settings..."
+aws elbv2 modify-target-group \
+    --target-group-arn $HTTP_TG_ARN \
+    --health-check-protocol HTTP \
+    --health-check-path /health \
+    --health-check-port 32080 \
+    --health-check-interval-seconds 10 \
+    --health-check-timeout-seconds 5 \
+    --healthy-threshold-count 2 \
+    --unhealthy-threshold-count 2 \
+    --matcher HttpCode=200 \
+    --region $AWS_REGION > /dev/null
+
 # Create HTTPS Target Group
 echo "🎯 Creating HTTPS target group..."
 HTTPS_TG_ARN=$(aws elbv2 create-target-group \
@@ -146,17 +162,43 @@ HTTPS_TG_ARN=$(aws elbv2 create-target-group \
 
 echo -e "${GREEN}✓ HTTPS Target Group: $HTTPS_TG_ARN${NC}"
 
+# Ensure HTTPS target group has correct settings
+echo "🔧 Updating HTTPS target group health check settings..."
+aws elbv2 modify-target-group \
+    --target-group-arn $HTTPS_TG_ARN \
+    --health-check-protocol HTTPS \
+    --health-check-path /health \
+    --health-check-port 32443 \
+    --health-check-interval-seconds 10 \
+    --health-check-timeout-seconds 5 \
+    --healthy-threshold-count 2 \
+    --unhealthy-threshold-count 2 \
+    --matcher HttpCode=200 \
+    --region $AWS_REGION > /dev/null
+
 # Register EC2 instance with target groups
 echo "🎯 Registering EC2 instance with target groups..."
+
+# Deregister first to ensure clean state, then re-register
+aws elbv2 deregister-targets \
+    --target-group-arn $HTTP_TG_ARN \
+    --targets Id=$EC2_INSTANCE_ID \
+    --region $AWS_REGION 2>/dev/null || true
+
 aws elbv2 register-targets \
     --target-group-arn $HTTP_TG_ARN \
     --targets Id=$EC2_INSTANCE_ID,Port=32080 \
-    --region $AWS_REGION 2>/dev/null || echo "  (already registered)"
+    --region $AWS_REGION
+
+aws elbv2 deregister-targets \
+    --target-group-arn $HTTPS_TG_ARN \
+    --targets Id=$EC2_INSTANCE_ID \
+    --region $AWS_REGION 2>/dev/null || true
 
 aws elbv2 register-targets \
     --target-group-arn $HTTPS_TG_ARN \
     --targets Id=$EC2_INSTANCE_ID,Port=32443 \
-    --region $AWS_REGION 2>/dev/null || echo "  (already registered)"
+    --region $AWS_REGION
 
 echo -e "${GREEN}✓ Targets registered${NC}"
 
@@ -164,7 +206,7 @@ echo -e "${GREEN}✓ Targets registered${NC}"
 echo "⚖️  Creating Application Load Balancer..."
 ALB_ARN=$(aws elbv2 create-load-balancer \
     --name lookout-staging-alb \
-    --subnets $SUBNET_1 $SUBNET_2 \
+    --subnets $SUBNET_1 $SUBNET_2 $SUBNET_3 \
     --security-groups $ALB_SG_ID \
     --scheme internet-facing \
     --type application \
@@ -179,6 +221,13 @@ ALB_ARN=$(aws elbv2 create-load-balancer \
         --output text)
 
 echo -e "${GREEN}✓ ALB ARN: $ALB_ARN${NC}"
+
+# Update ALB security groups (in case they changed)
+echo "🔧 Updating ALB security groups..."
+aws elbv2 set-security-groups \
+    --load-balancer-arn $ALB_ARN \
+    --security-groups $ALB_SG_ID \
+    --region $AWS_REGION > /dev/null || echo "  (security groups already set)"
 
 # Get ALB DNS name and Hosted Zone ID
 ALB_DNS=$(aws elbv2 describe-load-balancers \
@@ -243,39 +292,47 @@ if [ -z "$HTTPS_LISTENER_ARN" ]; then
         --region $AWS_REGION \
         --query 'Listeners[0].ListenerArn' \
         --output text)
+else
+    # Update existing HTTPS listener with correct certificate and target group
+    echo "🔧 Updating HTTPS listener configuration..."
+    aws elbv2 modify-listener \
+        --listener-arn $HTTPS_LISTENER_ARN \
+        --certificates CertificateArn=$CERTIFICATE_ARN \
+        --default-actions Type=forward,TargetGroupArn=$HTTPS_TG_ARN \
+        --region $AWS_REGION > /dev/null || echo "  (listener already configured)"
 fi
 
 echo -e "${GREEN}✓ HTTPS Listener: $HTTPS_LISTENER_ARN${NC}"
 
 # Create Route53 A record
-echo "🌐 Creating Route53 A record..."
-cat > /tmp/route53-change.json <<EOF
-{
-  "Changes": [
-    {
-      "Action": "UPSERT",
-      "ResourceRecordSet": {
-        "Name": "lookout-stg.timonier.io",
-        "Type": "A",
-        "AliasTarget": {
-          "HostedZoneId": "$ALB_ZONE_ID",
-          "DNSName": "$ALB_DNS",
-          "EvaluateTargetHealth": true
-        }
-      }
-    }
-  ]
-}
-EOF
+# echo "🌐 Creating Route53 A record..."
+# cat > /tmp/route53-change.json <<EOF
+# {
+#   "Changes": [
+#     {
+#       "Action": "UPSERT",
+#       "ResourceRecordSet": {
+#         "Name": "lookout-stg.timonier.io",
+#         "Type": "A",
+#         "AliasTarget": {
+#           "HostedZoneId": "$ALB_ZONE_ID",
+#           "DNSName": "$ALB_DNS",
+#           "EvaluateTargetHealth": true
+#         }
+#       }
+#     }
+#   ]
+# }
+# EOF
 
-aws route53 change-resource-record-sets \
-    --hosted-zone-id $HOSTED_ZONE_ID \
-    --change-batch file:///tmp/route53-change.json \
-    --region $AWS_REGION > /dev/null
+# aws route53 change-resource-record-sets \
+#     --hosted-zone-id $HOSTED_ZONE_ID \
+#     --change-batch file:///tmp/route53-change.json \
+#     --region $AWS_REGION > /dev/null
 
-rm /tmp/route53-change.json
+# rm /tmp/route53-change.json
 
-echo -e "${GREEN}✓ Route53 record created for lookout-stg.timonier.io${NC}"
+# echo -e "${GREEN}✓ Route53 record created for lookout-stg.timonier.io${NC}"
 
 # Verify target health
 echo ""

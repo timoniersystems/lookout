@@ -619,7 +619,96 @@ kubectl get svc -n envoy-gateway-system -l gateway.envoyproxy.io/owning-gateway-
 # Expected: 8080:32080/TCP,8443:32443/TCP
 ```
 
-### 4.3 Step 1: Create Target Groups
+### 4.3 Kind-Specific Setup (Required for Kind Clusters)
+
+**IMPORTANT:** If you're using a Kind cluster (like in this setup), Kind NodePorts are **not exposed to the EC2 host** by default. They only exist within the Kind Docker container network. You must complete these additional steps before setting up the ALB:
+
+#### Step 1: Setup NodePort Forwarding
+
+Run the automated script to forward NodePorts from the Kind container to the EC2 host:
+
+```bash
+# SSH to EC2
+ssh ubuntu@10.0.3.142
+
+# Run the NodePort forwarding script
+./scripts/setup-kind-nodeport-forwarding.sh
+```
+
+This script:
+- Installs `socat` if not already installed
+- Creates port forwarding from EC2 host ports 32080 and 32443 to Kind container
+- Verifies the forwarding is working
+
+**Manual setup (if script fails):**
+
+```bash
+# Get Kind container IP
+KIND_IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' lookout-control-plane)
+
+# Install socat
+sudo apt-get update && sudo apt-get install -y socat
+
+# Forward port 32080 (HTTP)
+sudo nohup socat TCP4-LISTEN:32080,fork,reuseaddr TCP4:${KIND_IP}:32080 > /tmp/socat-32080.log 2>&1 &
+
+# Forward port 32443 (HTTPS)
+sudo nohup socat TCP4-LISTEN:32443,fork,reuseaddr TCP4:${KIND_IP}:32443 > /tmp/socat-32443.log 2>&1 &
+
+# Verify forwarding is active
+ps aux | grep "[s]ocat.*3204"
+```
+
+#### Step 2: Setup Health Check HTTPRoute
+
+ALB health checks don't send the `Host: lookout-stg.timonier.io` header. Create an HTTPRoute that accepts `/health` requests without hostname restrictions:
+
+```bash
+# Run the health check HTTPRoute setup script
+./scripts/setup-health-httproute.sh
+```
+
+This creates an HTTPRoute that:
+- Accepts requests to `/health` from any hostname
+- Forwards to the Lookout app service
+- Allows ALB health checks to succeed
+
+**Manual setup (if script fails):**
+
+```bash
+kubectl apply -f - <<EOF
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: lookout-health
+  namespace: staging
+spec:
+  parentRefs:
+  - name: lookout-staging
+  rules:
+  - matches:
+    - path:
+        type: Exact
+        value: /health
+    backendRefs:
+    - name: lookout-staging-lookout-app
+      port: 3000
+EOF
+```
+
+**Test the setup:**
+
+```bash
+# Test HTTP port without Host header
+curl http://localhost:32080/health
+
+# Test HTTPS port without Host header
+curl -k https://localhost:32443/health
+
+# Both should return: {"service":"lookout-ui","status":"healthy",...}
+```
+
+### 4.4 Step 1: Create Target Groups
 
 You'll need **two target groups** - one for HTTP and one for HTTPS.
 
@@ -654,12 +743,15 @@ You'll need **two target groups** - one for HTTP and one for HTTPS.
 
 Repeat the above steps with:
 - Target group name: `lookout-staging-https-tg`
-- Protocol: `HTTP` (Envoy Gateway terminates TLS)
-- Port: `32443` (fixed HTTPS NodePort)
+- Protocol: `HTTP` (ALB forwards unencrypted traffic to target)
+- Port: `32443` (fixed HTTPS NodePort - Envoy Gateway terminates TLS)
+- **Health check protocol: `HTTPS`** (Port 32443 uses TLS)
 - Health check path: `/health`
 - Register same EC2 instance on port `32443`
 
-**Note:** Use HTTP protocol for the target group even though it's on the HTTPS port, because Envoy Gateway terminates TLS.
+**Important:**
+- Target group protocol is `HTTP` (ALB terminates TLS and forwards unencrypted to target)
+- Health check protocol is `HTTPS` (because Envoy Gateway's port 32443 uses TLS)
 
 ### 4.4 Step 2: Configure Security Groups
 
