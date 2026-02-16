@@ -13,5 +13,12 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
+    - name: Sanity check package exists
+      run: |
+        ls -la pkg/ui || true
+        find pkg/ui -maxdepth 2 -type d -print || true
+        grep -R --line-number 'pkg/ui/dgraph' -n cmd/ui/main.go || true
+        cat go.mod | head -n 5
+
     - name: Build Docker image
       run: docker build -t lookout:${{ github.sha }} .
