@@ -39,10 +39,10 @@ jobs:
     #       ${{ runner.os }}-go-${{ matrix.go-version }}-
 
     - name: Run tests
-      run: go test -mod=vendor -v -race -timeout 5m ./...
+      run: go test -v -race -timeout 5m ./...
 
     - name: Run tests with coverage
-      run: go test -mod=vendor -v -coverprofile=coverage.out -covermode=atomic ./...
+      run: go test -v -coverprofile=coverage.out -covermode=atomic ./...
 
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v4
@@ -102,10 +102,10 @@ jobs:
         cache-dependency-path: go.sum
 
     - name: Build CLI
-      run: go build -mod=vendor -v -o lookout ./cmd/cli
+      run: go build -v -o lookout ./cmd/cli
 
     - name: Build UI
-      run: go build -mod=vendor -v -o lookout-ui ./cmd/ui
+      run: go build -v -o lookout-ui ./cmd/ui
 
     - name: Upload CLI artifact
       uses: actions/upload-artifact@v4
