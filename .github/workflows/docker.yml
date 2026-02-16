@@ -101,7 +101,7 @@ jobs:
         exit-code: '1'
 
   test-build:
-    name: Test Multi-Platform Build
+    name: Build Multi-Platform
     runs-on: ubuntu-latest
     strategy:
       matrix:
