@@ -13,35 +13,58 @@ Internet → Route53 (lookout-stg.timonier.io) → ALB → EC2 Instance → Kind
 
 - AWS account with appropriate IAM permissions
 - EC2 instance at `<EC2_INSTANCE_IP>` with Kind cluster running
+- **Envoy Gateway configured with fixed NodePorts** (see [GATEWAY_SETUP.md](GATEWAY_SETUP.md))
+  - HTTP NodePort: `32080`
+  - HTTPS NodePort: `32443`
 - Domain `timonier.io` managed in Route53 (or ability to create DNS records)
-- SSL certificate for `*.timonier.io` or `lookout-stg.timonier.io`
+- SSL certificate for `*.timonier.io` or `lookout-stg.timonier.io` in AWS Certificate Manager
 
-## Step 1: Identify the Envoy Gateway Service
-
-First, find the NodePort or port that Envoy Gateway is exposing:
-
+**Important:** Before configuring the ALB, ensure the Gateway is set up with fixed NodePorts by running:
 ```bash
-ssh ubuntu@<EC2_INSTANCE_IP> 'kubectl get svc -n envoy-gateway-system'
+ssh ubuntu@<EC2_INSTANCE_IP> 'cd lookout && ./scripts/setup-fixed-nodeports.sh'
 ```
 
-The Envoy Gateway should have a service that exposes ports for HTTP (80) and HTTPS (443). For Kind clusters, this will typically be a NodePort service.
+## Step 1: Configure Fixed NodePorts for Envoy Gateway
 
-If not already exposed, you may need to create a NodePort service or configure the gateway to use a specific port.
+The Envoy Gateway has been configured with **fixed NodePorts** to ensure they don't change when the Gateway is recreated:
 
-## Step 2: Create Target Group
+- **HTTP NodePort:** `32080` (Gateway port 8080)
+- **HTTPS NodePort:** `32443` (Gateway port 8443)
+
+These ports are configured via the `scripts/setup-fixed-nodeports.sh` script and will remain stable across Gateway recreations.
+
+To verify the NodePorts:
+
+```bash
+ssh ubuntu@<EC2_INSTANCE_IP> 'kubectl get svc -n envoy-gateway-system -l gateway.envoyproxy.io/owning-gateway-name=lookout-staging'
+```
+
+Expected output:
+```
+NAME                                     TYPE           PORT(S)
+envoy-staging-lookout-staging-*          LoadBalancer   8080:32080/TCP,8443:32443/TCP
+```
+
+**Note:** If you need to reconfigure the Gateway or NodePorts, see [GATEWAY_SETUP.md](GATEWAY_SETUP.md) for detailed instructions.
+
+## Step 2: Create Target Groups
+
+You'll need **two target groups** - one for HTTP and one for HTTPS:
+
+### HTTP Target Group
 
 1. **Navigate to EC2 Console** → **Target Groups** → **Create target group**
 
 2. **Basic Configuration:**
    - Target type: `Instances`
-   - Target group name: `lookout-staging-tg`
+   - Target group name: `lookout-staging-http-tg`
    - Protocol: `HTTP`
-   - Port: Get the NodePort from Step 1 (likely `30000-32767` range) or use the Kind cluster's gateway port
+   - Port: `32080` (fixed HTTP NodePort)
    - VPC: Select the VPC where your EC2 instance is running
 
 3. **Health Check Settings:**
    - Health check protocol: `HTTP`
-   - Health check path: `/health` (or another health endpoint exposed by your app)
+   - Health check path: `/health`
    - Advanced health check settings:
      - Healthy threshold: `2`
      - Unhealthy threshold: `2`
@@ -50,23 +73,39 @@ If not already exposed, you may need to create a NodePort service or configure t
      - Success codes: `200`
 
 4. **Register Targets:**
-   - Select your EC2 instance (`<EC2_INSTANCE_IP>`)
-   - Port: The NodePort from Step 1
+   - Select your EC2 instance
+   - Port: `32080`
    - Click "Include as pending below"
    - Click "Create target group"
+
+### HTTPS Target Group
+
+Repeat the above steps with:
+- Target group name: `lookout-staging-https-tg`
+- Protocol: `HTTPS` (or `HTTP` if Envoy Gateway terminates TLS)
+- Port: `32443` (fixed HTTPS NodePort)
+- Health check path: `/health`
+- Register same EC2 instance on port `32443`
+
+**Note:** The Envoy Gateway terminates TLS, so you can use HTTP protocol for the target group even though it's on the HTTPS port. The connection from ALB to the target uses the NodePort (32080/32443).
 
 ## Step 3: Configure Security Groups
 
 ### EC2 Instance Security Group
 
-Ensure the security group attached to your EC2 instance allows:
+Ensure the security group attached to your EC2 instance allows traffic from the ALB on both NodePorts:
 
 ```
 Inbound Rules:
 - Type: Custom TCP
-  Port: <NodePort from Step 1>
+  Port: 32080
   Source: <ALB Security Group>
-  Description: Allow traffic from ALB
+  Description: Allow HTTP traffic from ALB
+
+- Type: Custom TCP
+  Port: 32443
+  Source: <ALB Security Group>
+  Description: Allow HTTPS traffic from ALB
 ```
 
 ### Create ALB Security Group
@@ -149,7 +188,9 @@ If you already have an SSL certificate:
    - Protocol: HTTPS
    - Port: 443
    - Default SSL/TLS certificate: Select the certificate from Step 4
-   - Default action: Forward to `lookout-staging-tg`
+   - Default action: Forward to `lookout-staging-https-tg`
+
+   **Note:** You can also forward HTTP traffic directly to `lookout-staging-http-tg` instead of redirecting, depending on your requirements.
 
 7. **Review and Create**
 
@@ -189,8 +230,9 @@ If you need more sophisticated routing:
 1. **Check Target Health:**
    ```bash
    # In AWS Console
-   EC2 → Target Groups → lookout-staging-tg → Targets tab
-   # Status should show "healthy"
+   EC2 → Target Groups → lookout-staging-http-tg → Targets tab
+   EC2 → Target Groups → lookout-staging-https-tg → Targets tab
+   # Both should show "healthy"
    ```
 
 2. **Test DNS Resolution:**
@@ -213,11 +255,18 @@ If you need more sophisticated routing:
 
 ### Target is Unhealthy
 
-1. Check EC2 security group allows traffic from ALB
-2. Verify the NodePort is correct
+1. Check EC2 security group allows traffic from ALB on ports 32080 and 32443
+2. Verify the Gateway service is running with fixed NodePorts:
+   ```bash
+   ssh ubuntu@<EC2_INSTANCE_IP> 'kubectl get svc -n envoy-gateway-system'
+   ```
 3. Check health check path is accessible:
    ```bash
-   ssh ubuntu@<EC2_INSTANCE_IP> 'curl -I http://localhost:<NodePort>/health'
+   # Test HTTP NodePort
+   ssh ubuntu@<EC2_INSTANCE_IP> 'curl -I -H "Host: lookout-stg.timonier.io" http://localhost:32080/health'
+
+   # Test HTTPS NodePort
+   ssh ubuntu@<EC2_INSTANCE_IP> 'curl -I -k -H "Host: lookout-stg.timonier.io" https://localhost:32443/health'
    ```
 4. Check Kind cluster status:
    ```bash
@@ -252,18 +301,24 @@ If you need more sophisticated routing:
    dig lookout-stg.timonier.io
    ```
 
-## Alternative: Using NodePort Directly
+## Fixed NodePorts: Why They Matter
 
-If you want to simplify the setup without Envoy Gateway:
+The Envoy Gateway is configured with **fixed NodePorts** (32080 and 32443) to ensure:
 
-1. Create a NodePort service for the Lookout app:
-   ```bash
-   ssh ubuntu@<EC2_INSTANCE_IP> 'kubectl patch svc lookout-staging-lookout-app -n staging -p "{\"spec\":{\"type\":\"NodePort\",\"ports\":[{\"port\":3000,\"nodePort\":30080}]}}"'
-   ```
+1. **Stable ALB Configuration:** NodePorts don't change when the Gateway is recreated
+2. **No Target Group Updates:** You don't need to reconfigure ALB target groups
+3. **Predictable Port Mapping:** Always know which ports to allow in security groups
 
-2. Configure target group to use port `30080`
+This configuration is managed by:
+- `scripts/setup-fixed-nodeports.sh` - Creates EnvoyProxy with fixed ports
+- `helm/lookout/values.staging.yaml` - References the EnvoyProxy infrastructure config
+- `k8s/gateway/envoyproxy-config.yaml` - EnvoyProxy resource definition
 
-3. Update EC2 security group to allow port `30080` from ALB
+If you need to change the NodePorts, update the `HTTP_NODEPORT` and `HTTPS_NODEPORT` environment variables when running the setup script:
+
+```bash
+HTTP_NODEPORT=32090 HTTPS_NODEPORT=32453 ./scripts/setup-fixed-nodeports.sh
+```
 
 ## Architecture Diagram
 
@@ -284,7 +339,9 @@ If you want to simplify the setup without Envoy Gateway:
                 └───────────────┬────────────────┘
                                 │
                 ┌───────────────▼────────────────┐
-                │  Target Group                  │
+                │  Target Groups                 │
+                │  - HTTP TG → Port 32080        │
+                │  - HTTPS TG → Port 32443       │
                 │  Health Check: /health         │
                 └───────────────┬────────────────┘
                                 │
@@ -294,7 +351,8 @@ If you want to simplify the setup without Envoy Gateway:
                 │  │  Kind Cluster            │  │
                 │  │  ┌────────────────────┐  │  │
                 │  │  │ Envoy Gateway      │  │  │
-                │  │  │ NodePort: 30XXX    │  │  │
+                │  │  │ HTTP: :32080       │  │  │
+                │  │  │ HTTPS: :32443      │  │  │
                 │  │  └─────────┬──────────┘  │  │
                 │  │            │              │  │
                 │  │  ┌─────────▼──────────┐  │  │
