@@ -2,7 +2,7 @@
 set -e
 
 # Sync code to EC2 instance
-# Usage: EC2_HOST=ubuntu@<EC2_PRIVATE_IP> ./scripts/sync-to-ec2.sh
+# Usage: EC2_HOST=ubuntu@<your-ec2-ip> ./scripts/sync-to-ec2.sh
 
 EC2_HOST="${EC2_HOST:-}"
 EC2_DIR="${EC2_DIR:-lookout}"
@@ -12,10 +12,10 @@ if [[ -z "$EC2_HOST" ]]; then
     echo "❌ Error: EC2_HOST environment variable is not set"
     echo ""
     echo "Usage:"
-    echo "  EC2_HOST=ubuntu@<EC2_PRIVATE_IP> $0"
+    echo "  EC2_HOST=ubuntu@<your-ec2-ip> $0"
     echo ""
     echo "Or export it first:"
-    echo "  export EC2_HOST=ubuntu@<EC2_PRIVATE_IP>"
+    echo "  export EC2_HOST=ubuntu@<your-ec2-ip>"
     echo "  $0"
     exit 1
 fi
