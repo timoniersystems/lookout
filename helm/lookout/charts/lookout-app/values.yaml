@@ -82,6 +82,13 @@ readinessProbe:
   initialDelaySeconds: 5
   periodSeconds: 5
 
+# Trivy vulnerability DB cache
+trivyCache:
+  persistence:
+    enabled: false
+    size: 2Gi
+    storageClass: ""
+
 nodeSelector: {}
 
 tolerations: []

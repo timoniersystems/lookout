@@ -1,0 +1,17 @@
+{{- if .Values.trivyCache.persistence.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "lookout-app.fullname" . }}-trivy-cache
+  labels:
+    {{- include "lookout-app.labels" . | nindent 4 }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.trivyCache.persistence.size }}
+  {{- if .Values.trivyCache.persistence.storageClass }}
+  storageClassName: {{ .Values.trivyCache.persistence.storageClass }}
+  {{- end }}
+{{- end }}

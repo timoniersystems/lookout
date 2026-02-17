@@ -44,6 +44,11 @@ spec:
         - secretRef:
             name: {{ include "lookout-app.fullname" . }}
         {{- end }}
+        {{- if .Values.trivyCache.persistence.enabled }}
+        env:
+        - name: TRIVY_SKIP_DB_UPDATE
+          value: "false"
+        {{- end }}
         {{- with .Values.livenessProbe }}
         livenessProbe:
           {{- toYaml . | nindent 12 }}
@@ -59,11 +64,20 @@ spec:
           mountPath: /tmp
         - name: cache
           mountPath: /home/nonroot/.cache
+        {{- if .Values.trivyCache.persistence.enabled }}
+        - name: trivy-cache
+          mountPath: /opt/trivy-cache
+        {{- end }}
       volumes:
       - name: tmp
         emptyDir: {}
       - name: cache
         emptyDir: {}
+      {{- if .Values.trivyCache.persistence.enabled }}
+      - name: trivy-cache
+        persistentVolumeClaim:
+          claimName: {{ include "lookout-app.fullname" . }}-trivy-cache
+      {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

@@ -42,6 +42,14 @@ lookout-app:
   enabled: true
   replicaCount: 3  # High availability
 
+  # Persistent Trivy DB cache - stays fresh across pod restarts
+  # Note: RWO PVC constrains all replicas to one node. For multi-node HA,
+  # consider ReadWriteMany storage or disabling this to use the baked-in DB.
+  trivyCache:
+    persistence:
+      enabled: true
+      size: 2Gi
+
   image:
     repository: registry:5000/lookout
     pullPolicy: IfNotPresent

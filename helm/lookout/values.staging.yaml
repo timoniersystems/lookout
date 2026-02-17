@@ -57,6 +57,12 @@ lookout-app:
   enabled: true
   replicaCount: 1  # Single replica for kind cluster
 
+  # Persistent Trivy DB cache - stays fresh across pod restarts
+  trivyCache:
+    persistence:
+      enabled: true
+      size: 2Gi
+
   image:
     repository: ghcr.io/timoniersystems/lookout
     pullPolicy: Always  # Always pull latest in staging
