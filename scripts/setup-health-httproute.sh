@@ -45,7 +45,7 @@ spec:
         type: Exact
         value: /health
     backendRefs:
-    - name: lookout-lookout-app
+    - name: lookout-staging-lookout-app
       port: 3000
 EOF
 
