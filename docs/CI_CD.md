@@ -52,7 +52,6 @@ Lookout uses GitHub Actions for continuous integration and deployment.
 
 3. **Push** - Push image to GHCR (skipped on pull requests)
    - Requires build and scan to pass first
-   - Attests build provenance via `actions/attest-build-provenance@v2` (OIDC-signed, pushed to registry)
 
 4. **Docker Compose** - Integration test of the full stack
    - Generates TLS certs, starts all services
@@ -77,14 +76,12 @@ Lookout uses GitHub Actions for continuous integration and deployment.
 1. **Create Release**
    - Runs full test suite
    - Cross-compiles CLI for 5 platforms + UI for Linux
-   - Attests build provenance for all 6 binaries via `actions/attest-build-provenance@v2`
    - Generates changelog from git log since previous tag
    - Creates GitHub release with binaries and checksums
    - Pre-release auto-detected for `-rc`, `-beta`, `-alpha` tags
 
 2. **Publish Docker Image** (runs after release)
    - Builds and pushes to GHCR with version tag + `latest`
-   - Attests Docker image provenance (OIDC-signed, pushed to registry)
 
 **Supported Platforms:**
 | OS | Architecture |
@@ -103,29 +100,6 @@ lookout-windows-amd64.exe
 lookout-ui-linux-amd64
 checksums.txt
 ```
-
-## Build Provenance Attestations
-
-Both the Release and Docker workflows generate [SLSA build provenance](https://slsa.dev/) attestations using `actions/attest-build-provenance@v2`. These are OIDC-signed statements that cryptographically link each artifact to the GitHub Actions workflow that produced it.
-
-**What gets attested:**
-- **Release binaries** - All 6 platform binaries (CLI + UI) via `subject-path`
-- **Docker images** (release) - Image digest attested and pushed to GHCR registry
-- **Docker images** (main branch) - Image digest captured from `docker push` output, attested and pushed to registry
-
-**Required permissions:** `id-token: write` (OIDC token) and `attestations: write`
-
-**Verification:**
-
-```bash
-# Verify a downloaded binary
-gh attestation verify lookout-linux-amd64 --repo timoniersystems/lookout
-
-# Verify a Docker image
-gh attestation verify oci://ghcr.io/timoniersystems/lookout:latest --repo timoniersystems/lookout
-```
-
-Attestations are visible on the GitHub release page under the "Attestations" section.
 
 ## Dependency Management
 

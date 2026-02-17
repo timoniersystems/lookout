@@ -7,8 +7,9 @@ on:
 
 permissions:
   contents: write
-  id-token: write
-  attestations: write
+  # Attestations require GitHub Enterprise Cloud
+  # id-token: write
+  # attestations: write
 
 jobs:
   release:
@@ -45,16 +46,17 @@ jobs:
       run: |
         sha256sum lookout-* > checksums.txt
 
-    - name: Attest build provenance
-      uses: actions/attest-build-provenance@v2
-      with:
-        subject-path: |
-          lookout-linux-amd64
-          lookout-linux-arm64
-          lookout-darwin-amd64
-          lookout-darwin-arm64
-          lookout-windows-amd64.exe
-          lookout-ui-linux-amd64
+    # Attestations require GitHub Enterprise Cloud
+    # - name: Attest build provenance
+    #   uses: actions/attest-build-provenance@v2
+    #   with:
+    #     subject-path: |
+    #       lookout-linux-amd64
+    #       lookout-linux-arm64
+    #       lookout-darwin-amd64
+    #       lookout-darwin-arm64
+    #       lookout-windows-amd64.exe
+    #       lookout-ui-linux-amd64
 
     - name: Generate changelog
       id: changelog
@@ -121,8 +123,9 @@ jobs:
     permissions:
       contents: read
       packages: write
-      id-token: write
-      attestations: write
+      # Attestations require GitHub Enterprise Cloud
+      # id-token: write
+      # attestations: write
 
     steps:
     - name: Checkout code
@@ -143,7 +146,6 @@ jobs:
       run: echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
 
     - name: Build and push Docker image
-      id: docker_push
       uses: docker/build-push-action@v6
       with:
         context: .
@@ -160,9 +162,10 @@ jobs:
         cache-from: type=gha
         cache-to: type=gha,mode=max
 
-    - name: Attest Docker image
-      uses: actions/attest-build-provenance@v2
-      with:
-        subject-name: ghcr.io/${{ github.repository }}
-        subject-digest: ${{ steps.docker_push.outputs.digest }}
-        push-to-registry: true
+    # Attestations require GitHub Enterprise Cloud
+    # - name: Attest Docker image
+    #   uses: actions/attest-build-provenance@v2
+    #   with:
+    #     subject-name: ghcr.io/${{ github.repository }}
+    #     subject-digest: ${{ steps.docker_push.outputs.digest }}
+    #     push-to-registry: true
