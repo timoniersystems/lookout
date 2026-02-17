@@ -63,7 +63,7 @@ echo ""
 
 # Verify fixed NodePorts are configured
 echo "🔍 Verifying fixed NodePorts..."
-if ! kubectl get svc -n envoy-gateway-system -l gateway.envoyproxy.io/owning-gateway-name=lookout-staging 2>/dev/null | grep -q "32080.*32443"; then
+if ! kubectl get svc -n envoy-gateway-system -l gateway.envoyproxy.io/owning-gateway-name=lookout 2>/dev/null | grep -q "32080.*32443"; then
     echo -e "${RED}ERROR: Fixed NodePorts not configured. Run ./scripts/setup-fixed-nodeports.sh first${NC}"
     exit 1
 fi

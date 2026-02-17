@@ -8,12 +8,12 @@ YELLOW='\033[1;33m'
 RED='\033[0;31m'
 NC='\033[0m'
 
-echo -e "${BLUE}🔐 Setting up Basic Authentication for Staging${NC}\n"
-
 # Configuration
 AWS_REGION="${AWS_REGION:-us-west-2}"
-SECRET_NAME="lookout/staging/basic-auth"
 NAMESPACE="${NAMESPACE:-staging}"
+SECRET_NAME="${SECRET_NAME:-lookout/${NAMESPACE}/basic-auth}"
+
+echo -e "${BLUE}🔐 Setting up Basic Authentication for ${NAMESPACE}${NC}\n"
 
 # Step 1: Check prerequisites
 echo -e "${YELLOW}📋 Step 1: Checking prerequisites${NC}"
@@ -44,8 +44,9 @@ echo ""
 # Step 2: Get username and password
 echo -e "${YELLOW}🔑 Step 2: Generating credentials${NC}"
 
-read -p "Enter username [staging]: " USERNAME
-USERNAME="${USERNAME:-staging}"
+DEFAULT_USERNAME="${NAMESPACE}"
+read -p "Enter username [${DEFAULT_USERNAME}]: " USERNAME
+USERNAME="${USERNAME:-${DEFAULT_USERNAME}}"
 
 # Check if password was passed via environment variable (for non-interactive use)
 if [ -n "$BASIC_AUTH_PASSWORD" ]; then
@@ -88,7 +89,7 @@ else
     echo "Creating new secret..."
     aws secretsmanager create-secret \
         --name "${SECRET_NAME}" \
-        --description "Basic auth credentials for Lookout staging" \
+        --description "Basic auth credentials for Lookout ${NAMESPACE}" \
         --secret-string "${HTPASSWD_JSON}" \
         --region "${AWS_REGION}" > /dev/null
     echo -e "${GREEN}✓ Secret created in AWS Secrets Manager${NC}"
@@ -120,14 +121,18 @@ echo -e "${YELLOW}🔄 Step 5: Syncing to Kubernetes${NC}"
 
 if command -v kubectl &> /dev/null && kubectl cluster-info &> /dev/null; then
     # Check if the ExternalSecret exists
+    # Determine release name based on namespace
+    RELEASE_NAME="lookout-${NAMESPACE}"
+    BASIC_AUTH_SECRET_NAME="${RELEASE_NAME}-basic-auth"
+
     if kubectl get externalsecret -n "${NAMESPACE}" 2>/dev/null | grep -q basic-auth; then
         echo "ExternalSecret for basic-auth found, forcing sync..."
         # Delete the K8s secret to trigger immediate re-sync
-        kubectl delete secret -n "${NAMESPACE}" -l "reconcile.external-secrets.io/managed=true" --field-selector "metadata.name=lookout-staging-basic-auth" 2>/dev/null || true
+        kubectl delete secret -n "${NAMESPACE}" -l "reconcile.external-secrets.io/managed=true" --field-selector "metadata.name=${BASIC_AUTH_SECRET_NAME}" 2>/dev/null || true
         echo "Waiting for sync..."
         sleep 10
 
-        if kubectl get secret lookout-staging-basic-auth -n "${NAMESPACE}" &> /dev/null; then
+        if kubectl get secret "${BASIC_AUTH_SECRET_NAME}" -n "${NAMESPACE}" &> /dev/null; then
             echo -e "${GREEN}✓ Secret synced to Kubernetes${NC}"
         else
             echo -e "${YELLOW}⚠ Secret not yet synced. It will sync within the configured refreshInterval (default: 1h)${NC}"
@@ -136,7 +141,7 @@ if command -v kubectl &> /dev/null && kubectl cluster-info &> /dev/null; then
     else
         echo -e "${YELLOW}⚠ ExternalSecret for basic-auth not found in cluster${NC}"
         echo "  Deploy the Helm chart first, then the secret will sync automatically."
-        echo "  Or run: argocd app sync lookout-staging"
+        echo "  Or run: argocd app sync ${RELEASE_NAME}"
     fi
 else
     echo -e "${YELLOW}⚠ kubectl not available or cluster not reachable${NC}"
@@ -149,9 +154,14 @@ echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━
 echo -e "${GREEN}✅ Basic auth setup complete!${NC}"
 echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo ""
-echo "📋 Access the staging site:"
-echo "  Browser: https://lookout-stg.timonier.io (enter ${USERNAME} / your password)"
-echo "  curl:    curl -u ${USERNAME}:PASSWORD https://lookout-stg.timonier.io/"
+if [ "${NAMESPACE}" = "production" ]; then
+    DOMAIN="lookout-prod.timonier.io"
+else
+    DOMAIN="lookout-stg.timonier.io"
+fi
+echo "📋 Access the ${NAMESPACE} site:"
+echo "  Browser: https://${DOMAIN} (enter ${USERNAME} / your password)"
+echo "  curl:    curl -u ${USERNAME}:PASSWORD https://${DOMAIN}/"
 echo ""
 echo "🔧 To update the password later:"
 echo "  ./scripts/setup-basic-auth.sh"

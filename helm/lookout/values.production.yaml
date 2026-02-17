@@ -5,30 +5,27 @@ global:
     enabled: true
     gatewayClassName: eg
 
+# No Gateway in production - uses staging Gateway via cross-namespace HTTPRoute
 gateway:
-  enabled: true
-  name: lookout-production
-  listeners:
-    http:
-      port: 80
-      protocol: HTTP
-    https:
-      port: 443
-      protocol: HTTPS
-      tls:
-        enabled: true
-        certificateRef:
-          name: lookout-tls
-          kind: Secret
-
-# Basic authentication disabled in production
-basicAuth:
   enabled: false
+  name: lookout  # Reference to the shared gateway in staging namespace
+
+# Basic authentication for production
+basicAuth:
+  enabled: true
+  externalSecret:
+    enabled: true
+    refreshInterval: "1h"
+    secretStoreName: "aws-secrets-manager"
+    remoteKey: "lookout/production/basic-auth"
+    property: "htpasswd"
 
 httproute:
   enabled: true
+  gatewayNamespace: staging  # Cross-namespace reference to staging gateway
   hostnames:
-    - "lookout.example.com"  # CHANGE THIS to your actual domain
+    - "lookout-prod.timonier.io"
+    - "lookout.timonier.io"
   rules:
     - matches:
         - path:
@@ -37,23 +34,27 @@ httproute:
       backendRefs:
         - name: lookout-production-lookout-app
           port: 3000
+      timeouts:
+        request: "600s"
+        backendRequest: "600s"
 
 lookout-app:
   enabled: true
-  replicaCount: 3  # High availability
+  replicaCount: 1  # Single replica for Kind cluster
 
   # Persistent Trivy DB cache - stays fresh across pod restarts
-  # Note: RWO PVC constrains all replicas to one node. For multi-node HA,
-  # consider ReadWriteMany storage or disabling this to use the baked-in DB.
   trivyCache:
     persistence:
       enabled: true
       size: 2Gi
 
   image:
-    repository: registry:5000/lookout
+    repository: ghcr.io/timoniersystems/lookout
     pullPolicy: IfNotPresent
-    tag: "latest"  # Pin to specific version in production
+    tag: "latest"  # Managed by ArgoCD Image Updater (semver)
+
+  imagePullSecrets:
+    - name: ghcr-secret
 
   service:
     type: ClusterIP
@@ -61,33 +62,42 @@ lookout-app:
 
   resources:
     limits:
-      cpu: 1000m
-      memory: 1Gi
-    requests:
-      cpu: 500m
+      cpu: 250m
       memory: 512Mi
+    requests:
+      cpu: 100m
+      memory: 256Mi
 
   autoscaling:
-    enabled: true
-    minReplicas: 3
-    maxReplicas: 10
-    targetCPUUtilizationPercentage: 70
-    targetMemoryUtilizationPercentage: 80
+    enabled: false  # Disabled for Kind cluster
 
   env:
     DGRAPH_HOST: "dgraph-alpha"
     DGRAPH_PORT: "9080"
 
-  # Set via --set or use sealed-secrets
   secrets:
-    NVD_API_KEY: ""
+    NVD_API_KEY: ""  # Managed by External Secrets
+
+  externalSecrets:
+    enabled: true
+    refreshInterval: "1h"
+    aws:
+      region: "us-west-2"
+      role: ""
+      credentialsSecret: "aws-credentials"
+    secretStore:
+      name: "aws-secrets-manager"
+    secrets:
+      - secretKey: NVD_API_KEY
+        remoteKey: "lookout/production/nvd-api-key"
+        property: NVD_API_KEY
 
 dgraph:
   enabled: true
 
   zero:
     enabled: true
-    replicaCount: 3  # High availability
+    replicaCount: 1  # Single replica for Kind cluster
 
     image:
       repository: dgraph/dgraph
@@ -96,20 +106,20 @@ dgraph:
 
     resources:
       limits:
-        cpu: 1000m
-        memory: 1Gi
-      requests:
-        cpu: 500m
+        cpu: 250m
         memory: 512Mi
+      requests:
+        cpu: 100m
+        memory: 256Mi
 
     persistence:
       enabled: true
-      size: 20Gi
-      storageClass: ""  # Use default or specify fast storage
+      size: 10Gi
+      storageClass: ""
 
   alpha:
     enabled: true
-    replicaCount: 3  # High availability
+    replicaCount: 1  # Single replica for Kind cluster
 
     image:
       repository: dgraph/dgraph
@@ -118,16 +128,16 @@ dgraph:
 
     resources:
       limits:
-        cpu: 2000m
-        memory: 4Gi
+        cpu: 500m
+        memory: 1536Mi
       requests:
-        cpu: 1000m
-        memory: 2Gi
+        cpu: 200m
+        memory: 768Mi
 
     persistence:
       enabled: true
-      size: 100Gi  # Larger for production data
-      storageClass: ""  # Use fast SSD storage class
+      size: 30Gi
+      storageClass: ""
 
   ratel:
     enabled: true
@@ -140,8 +150,8 @@ dgraph:
 
     resources:
       limits:
-        cpu: 500m
-        memory: 512Mi
-      requests:
-        cpu: 250m
+        cpu: 100m
         memory: 256Mi
+      requests:
+        cpu: 50m
+        memory: 128Mi

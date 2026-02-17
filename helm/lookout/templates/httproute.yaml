@@ -11,6 +11,9 @@ metadata:
 spec:
   parentRefs:
   - name: {{ .Values.gateway.name }}
+    {{- if .Values.httproute.gatewayNamespace }}
+    namespace: {{ .Values.httproute.gatewayNamespace }}
+    {{- end }}
   {{- with .Values.httproute.hostnames }}
   hostnames:
   {{- toYaml . | nindent 2 }}

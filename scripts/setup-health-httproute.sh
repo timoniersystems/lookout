@@ -18,9 +18,9 @@ if ! command -v kubectl &> /dev/null; then
     exit 1
 fi
 
-# Check if lookout-staging Gateway exists
-if ! kubectl get gateway lookout-staging -n staging &> /dev/null; then
-    echo -e "${RED}ERROR: Gateway 'lookout-staging' not found in staging namespace${NC}"
+# Check if lookout Gateway exists
+if ! kubectl get gateway lookout -n staging &> /dev/null; then
+    echo -e "${RED}ERROR: Gateway 'lookout' not found in staging namespace${NC}"
     echo "Make sure the Gateway is deployed first"
     exit 1
 fi
@@ -38,14 +38,14 @@ metadata:
     component: health-check
 spec:
   parentRefs:
-  - name: lookout-staging
+  - name: lookout
   rules:
   - matches:
     - path:
         type: Exact
         value: /health
     backendRefs:
-    - name: lookout-staging-lookout-app
+    - name: lookout-lookout-app
       port: 3000
 EOF
 

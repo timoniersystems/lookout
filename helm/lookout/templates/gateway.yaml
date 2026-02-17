@@ -19,6 +19,11 @@ spec:
   - name: http
     protocol: {{ .Values.gateway.listeners.http.protocol }}
     port: {{ .Values.gateway.listeners.http.port }}
+    {{- if .Values.gateway.allowRoutesFromAllNamespaces }}
+    allowedRoutes:
+      namespaces:
+        from: All
+    {{- end }}
   {{- end }}
   {{- if and .Values.gateway.listeners.https .Values.gateway.listeners.https.tls.enabled }}
   - name: https
@@ -29,5 +34,10 @@ spec:
       certificateRefs:
       - kind: {{ .Values.gateway.listeners.https.tls.certificateRef.kind }}
         name: {{ .Values.gateway.listeners.https.tls.certificateRef.name }}
+    {{- if .Values.gateway.allowRoutesFromAllNamespaces }}
+    allowedRoutes:
+      namespaces:
+        from: All
+    {{- end }}
   {{- end }}
 {{- end }}
