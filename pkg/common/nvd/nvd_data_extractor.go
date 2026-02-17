@@ -254,8 +254,8 @@ func FetchCVEData(cveID string) (CVEData, error) {
 }
 
 // AggregateCVEData fetches and aggregates CVE data for multiple CVE IDs.
-// Filters results to only include HIGH, CRITICAL, or N/A severity vulnerabilities.
 // Continues processing even if individual CVE fetches fail.
+// Severity filtering is handled downstream by the handler's severity filter checkboxes.
 func AggregateCVEData(cvePurlMap map[string]string) []CVEPURLPair {
 	var pairs []CVEPURLPair
 	for cveID, purl := range cvePurlMap {
@@ -267,19 +267,7 @@ func AggregateCVEData(cvePurlMap map[string]string) []CVEPURLPair {
 			continue
 		}
 
-		filteredVulnerabilities := []Vulnerability{}
-		for _, vulnerability := range data.Vulnerabilities {
-			for _, cvssMetric := range vulnerability.CVE.Metrics.CvssMetricV31 {
-				severity := strings.ToLower(cvssMetric.CvssData.BaseSeverity)
-				if severity == "high" || severity == "critical" || severity == "n/a" {
-					filteredVulnerabilities = append(filteredVulnerabilities, vulnerability)
-					break
-				}
-			}
-		}
-
-		if len(filteredVulnerabilities) > 0 {
-			data.Vulnerabilities = filteredVulnerabilities
+		if len(data.Vulnerabilities) > 0 {
 			pair := CVEPURLPair{
 				Data: data,
 				PURL: purl,
