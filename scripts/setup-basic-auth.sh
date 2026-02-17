@@ -66,16 +66,16 @@ else
     fi
 fi
 
-# Generate bcrypt-hashed htpasswd entry
-HTPASSWD_ENTRY=$(htpasswd -nbB "$USERNAME" "$PASSWORD")
+# Generate SHA-hashed htpasswd entry (Envoy requires {SHA} format, not bcrypt)
+HTPASSWD_ENTRY=$(htpasswd -nbs "$USERNAME" "$PASSWORD")
 echo -e "${GREEN}✓ Generated htpasswd entry for user: ${USERNAME}${NC}"
 echo ""
 
 # Step 3: Store in AWS Secrets Manager
 echo -e "${YELLOW}☁️  Step 3: Storing credentials in AWS Secrets Manager${NC}"
 
-# Build the JSON payload - escape special characters for JSON
-HTPASSWD_JSON=$(python3 -c "import json; print(json.dumps({'htpasswd': '$HTPASSWD_ENTRY'}))")
+# Build the JSON payload - use python3 to safely escape special characters
+HTPASSWD_JSON=$(python3 -c "import json,sys; print(json.dumps({'htpasswd': sys.stdin.read().strip()}))" <<< "$HTPASSWD_ENTRY")
 
 if aws secretsmanager describe-secret --secret-id "${SECRET_NAME}" --region "${AWS_REGION}" &> /dev/null; then
     echo "Secret already exists, updating..."

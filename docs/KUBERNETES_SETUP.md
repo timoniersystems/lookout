@@ -2132,7 +2132,7 @@ BASIC_AUTH_PASSWORD='your-password' ./scripts/setup-basic-auth.sh
 The script will:
 1. Check prerequisites (`htpasswd`, AWS CLI)
 2. Prompt for username (default: `staging`) and password
-3. Generate a bcrypt-hashed htpasswd entry
+3. Generate a SHA-hashed htpasswd entry (Envoy requires `{SHA}` format)
 4. Create or update the secret in AWS Secrets Manager
 5. Trigger a sync to Kubernetes if the cluster is reachable
 
@@ -2141,15 +2141,15 @@ The script will:
 If you prefer to run the steps manually:
 
 ```bash
-# 1. Generate htpasswd entry
-htpasswd -nbB staginguser 'your-secure-password'
-# Output: staginguser:$2y$05$...
+# 1. Generate htpasswd entry (Envoy requires {SHA} format, not bcrypt)
+htpasswd -nbs staginguser 'your-secure-password'
+# Output: staginguser:{SHA}base64hash...
 
 # 2. Store in AWS Secrets Manager
 aws secretsmanager create-secret \
   --name "lookout/staging/basic-auth" \
   --description "Basic auth credentials for Lookout staging" \
-  --secret-string '{"htpasswd":"staginguser:$2y$05$...your-hash-here..."}' \
+  --secret-string '{"htpasswd":"staginguser:{SHA}base64hash..."}' \
   --region us-west-2
 ```
 
