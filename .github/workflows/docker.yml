@@ -156,8 +156,13 @@ jobs:
     permissions:
       contents: read
       packages: write
+      id-token: write
+      attestations: write
 
     steps:
+    - name: Checkout code
+      uses: actions/checkout@v6
+
     - name: Download Docker image
       uses: actions/download-artifact@v4
       with:
@@ -186,12 +191,28 @@ jobs:
         password: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Push Docker image to registry
+      id: push
       run: |
-        # Push all tags to registry
+        # Push all tags to registry and capture digest
+        DIGEST=""
         for tag in $(echo "${{ needs.build.outputs.tags }}" | tr ',' '\n'); do
           echo "Pushing $tag"
-          docker push "$tag"
+          PUSH_OUTPUT=$(docker push "$tag" 2>&1)
+          echo "$PUSH_OUTPUT"
+          TAG_DIGEST=$(echo "$PUSH_OUTPUT" | grep -oP 'sha256:[a-f0-9]+' | head -1 || true)
+          if [ -n "$TAG_DIGEST" ]; then
+            DIGEST="$TAG_DIGEST"
+          fi
         done
+        echo "digest=${DIGEST}" >> $GITHUB_OUTPUT
+        echo "Image digest: ${DIGEST}"
+
+    - name: Attest Docker image
+      uses: actions/attest-build-provenance@v2
+      with:
+        subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+        subject-digest: ${{ steps.push.outputs.digest }}
+        push-to-registry: true
 
   docker-compose:
     name: Test Docker Compose
