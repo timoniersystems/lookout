@@ -162,6 +162,7 @@ lookout -sbom mybom.json -output vulnerabilities.json
 
 **Supported SBOM formats:**
 - CycloneDX 1.4+ (JSON)
+- SPDX 2.3+ (JSON)
 
 #### Dependency Traversal
 
@@ -273,7 +274,7 @@ Access at: https://localhost:7443 (or http://localhost:7080 which redirects to H
 #### 2. SBOM Analysis with Progress Tracking
 
 1. Click "Choose SBOM..." under Scan SBOM section
-2. Select CycloneDX JSON file
+2. Select CycloneDX or SPDX JSON file
 3. Select severity filters (CRITICAL, HIGH, MEDIUM, LOW)
 4. Click "Analyze SBOM"
 5. **Real-time progress tracking:**
@@ -537,16 +538,19 @@ docker-compose logs alpha
 
 **Check:**
 - Is it valid JSON?
-- Is bomFormat = "CycloneDX"?
-- Is specVersion supported (1.4+)?
+- For CycloneDX: Is `bomFormat` = `"CycloneDX"`? Is `specVersion` 1.4+?
+- For SPDX: Is `spdxVersion` = `"SPDX-2.3"` or later? Are there packages with PURLs in `externalRefs`?
 
 **Validate:**
 ```bash
 # Install jq
 cat sbom.json | jq .
 
-# Check format
+# Check CycloneDX format
 cat sbom.json | jq '.bomFormat'
+
+# Check SPDX format
+cat sbom.json | jq '.spdxVersion'
 ```
 
 ## Environment Variables
@@ -576,7 +580,7 @@ A: Real-time. Lookout fetches directly from NVD API.
 A: Yes, for CLI-only. Dependency traversal requires Dgraph (Docker).
 
 **Q: What SBOM formats are supported?**
-A: CycloneDX 1.4+ (JSON). SPDX support planned.
+A: CycloneDX 1.4+ (JSON) and SPDX 2.3+ (JSON). The format is auto-detected on upload.
 
 **Q: Is it free?**
 A: Yes, open source under [LICENSE](../LICENSE).

@@ -1,6 +1,6 @@
 # Architecture
 
-Lookout is a CycloneDX SBOM vulnerability analysis tool with both CLI and web-based interfaces.
+Lookout is an SBOM vulnerability analysis tool (supporting CycloneDX and SPDX) with both CLI and web-based interfaces.
 
 ## System Overview
 

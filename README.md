@@ -1,6 +1,6 @@
 # Lookout
 
-> CycloneDX SBOM and CVE vulnerability analysis tool with dependency path tracing
+> SBOM (CycloneDX & SPDX) and CVE vulnerability analysis tool with dependency path tracing
 
 [![CI](https://github.com/<username>/lookout/actions/workflows/ci.yml/badge.svg)](https://github.com/<username>/lookout/actions/workflows/ci.yml)
 [![Go Report Card](https://goreportcard.com/badge/github.com/<username>/lookout)](https://goreportcard.com/report/github.com/<username>/lookout)
@@ -259,7 +259,8 @@ lookout/
 │   ├── cli/
 │   │   └── cli_processor/ # CLI formatting and output
 │   ├── common/
-│   │   ├── cyclonedx/    # SBOM parsing
+│   │   ├── cyclonedx/    # CycloneDX SBOM parsing
+│   │   ├── spdx/         # SPDX SBOM parsing
 │   │   ├── fileutil/     # File utilities
 │   │   ├── handler/      # HTTP handlers
 │   │   ├── nvd/          # NVD API client
@@ -293,7 +294,7 @@ We welcome contributions! Please see [DEVELOPMENT.md](docs/DEVELOPMENT.md) for:
 
 ## Supported Formats
 
-- **SBOMs**: CycloneDX 1.4+ (JSON)
+- **SBOMs**: CycloneDX 1.4+ (JSON), SPDX 2.3+ (JSON)
 - **CVE Lists**: Plain text or Trivy JSON
 - **Package URLs**: [PURL Specification](https://github.com/package-url/purl-spec)
 
@@ -310,7 +311,7 @@ We welcome contributions! Please see [DEVELOPMENT.md](docs/DEVELOPMENT.md) for:
 ## Known Limitations
 
 1. **Rate Limiting**: NVD API has strict rate limits. Use an API key for best performance.
-2. **SBOM Format**: Currently supports CycloneDX 1.4+. SPDX support planned.
+2. **SBOM Format**: Supports CycloneDX 1.4+ and SPDX 2.3+ (JSON only, XML not yet supported).
 3. **Large SBOMs**: Processing hundreds of CVEs can be slow. NVD API key highly recommended.
 
 See [Usage Guide](docs/USAGE.md#troubleshooting) for solutions.
@@ -325,6 +326,7 @@ MIT License - see [LICENSE](LICENSE) for details.
 - [Trivy](https://github.com/aquasecurity/trivy) - Vulnerability scanner
 - [Dgraph](https://dgraph.io/) - Graph database
 - [CycloneDX](https://cyclonedx.org/) - SBOM standard
+- [SPDX](https://spdx.dev/) - SBOM standard
 
 ## Support
 
