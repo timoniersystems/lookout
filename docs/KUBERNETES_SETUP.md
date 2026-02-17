@@ -12,6 +12,7 @@ Complete guide for deploying Lookout on Kubernetes with kind cluster, Gateway AP
   - [3.10 ArgoCD Image Updater for Auto-Deploy](#310-argocd-image-updater-for-auto-deploy)
 - [Chapter 4: AWS ALB Integration](#chapter-4-aws-alb-integration)
 - [Chapter 5: Secrets Management with External Secrets Operator](#chapter-5-secrets-management-with-external-secrets-operator)
+- [Chapter 6: Basic Authentication for Staging](#chapter-6-basic-authentication-for-staging)
 - [Operations Guide](#operations-guide)
 - [Troubleshooting](#troubleshooting)
 
@@ -2095,6 +2096,172 @@ kubectl get externalsecret -n staging \
 - [AWS Secrets Manager Documentation](https://docs.aws.amazon.com/secretsmanager/)
 - [Kubernetes Secrets](https://kubernetes.io/docs/concepts/configuration/secret/)
 - [IAM Roles for EC2](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/iam-roles-for-amazon-ec2.html)
+
+---
+
+## Chapter 6: Basic Authentication for Staging
+
+Basic authentication protects the staging site from unauthorized access. It's implemented at the Envoy Gateway layer via a `SecurityPolicy` CRD, so no application code changes are needed.
+
+### 6.1 How It Works
+
+```
+Browser Request
+    ↓
+Envoy Gateway (SecurityPolicy: basicAuth)
+    ↓ ← 401 if no credentials / wrong credentials
+HTTPRoute
+    ↓
+Lookout App (ClusterIP:3000)
+```
+
+The SecurityPolicy targets the HTTPRoute and enforces HTTP Basic Auth before any request reaches the application. Credentials are stored in AWS Secrets Manager and synced to Kubernetes via External Secrets Operator (same pattern as the NVD API key).
+
+### 6.2 Setup
+
+#### Using the setup script (recommended)
+
+```bash
+# Interactive — prompts for username and password
+./scripts/setup-basic-auth.sh
+
+# Non-interactive
+BASIC_AUTH_PASSWORD='your-password' ./scripts/setup-basic-auth.sh
+```
+
+The script will:
+1. Check prerequisites (`htpasswd`, AWS CLI)
+2. Prompt for username (default: `staging`) and password
+3. Generate a bcrypt-hashed htpasswd entry
+4. Create or update the secret in AWS Secrets Manager
+5. Trigger a sync to Kubernetes if the cluster is reachable
+
+#### Manual setup
+
+If you prefer to run the steps manually:
+
+```bash
+# 1. Generate htpasswd entry
+htpasswd -nbB staginguser 'your-secure-password'
+# Output: staginguser:$2y$05$...
+
+# 2. Store in AWS Secrets Manager
+aws secretsmanager create-secret \
+  --name "lookout/staging/basic-auth" \
+  --description "Basic auth credentials for Lookout staging" \
+  --secret-string '{"htpasswd":"staginguser:$2y$05$...your-hash-here..."}' \
+  --region us-west-2
+```
+
+#### Deploy
+
+The Helm chart already has basic auth enabled in `values.staging.yaml`. Push and let ArgoCD sync:
+
+```bash
+git push  # ArgoCD will pick up the SecurityPolicy and ExternalSecret
+```
+
+Or sync manually:
+
+```bash
+argocd app sync lookout-staging
+```
+
+#### Verify
+
+```bash
+# Should return 401 Unauthorized
+curl -s -o /dev/null -w "%{http_code}" https://lookout-stg.timonier.io/
+
+# Should return 200 with correct credentials
+curl -s -o /dev/null -w "%{http_code}" -u staginguser:your-secure-password https://lookout-stg.timonier.io/
+```
+
+### 6.3 Managing Credentials
+
+#### Update password
+
+Re-run the setup script — it detects the existing secret and updates it:
+
+```bash
+./scripts/setup-basic-auth.sh
+```
+
+The ExternalSecret will sync the new value within 1 hour (the configured `refreshInterval`).
+
+To force immediate sync:
+
+```bash
+# Delete and let ESO recreate
+kubectl delete secret lookout-staging-basic-auth -n staging
+```
+
+#### Add multiple users
+
+```bash
+# Generate htpasswd with multiple users (newline-separated)
+HTPASSWD=$(htpasswd -nbB user1 'pass1' && htpasswd -nbB user2 'pass2')
+
+# Store in AWS (use \n for newline separation)
+aws secretsmanager update-secret \
+  --secret-id "lookout/staging/basic-auth" \
+  --secret-string "{\"htpasswd\":\"user1:\$2y\$05\$...hash1...\nuser2:\$2y\$05\$...hash2...\"}" \
+  --region us-west-2
+```
+
+### 6.4 Helm Values Reference
+
+Basic auth is controlled by the `basicAuth` section in values files:
+
+```yaml
+# values.staging.yaml - ENABLED
+basicAuth:
+  enabled: true
+  externalSecret:
+    enabled: true
+    refreshInterval: "1h"
+    secretStoreName: "aws-secrets-manager"
+    remoteKey: "lookout/staging/basic-auth"
+    property: "htpasswd"
+
+# values.production.yaml - DISABLED
+basicAuth:
+  enabled: false
+```
+
+When `basicAuth.enabled` is `true`, the chart creates:
+- **SecurityPolicy** — Envoy Gateway CRD targeting the HTTPRoute
+- **ExternalSecret** — Syncs htpasswd from AWS Secrets Manager to a K8s Secret
+
+### 6.5 Troubleshooting
+
+#### 401 even with correct credentials
+
+```bash
+# Check the K8s secret exists and has data
+kubectl get secret lookout-staging-basic-auth -n staging -o jsonpath='{.data.\.htpasswd}' | base64 -d
+
+# Check ExternalSecret sync status
+kubectl get externalsecret -n staging
+
+# Check SecurityPolicy status
+kubectl get securitypolicy -n staging
+kubectl describe securitypolicy lookout-staging-basic-auth -n staging
+```
+
+#### SecurityPolicy not taking effect
+
+```bash
+# Verify it targets the correct HTTPRoute
+kubectl get securitypolicy -n staging -o yaml | grep -A5 targetRefs
+
+# Check Envoy Gateway logs
+kubectl logs -n envoy-gateway-system deployment/envoy-gateway -f
+```
+
+#### Secret not syncing from AWS
+
+See [Chapter 5 Troubleshooting](#56-troubleshooting) for ExternalSecret debugging steps.
 
 ---
 

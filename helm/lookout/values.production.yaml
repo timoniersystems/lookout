@@ -21,6 +21,10 @@ gateway:
           name: lookout-tls
           kind: Secret
 
+# Basic authentication disabled in production
+basicAuth:
+  enabled: false
+
 httproute:
   enabled: true
   hostnames:

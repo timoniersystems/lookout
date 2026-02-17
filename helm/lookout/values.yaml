@@ -28,6 +28,10 @@ gateway:
           name: lookout-tls
           kind: Secret
 
+# Basic authentication (for staging/protected environments)
+basicAuth:
+  enabled: false
+
 # HTTPRoute configuration
 httproute:
   enabled: true

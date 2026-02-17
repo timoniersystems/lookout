@@ -27,6 +27,16 @@ gateway:
           name: lookout-tls
           kind: Secret
 
+# Basic authentication for staging
+basicAuth:
+  enabled: true
+  externalSecret:
+    enabled: true
+    refreshInterval: "1h"
+    secretStoreName: "aws-secrets-manager"  # Same SecretStore as NVD API key
+    remoteKey: "lookout/staging/basic-auth"
+    property: "htpasswd"
+
 httproute:
   enabled: true
   hostnames:
