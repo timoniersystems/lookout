@@ -4,77 +4,91 @@ Lookout uses GitHub Actions for continuous integration and deployment.
 
 ## Workflows Overview
 
-### 🔄 CI Workflow (`ci.yml`)
-**Triggers:** Every push to `main`/`develop` and all pull requests
+### CI Workflow (`ci.yml`)
+
+**Triggers:** Push to `main`/`develop` and pull requests to `main`/`develop`
+**Path filters:** Only runs when Go source files, `go.mod`, `go.sum`, or the workflow file change.
 
 **Jobs:**
-1. **Test** - Run test suite across Go versions
-2. **Lint** - Code quality checks with golangci-lint
-3. **Build** - Compile CLI and UI binaries
-4. **Security** - Gosec security scanning
 
-**Matrix Testing:**
-- Go 1.21
-- Go 1.22
+1. **Test** - Run unit tests with race detection and coverage
+   - Go 1.26
+   - `go test -v -race -timeout 5m ./...`
+   - Coverage uploaded to Codecov
+2. **Lint** - Code quality checks with golangci-lint v2.9.0 (5-minute timeout)
+3. **Build** - Compile CLI and UI binaries, upload as artifacts (7-day retention)
+4. **Security Scan** - Gosec scanner with SARIF output (`-no-fail` mode)
 
-**Features:**
-- Race detection (`-race` flag)
-- Dependency caching
-- Coverage upload to Codecov
-- SARIF security reports
+### Coverage Workflow (`coverage.yml`)
 
-### 📊 Coverage Workflow (`coverage.yml`)
-**Triggers:** Push to `main` and pull requests
+**Triggers:** Push to `main` and pull requests to `main`
+**Path filters:** Same as CI workflow.
 
 **Features:**
-- Detailed coverage reports
-- PR comments with coverage summary
-- Coverage badge generation
-- Threshold enforcement (25%)
+- Generates detailed coverage report with `go tool cover`
+- Posts coverage summary as PR comment
+- Generates a coverage badge via GitHub Gist (requires `GIST_SECRET` and `GIST_ID` secrets)
+- Warns if coverage drops below 25% threshold (non-blocking)
+- Uploads coverage report as artifact (30-day retention)
 
-**Coverage Badge:**
-Shows current test coverage percentage with color coding:
-- 🟢 Green: >80%
-- 🟡 Yellow: 60-80%
-- 🔴 Red: <60%
+### Docker Workflow (`docker.yml`)
 
-### 🐳 Docker Workflow (`docker.yml`)
-**Triggers:** Push to `main` and version tags (not pull requests)
+**Triggers:** Push to `main` and version tags (`v*`)
+**Path filters:** Go source files, `Dockerfile`, `scripts/**`, or the workflow file.
 
 **Jobs:**
-1. **Build** - Multi-platform Docker image
-2. **Docker Compose** - Integration testing
 
-**Features:**
-- GitHub Container Registry (GHCR) publishing
-- Trivy vulnerability scanning
-- Build caching for faster builds
-- Automatic semantic versioning
+1. **Build** - Build Docker image (linux/amd64) with Buildx
+   - Source hash-based cache key for invalidation on code changes
+   - Build args: `GO_VERSION=1.26.0`, `TRIVY_VERSION=0.69.1`
+   - Image exported as artifact for downstream jobs
 
-**Image Tags:**
-- `main` - Latest main branch
-- `v1.0.0` - Semantic version
-- `<commit-sha>` - Commit-specific
-- `latest` - Latest release
+2. **Trivy Scan** - Vulnerability scanning in 3 parallel matrix configurations:
+   | Format | Severity | Purpose |
+   |--------|----------|---------|
+   | SARIF | CRITICAL, HIGH, MEDIUM | Upload to GitHub Security tab |
+   | JSON | CRITICAL, HIGH, MEDIUM, LOW | Artifact for offline review (30-day retention) |
+   | Table | CRITICAL, HIGH | Human-readable output (non-blocking) |
+
+3. **Push** - Push image to GHCR (skipped on pull requests)
+   - Requires build and scan to pass first
+
+4. **Docker Compose** - Integration test of the full stack
+   - Generates TLS certs, starts all services
+   - Tests Dgraph health, Lookout UI health, nginx HTTPS, HTTP-to-HTTPS redirect
+
+**Image Tags** (via `docker/metadata-action`):
+- `main` - Latest main branch build
+- `v1.0.0`, `v1.0`, `v1` - Semver from tags
+- `sha-abc1234` - Commit-specific
+- `latest` - Default branch only
 
 **Deployment Triggers:**
-- Push to `main` → Builds image with `:main` tag → ArgoCD deploys to staging (digest strategy)
-- Push semver tag (`v*`) → Builds image with `:v1.0.0` tag → ArgoCD deploys to production (semver strategy)
+- Push to `main` → Image tagged `:main` → ArgoCD deploys to staging (digest strategy)
+- Push semver tag (`v*`) → Image tagged `:v1.0.0` → ArgoCD deploys to production (semver strategy)
 
-### 🚀 Release Workflow (`release.yml`)
+### Release Workflow (`release.yml`)
+
 **Triggers:** Version tags (`v*`)
 
-**Automated Release Process:**
-1. Run full test suite
-2. Build multi-platform binaries
-3. Generate changelog
-4. Create GitHub release
-5. Publish Docker images
+**Jobs:**
+
+1. **Create Release**
+   - Runs full test suite
+   - Cross-compiles CLI for 5 platforms + UI for Linux
+   - Generates changelog from git log since previous tag
+   - Creates GitHub release with binaries and checksums
+   - Pre-release auto-detected for `-rc`, `-beta`, `-alpha` tags
+
+2. **Publish Docker Image** (runs after release)
+   - Builds and pushes to GHCR with version tag + `latest`
 
 **Supported Platforms:**
-- **Linux**: AMD64, ARM64
-- **macOS**: AMD64 (Intel), ARM64 (Apple Silicon)
-- **Windows**: AMD64
+| OS | Architecture |
+|----|-------------|
+| Linux | AMD64, ARM64 |
+| macOS | AMD64 (Intel), ARM64 (Apple Silicon) |
+| Windows | AMD64 |
 
 **Release Artifacts:**
 ```
@@ -87,130 +101,49 @@ lookout-ui-linux-amd64
 checksums.txt
 ```
 
-### 🔒 CodeQL Workflow (`codeql.yml`)
-**Triggers:** Push to `main`, pull requests, weekly schedule
-
-**Security Analysis:**
-- Static code analysis
-- Security vulnerability detection
-- Code quality checks
-- SARIF report generation
-
-**Schedule:** Every Monday at 6 AM UTC
-
 ## Dependency Management
 
 ### Dependabot Configuration
-**Schedule:** Weekly updates on Mondays
 
-**Monitors:**
-- Go modules (grouped by framework)
-- GitHub Actions versions
-- Docker base images
+**Schedule:** Weekly on Mondays at 6 AM UTC
 
-**Grouping:**
-- Dgraph dependencies
-- Echo framework dependencies
+**Ecosystems monitored:**
+- **Go modules** - Up to 10 open PRs, grouped by framework (Dgraph, Echo)
+- **GitHub Actions** - Up to 5 open PRs
+- **Docker** - Up to 5 open PRs
 
-## Setting Up CI/CD
-
-### 1. Enable GitHub Features
-
-Go to repository **Settings**:
-
-**Actions:**
-- ✅ Enable GitHub Actions
-- ✅ Allow all actions and reusable workflows
-
-**Security:**
-- ✅ Enable Dependabot alerts
-- ✅ Enable Dependabot security updates
-- ✅ Enable Secret scanning
-- ✅ Enable Code scanning (CodeQL)
-
-**Packages:**
-- ✅ Enable GitHub Packages
-
-### 2. Configure Secrets (Optional)
-
-For enhanced features, add these secrets:
-
-```bash
-# Codecov integration (optional)
-gh secret set CODECOV_TOKEN --body "your_codecov_token"
-
-# Coverage badge (optional)
-gh secret set GIST_SECRET --body "ghp_your_github_token"
-gh secret set GIST_ID --body "your_gist_id"
-```
-
-**Creating a coverage badge:**
-1. Create a new gist: https://gist.github.com/
-2. Copy the gist ID from the URL
-3. Generate a GitHub token with `gist` scope
-4. Add secrets to repository
-
-### 3. Branch Protection Rules
-
-**Recommended settings for `main` branch:**
-
-Settings → Branches → Add rule:
-- Branch name pattern: `main`
-- ✅ Require pull request reviews before merging
-- ✅ Require status checks to pass before merging
-  - ✅ `Test (1.21)`
-  - ✅ `Test (1.22)`
-  - ✅ `Lint`
-  - ✅ `Build`
-- ✅ Require branches to be up to date before merging
-- ✅ Require conversation resolution before merging
+**Commit message prefixes:**
+- Go: `chore(deps)`
+- Actions: `chore(ci)`
+- Docker: `chore(docker)`
 
 ## Creating a Release
 
-### 1. Prepare Release
+### 1. Prepare
 
 ```bash
-# Ensure you're on main and up to date
 git checkout main
 git pull origin main
 
-# Ensure tests pass
-make test
-# or: go test -short ./...
-
-# Ensure linting passes
-golangci-lint run
+# Run tests
+go test -v ./...
 ```
 
-### 2. Create and Push Tag
+### 2. Tag and Push
 
 ```bash
-# Create annotated tag
 git tag -a v1.0.0 -m "Release v1.0.0"
-
-# Push tag to trigger release workflow
 git push origin v1.0.0
 ```
 
-### 3. Monitor Release
+This triggers two workflows:
+- **Release** - Builds binaries, creates GitHub release
+- **Docker Build** - Builds and pushes Docker image, ArgoCD deploys to production
 
-1. Go to **Actions** tab
-2. Watch `Release` workflow
-3. Release appears in **Releases** section when complete
+### 3. Verify Production Deployment
 
-### 4. Post-Release
+ArgoCD Image Updater (semver strategy) automatically detects the new tag and deploys to production.
 
-The release workflow automatically:
-- ✅ Builds binaries for all platforms
-- ✅ Generates changelog
-- ✅ Creates GitHub release with assets
-- ✅ Publishes Docker image with `:latest` tag
-
-### 5. Production Deployment
-
-After pushing a semver tag, ArgoCD Image Updater (configured with semver strategy) automatically detects the new tag and deploys it to the production namespace. No manual deployment steps are needed.
-
-**Verify production deployment:**
 ```bash
 # Check ArgoCD production app status
 kubectl get application lookout-production -n argocd
@@ -222,204 +155,64 @@ kubectl get pods -n production
 curl -u production:PASSWORD https://lookout-prod.timonier.io/health
 ```
 
-## Local Testing
+## Setting Up CI/CD
 
-### Test Workflows Locally with Act
+### 1. Required Secrets
+
+None - the workflows use `GITHUB_TOKEN` which is automatically provided.
+
+### 2. Optional Secrets
 
 ```bash
-# Install act (macOS)
-brew install act
+# Codecov integration
+gh secret set CODECOV_TOKEN --body "your_codecov_token"
 
-# Or download from: https://github.com/nektos/act
+# Coverage badge via Gist
+gh secret set GIST_SECRET --body "ghp_your_github_token"  # needs gist scope
+gh secret set GIST_ID --body "your_gist_id"
+```
 
-# List workflows
-act -l
+### 3. Branch Protection (Recommended)
 
-# Run CI workflow
-act -j test
+Settings > Branches > Add rule for `main`:
+- Require status checks: `Test`, `Build`
+- Require branches to be up to date before merging
 
-# Run specific job
-act -j lint
+## Local Testing
 
-# Run with specific event
-act push
-act pull_request
+### Run Tests
+
+```bash
+# Unit tests (fast)
+go test -short ./...
+
+# With race detection
+go test -race ./...
+
+# With coverage
+go test -coverprofile=coverage.out ./...
+go tool cover -html=coverage.out
+
+# Integration tests (requires Dgraph)
+go test -tags=integration ./...
 ```
 
 ### Test Docker Build
 
 ```bash
-# Build image
 docker build -t lookout:local .
 
-# Test with docker-compose
-docker-compose up
-
-# Check Dgraph health
-curl http://localhost:9080/health
+# Full stack
+./scripts/generate-certs.sh
+docker compose up -d
+curl -k https://localhost:7443/health
 ```
 
-### Run Tests Locally
+### Test Workflows Locally with Act
 
 ```bash
-# Unit tests only (fast, no external dependencies)
-make test
-# or: go test -short ./...
-
-# All tests including integration tests (requires Dgraph)
-make test-all
-# or: go test -tags=integration ./...
-
-# Integration tests only
-make test-integration
-
-# With coverage
-make test-coverage
-# or: go test -coverprofile=coverage.out ./...
-go tool cover -html=coverage.out
-
-# With race detection
-go test -race ./...
-
-# Specific package
-go test -v ./pkg/validation
+brew install act
+act -l          # List workflows
+act -j test     # Run test job
+act push        # Simulate push event
 ```
-
-**Integration Tests:**
-Integration tests are marked with `//go:build integration` build tags and require external dependencies like Dgraph. They are located alongside unit tests in packages like `pkg/gui/dgraph/` and `pkg/common/cyclonedx/`.
-
-### Run Linters Locally
-
-```bash
-# Install golangci-lint
-brew install golangci-lint
-
-# Run linting
-golangci-lint run
-
-# Run specific linters
-golangci-lint run --enable-only=errcheck,gosec
-
-# Fix auto-fixable issues
-golangci-lint run --fix
-```
-
-## Monitoring CI/CD
-
-### GitHub Actions Dashboard
-`https://github.com/<username>/lookout/actions`
-
-**Sections:**
-- **All workflows** - Overview of all runs
-- **CI** - Test, lint, build results
-- **Coverage** - Coverage trends
-- **Docker** - Image build status
-- **Release** - Release workflow status
-
-### Packages
-`https://github.com/<username>/lookout/pkgs/container/lookout`
-
-**View:**
-- Published Docker images
-- Image tags and sizes
-- Pull statistics
-
-### Security
-`https://github.com/<username>/lookout/security`
-
-**Tabs:**
-- **Code scanning** - CodeQL alerts
-- **Dependabot** - Dependency updates
-- **Secret scanning** - Leaked secrets
-
-## Troubleshooting
-
-### Tests Failing in CI but Passing Locally
-
-**Causes:**
-- Different Go version
-- Missing dependencies
-- Race conditions
-- Environment differences
-
-**Solutions:**
-```bash
-# Test with same Go version as CI
-go version  # Should be 1.21 or 1.22
-
-# Run with race detection
-go test -race ./...
-
-# Clear cache
-go clean -cache -testcache
-```
-
-### Docker Build Failing
-
-**Common issues:**
-- Outdated dependencies: `go mod tidy`
-- Missing .dockerignore: Add large directories
-- Network issues: Check proxy settings
-
-### Coverage Badge Not Updating
-
-**Checklist:**
-- ✅ Workflow runs on `main` branch
-- ✅ `GIST_SECRET` and `GIST_ID` are set
-- ✅ Gist token has `gist` scope
-- ✅ Gist is public
-
-### Release Not Creating
-
-**Checklist:**
-- ✅ Tag starts with `v` (e.g., `v1.0.0`)
-- ✅ Tag is pushed to remote
-- ✅ Workflow has `contents: write` permission
-- ✅ No test failures
-
-## Best Practices
-
-### Commit Messages
-Follow conventional commits:
-```
-feat: add new feature
-fix: bug fix
-docs: documentation changes
-test: add/update tests
-ci: CI/CD changes
-refactor: code refactoring
-chore: maintenance tasks
-```
-
-### Pull Requests
-- Create from feature branch
-- Wait for all checks to pass
-- Address review comments
-- Squash merge when ready
-
-### Versioning
-Follow semantic versioning (semver):
-- `v1.0.0` - Major release
-- `v1.1.0` - Minor release (new features)
-- `v1.1.1` - Patch release (bug fixes)
-- `v2.0.0-beta.1` - Pre-release
-
-## Metrics and Badges
-
-### Add to README
-
-```markdown
-![CI](https://github.com/<username>/lookout/actions/workflows/ci.yml/badge.svg)
-![Coverage](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/<username>/<gist-id>/raw/lookout-coverage.json)
-![CodeQL](https://github.com/<username>/lookout/actions/workflows/codeql.yml/badge.svg)
-[![Go Report Card](https://goreportcard.com/badge/github.com/<username>/lookout)](https://goreportcard.com/report/github.com/<username>/lookout)
-[![Docker](https://ghcr-badge.egpl.dev/<username>/lookout/latest_tag?label=Docker)](https://github.com/<username>/lookout/pkgs/container/lookout)
-```
-
-## Resources
-
-- [GitHub Actions Documentation](https://docs.github.com/actions)
-- [golangci-lint Documentation](https://golangci-lint.run/)
-- [Semantic Versioning](https://semver.org/)
-- [Conventional Commits](https://www.conventionalcommits.org/)
-- [Act - Local Testing](https://github.com/nektos/act)
