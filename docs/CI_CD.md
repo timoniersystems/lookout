@@ -57,6 +57,10 @@ Shows current test coverage percentage with color coding:
 - `<commit-sha>` - Commit-specific
 - `latest` - Latest release
 
+**Deployment Triggers:**
+- Push to `main` → Builds image with `:main` tag → ArgoCD deploys to staging (digest strategy)
+- Push semver tag (`v*`) → Builds image with `:v1.0.0` tag → ArgoCD deploys to production (semver strategy)
+
 ### 🚀 Release Workflow (`release.yml`)
 **Triggers:** Version tags (`v*`)
 
@@ -201,6 +205,22 @@ The release workflow automatically:
 - ✅ Generates changelog
 - ✅ Creates GitHub release with assets
 - ✅ Publishes Docker image with `:latest` tag
+
+### 5. Production Deployment
+
+After pushing a semver tag, ArgoCD Image Updater (configured with semver strategy) automatically detects the new tag and deploys it to the production namespace. No manual deployment steps are needed.
+
+**Verify production deployment:**
+```bash
+# Check ArgoCD production app status
+kubectl get application lookout-production -n argocd
+
+# Check production pods
+kubectl get pods -n production
+
+# Test production endpoint
+curl -u production:PASSWORD https://lookout-prod.timonier.io/health
+```
 
 ## Local Testing
 

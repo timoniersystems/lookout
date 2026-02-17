@@ -12,7 +12,9 @@ Complete guide for deploying Lookout on Kubernetes with kind cluster, Gateway AP
   - [3.10 ArgoCD Image Updater for Auto-Deploy](#310-argocd-image-updater-for-auto-deploy)
 - [Chapter 4: AWS ALB Integration](#chapter-4-aws-alb-integration)
 - [Chapter 5: Secrets Management with External Secrets Operator](#chapter-5-secrets-management-with-external-secrets-operator)
-- [Chapter 6: Basic Authentication for Staging](#chapter-6-basic-authentication-for-staging)
+- [Chapter 6: Basic Authentication](#chapter-6-basic-authentication)
+  - [6.2 Staging Setup](#62-staging-setup)
+  - [6.3 Production Setup](#63-production-setup)
 - [Operations Guide](#operations-guide)
 - [Troubleshooting](#troubleshooting)
 
@@ -48,15 +50,19 @@ This guide covers the complete Kubernetes deployment stack for Lookout:
 │                           Internet                               │
 └───────────────────────────────┬─────────────────────────────────┘
                                 │
-                ┌───────────────▼────────────────┐
-                │  Route53: lookout-stg.timonier.io  │
-                └───────────────┬────────────────┘
+                ┌───────────────▼──────────────────────┐
+                │  Route53:                            │
+                │  - lookout-stg.timonier.io (staging) │
+                │  - lookout-prod.timonier.io (prod)   │
+                │  - lookout.timonier.io (prod alias)  │
+                └───────────────┬──────────────────────┘
                                 │
                 ┌───────────────▼────────────────┐
                 │   Application Load Balancer    │
                 │  - HTTPS Listener (443)        │
                 │  - HTTP Redirect (80→443)      │
                 │  - SSL/TLS Termination         │
+                │  - Host-based routing rules    │
                 └───────────────┬────────────────┘
                                 │
                 ┌───────────────▼────────────────┐
@@ -79,7 +85,18 @@ This guide covers the complete Kubernetes deployment stack for Lookout:
                 │  │            │              │  │
                 │  │  ┌─────────▼──────────┐  │  │
                 │  │  │  staging namespace │  │  │
-                │  │  │  - HTTPRoute       │  │  │
+                │  │  │  - Gateway:lookout │  │  │
+                │  │  │    (shared)        │  │  │
+                │  │  │  - HTTPRoute (stg) │  │  │
+                │  │  │  - Lookout App     │  │  │
+                │  │  │  - Dgraph          │  │  │
+                │  │  └────────────────────┘  │  │
+                │  │  ┌────────────────────┐  │  │
+                │  │  │ production         │  │  │
+                │  │  │  namespace         │  │  │
+                │  │  │  - HTTPRoute (prod)│  │  │
+                │  │  │    (cross-ns ref   │  │  │
+                │  │  │     to stg gw)     │  │  │
                 │  │  │  - Lookout App     │  │  │
                 │  │  │  - Dgraph          │  │  │
                 │  │  └────────────────────┘  │  │
@@ -93,28 +110,32 @@ This guide covers the complete Kubernetes deployment stack for Lookout:
                 └─────────────────────────────────┘
                         │
                         ▼
-                ┌───────────────────────┐
-                │  GitHub Container     │
-                │  Registry (ghcr.io)   │
-                │  - lookout:main       │
-                │  - lookout:sha        │
-                └───────────────────────┘
+                ┌─────────────────────────────┐
+                │  GitHub Container           │
+                │  Registry (ghcr.io)         │
+                │  - lookout:main (staging)   │
+                │  - lookout:v* (production)  │
+                └─────────────────────────────┘
 ```
 
 ### Traffic Flow
 
 ```
-Internet → Route53 → ALB (TLS termination) → EC2 Instance →
-  → Kind NodePorts (32080/32443) → Envoy Gateway → HTTPRoute →
+Internet → Route53 → ALB (TLS termination, host-based routing) → EC2 Instance →
+  → Kind NodePorts (32080/32443) → Envoy Gateway (shared) → HTTPRoute (per-env) →
   → Lookout App Service → Lookout Pods
 ```
 
 ### GitOps Deployment Flow
 
 ```
-Developer Push → GitHub Actions → Build & Test →
-  → Push to ghcr.io → ArgoCD Detects → Sync to Staging →
-  → Health Checks → Deployment Complete
+Staging:
+  Push to main → GitHub Actions → Build with :main tag →
+  ArgoCD Image Updater (digest strategy) → Deploy to staging
+
+Production:
+  Push semver tag (v*) → GitHub Actions → Build with :vX.Y.Z tag →
+  ArgoCD Image Updater (semver strategy) → Deploy to production
 ```
 
 ---
@@ -321,17 +342,24 @@ openssl req -x509 -newkey rsa:4096 \
   -subj "/CN=lookout-stg.timonier.io/O=Timonier Systems" \
   -addext "subjectAltName=DNS:lookout-stg.timonier.io,DNS:*.lookout-stg.timonier.io"
 
-# Create Kubernetes TLS secret
+# Create Kubernetes TLS secret in staging namespace
 kubectl create secret tls lookout-tls \
   --cert=/tmp/tls.crt \
   --key=/tmp/tls.key \
   --namespace=staging
 
+# Create TLS secret in production namespace too
+kubectl create secret tls lookout-tls \
+  --cert=/tmp/tls.crt \
+  --key=/tmp/tls.key \
+  --namespace=production
+
 # Cleanup temporary files
 rm /tmp/tls.key /tmp/tls.crt
 
-# Verify secret
+# Verify secrets
 kubectl get secret lookout-tls -n staging
+kubectl get secret lookout-tls -n production
 ```
 
 ### 2.6 Verify Gateway Configuration
@@ -344,11 +372,11 @@ kubectl get gatewayclass
 kubectl get gateway -n staging
 
 # Check Envoy Gateway service with fixed NodePorts
-kubectl get svc -n envoy-gateway-system -l gateway.envoyproxy.io/owning-gateway-name=lookout-staging
+kubectl get svc -n envoy-gateway-system -l gateway.envoyproxy.io/owning-gateway-name=lookout
 
 # Expected output:
 # NAME                                     TYPE           PORT(S)
-# envoy-staging-lookout-staging-*          LoadBalancer   8080:32080/TCP,8443:32443/TCP
+# envoy-staging-lookout-*                  LoadBalancer   8080:32080/TCP,8443:32443/TCP
 ```
 
 ### 2.7 Test Gateway Connectivity
@@ -412,12 +440,19 @@ EOF
 
 ArgoCD provides GitOps-based continuous deployment, automatically syncing your Kubernetes cluster with your Git repository and pulling new images from GitHub Container Registry.
 
-**Deployment Flow:**
+**Staging Deployment Flow:**
 1. Developer pushes to `main` branch
 2. GitHub Actions builds Docker image
 3. Pushes image to `ghcr.io/timoniersystems/lookout:main`
-4. ArgoCD detects changes (Git + Image)
+4. ArgoCD Image Updater detects new digest
 5. Automatically deploys to staging namespace
+
+**Production Deployment Flow:**
+1. Developer creates semver tag (e.g., `v1.0.0`)
+2. GitHub Actions builds Docker image
+3. Pushes image to `ghcr.io/timoniersystems/lookout:v1.0.0`
+4. ArgoCD Image Updater detects new semver tag
+5. Automatically deploys to production namespace
 
 ### 3.2 Install ArgoCD
 
@@ -478,6 +513,9 @@ export GITHUB_TOKEN=<your-github-token>
 # Run the script
 cd ~/lookout
 ./scripts/create-ghcr-secret.sh staging
+
+# Create GHCR secret for production namespace too
+./scripts/create-ghcr-secret.sh production
 ```
 
 **Creating a GitHub Token:**
@@ -515,21 +553,33 @@ This creates a secret with repository credentials that ArgoCD uses to access you
 
 ### 3.6 Deploy ArgoCD Application
 
-Deploy the staging application:
+Deploy the staging and production applications:
 
 ```bash
+# Deploy the staging application
 kubectl apply -f k8s/argocd/staging-application.yaml
+
+# Deploy the production application
+kubectl apply -f k8s/argocd/production-application.yaml
 ```
 
-This creates an ArgoCD Application that:
+The **staging** application:
 - Watches the `main` branch
 - Deploys Helm chart from `helm/lookout/`
 - Uses `values.staging.yaml`
 - Pulls images from `ghcr.io/timoniersystems/lookout:main`
 - Deploys to `staging` namespace
+- Uses ArgoCD Image Updater with digest strategy
 - Auto-syncs on changes
 
-Verify the application:
+The **production** application:
+- Watches for semver tags (vX.Y.Z)
+- Deploys Helm chart with `values.production.yaml`
+- Uses ArgoCD Image Updater with semver strategy
+- Deploys to `production` namespace
+- Auto-syncs on changes
+
+Verify the applications:
 
 ```bash
 # Check application status
@@ -607,7 +657,7 @@ ArgoCD Image Updater enables automatic deployment when new Docker images are pus
 The Image Updater is configured via Application annotations:
 
 ```yaml
-# Application annotations
+# Staging Application annotations (digest strategy)
 metadata:
   annotations:
     argocd-image-updater.argoproj.io/image-list: lookout=ghcr.io/timoniersystems/lookout:main
@@ -625,6 +675,17 @@ spec:
       prune: true
       selfHeal: true
       allowEmpty: false
+```
+
+```yaml
+# Production Application annotations (semver strategy)
+metadata:
+  annotations:
+    argocd-image-updater.argoproj.io/image-list: lookout=ghcr.io/timoniersystems/lookout
+    argocd-image-updater.argoproj.io/lookout.update-strategy: semver
+    argocd-image-updater.argoproj.io/lookout.allow-tags: "regexp:^v[0-9]+\\.[0-9]+\\.[0-9]+$"
+    argocd-image-updater.argoproj.io/lookout.pull-secret: pullsecret:production/ghcr-secret
+    argocd-image-updater.argoproj.io/write-back-method: argocd
 ```
 
 #### Verification
@@ -773,9 +834,15 @@ These secrets are already configured and should not need manual updates.
 
 ### 4.1 Overview
 
-The Application Load Balancer provides production-grade access for `lookout-stg.timonier.io` with:
+The Application Load Balancer provides access for both staging and production:
+- `lookout-stg.timonier.io` - Staging environment
+- `lookout-prod.timonier.io` - Production environment
+- `lookout.timonier.io` - Production alias
+
+Features:
 - TLS termination with ACM certificates
 - HTTP to HTTPS redirection (301 redirect)
+- Host-based routing rules for multi-environment support
 - Health checks with `/health` endpoint
 - Multi-AZ availability
 - Route53 DNS integration
@@ -783,9 +850,10 @@ The Application Load Balancer provides production-grade access for `lookout-stg.
 
 **Traffic Flow:**
 ```
-Internet → Route53 (lookout-stg.timonier.io) → ALB (TLS termination) →
+Internet → Route53 (lookout-stg/lookout-prod/lookout.timonier.io) →
+  → ALB (TLS termination, host-based routing) →
   → Target Groups (32080/32443) → EC2 Instance → Kind NodePorts →
-  → Envoy Gateway → HTTPRoute → Lookout App
+  → Envoy Gateway (shared) → HTTPRoute (per-env) → Lookout App
 ```
 
 ### 4.2 Prerequisites
@@ -802,7 +870,7 @@ Before configuring ALB:
 
 **Verify Fixed NodePorts:**
 ```bash
-kubectl get svc -n envoy-gateway-system -l gateway.envoyproxy.io/owning-gateway-name=lookout-staging
+kubectl get svc -n envoy-gateway-system -l gateway.envoyproxy.io/owning-gateway-name=lookout
 
 # Expected: 8080:32080/TCP,8443:32443/TCP
 ```
@@ -872,7 +940,7 @@ metadata:
   namespace: staging
 spec:
   parentRefs:
-  - name: lookout-staging
+  - name: lookout
   rules:
   - matches:
     - path:
@@ -1048,7 +1116,9 @@ If you already have an SSL certificate:
 
 1. Navigate to **Route53** → **Hosted zones** → Select `timonier.io`
 
-2. **Create Record:**
+2. **Create Records:**
+
+   **Staging:** `lookout-stg` → ALB
    - Record name: `lookout-stg`
    - Record type: `A - Routes traffic to an IPv4 address`
    - Alias: Yes
@@ -1057,6 +1127,20 @@ If you already have an SSL certificate:
      - Region: Select your region
      - Load balancer: Select `lookout-alb`
    - Routing policy: Simple routing
+   - Click "Create records"
+
+   **Production:** `lookout-prod` → ALB
+   - Record name: `lookout-prod`
+   - Record type: `A - Routes traffic to an IPv4 address`
+   - Alias: Yes
+   - Route traffic to: Same ALB as staging
+   - Click "Create records"
+
+   **Production alias:** `lookout` → ALB
+   - Record name: `lookout`
+   - Record type: `A - Routes traffic to an IPv4 address`
+   - Alias: Yes
+   - Route traffic to: Same ALB as staging
    - Click "Create records"
 
 ### 4.7 AWS CLI Alternative
@@ -1455,7 +1539,7 @@ To reconfigure NodePorts if needed:
 HTTP_NODEPORT=32090 HTTPS_NODEPORT=32453 ./scripts/setup-fixed-nodeports.sh
 
 # Recreate Gateway to apply
-kubectl delete gateway lookout-staging -n staging
+kubectl delete gateway lookout -n staging
 kubectl apply -f k8s/argocd/staging-application.yaml
 
 # Update ALB target groups with new ports
@@ -1474,15 +1558,19 @@ kubectl apply -f k8s/argocd/staging-application.yaml
 │                           Internet                               │
 └───────────────────────────────┬─────────────────────────────────┘
                                 │
-                ┌───────────────▼────────────────┐
-                │  Route53: lookout-stg.timonier.io  │
-                └───────────────┬────────────────┘
+                ┌───────────────▼──────────────────────┐
+                │  Route53:                            │
+                │  - lookout-stg.timonier.io (staging) │
+                │  - lookout-prod.timonier.io (prod)   │
+                │  - lookout.timonier.io (prod alias)  │
+                └───────────────┬──────────────────────┘
                                 │
                 ┌───────────────▼────────────────┐
                 │   Application Load Balancer    │
                 │  - HTTPS Listener (443)        │
                 │  - HTTP Redirect (80→443)      │
                 │  - SSL/TLS Termination         │
+                │  - Host-based routing rules    │
                 └───────────────┬────────────────┘
                                 │
                 ┌───────────────▼────────────────┐
@@ -1504,7 +1592,15 @@ kubectl apply -f k8s/argocd/staging-application.yaml
                 │  │            │              │  │
                 │  │  ┌─────────▼──────────┐  │  │
                 │  │  │  staging namespace │  │  │
-                │  │  │  - HTTPRoute       │  │  │
+                │  │  │  - Gateway:lookout │  │  │
+                │  │  │  - HTTPRoute (stg) │  │  │
+                │  │  │  - Lookout App     │  │  │
+                │  │  │  - Dgraph          │  │  │
+                │  │  └────────────────────┘  │  │
+                │  │  ┌────────────────────┐  │  │
+                │  │  │ production         │  │  │
+                │  │  │  namespace         │  │  │
+                │  │  │  - HTTPRoute (prod)│  │  │
                 │  │  │  - Lookout App     │  │  │
                 │  │  │  - Dgraph          │  │  │
                 │  │  └────────────────────┘  │  │
@@ -2099,9 +2195,9 @@ kubectl get externalsecret -n staging \
 
 ---
 
-## Chapter 6: Basic Authentication for Staging
+## Chapter 6: Basic Authentication
 
-Basic authentication protects the staging site from unauthorized access. It's implemented at the Envoy Gateway layer via a `SecurityPolicy` CRD, so no application code changes are needed.
+Basic authentication protects the staging and production sites from unauthorized access. It's implemented at the Envoy Gateway layer via a `SecurityPolicy` CRD, so no application code changes are needed.
 
 ### 6.1 How It Works
 
@@ -2117,11 +2213,12 @@ Lookout App (ClusterIP:3000)
 
 The SecurityPolicy targets the HTTPRoute and enforces HTTP Basic Auth before any request reaches the application. Credentials are stored in AWS Secrets Manager and synced to Kubernetes via External Secrets Operator (same pattern as the NVD API key).
 
-### 6.2 Setup
+### 6.2 Staging Setup
 
 #### Using the setup script (recommended)
 
 ```bash
+# Staging (default namespace)
 # Interactive — prompts for username and password
 ./scripts/setup-basic-auth.sh
 
@@ -2135,6 +2232,15 @@ The script will:
 3. Generate a SHA-hashed htpasswd entry (Envoy requires `{SHA}` format)
 4. Create or update the secret in AWS Secrets Manager
 5. Trigger a sync to Kubernetes if the cluster is reachable
+
+### 6.3 Production Setup
+
+```bash
+# Production
+NAMESPACE=production BASIC_AUTH_PASSWORD='lookout' ./scripts/setup-basic-auth.sh
+```
+
+This creates the basic auth secret in AWS Secrets Manager under the `lookout/production/basic-auth` key and syncs it to the production namespace.
 
 #### Manual setup
 
@@ -2224,9 +2330,15 @@ basicAuth:
     remoteKey: "lookout/staging/basic-auth"
     property: "htpasswd"
 
-# values.production.yaml - DISABLED
+# values.production.yaml - ENABLED
 basicAuth:
-  enabled: false
+  enabled: true
+  externalSecret:
+    enabled: true
+    refreshInterval: "1h"
+    secretStoreName: "aws-secrets-manager"
+    remoteKey: "lookout/production/basic-auth"
+    property: "htpasswd"
 ```
 
 When `basicAuth.enabled` is `true`, the chart creates:
@@ -2287,33 +2399,46 @@ kubectl get gateway -A
 ### View Logs
 
 ```bash
-# Application logs
+# Staging application logs
 kubectl logs -n staging -l app.kubernetes.io/name=lookout-app --tail=100 -f
 
+# Production application logs
+kubectl logs -n production -l app.kubernetes.io/name=lookout-app --tail=100 -f
+
 # Envoy Gateway logs
-kubectl logs -n envoy-gateway-system -l gateway.envoyproxy.io/owning-gateway-name=lookout-staging --tail=100 -f
+kubectl logs -n envoy-gateway-system -l gateway.envoyproxy.io/owning-gateway-name=lookout --tail=100 -f
 
 # ArgoCD logs
 kubectl logs -n argocd -l app.kubernetes.io/name=argocd-server --tail=100 -f
 
-# Dgraph logs
+# Dgraph logs (staging)
 kubectl logs -n staging -l app=dgraph-alpha --tail=100 -f
+
+# Dgraph logs (production)
+kubectl logs -n production -l app=dgraph-alpha --tail=100 -f
 ```
 
 ### Debug Pods
 
 ```bash
-# Get pod name
+# Get pod name (staging)
 kubectl get pods -n staging
+
+# Get pod name (production)
+kubectl get pods -n production
 
 # Describe pod
 kubectl describe pod -n staging <pod-name>
 
 # View pod events
 kubectl get events -n staging --sort-by=.metadata.creationTimestamp
+kubectl get events -n production --sort-by=.metadata.creationTimestamp
 
-# Port forward to service
+# Port forward to service (staging)
 kubectl port-forward -n staging svc/lookout-staging-lookout-app 3000:3000
+
+# Port forward to service (production)
+kubectl port-forward -n production svc/lookout-production-lookout-app 3001:3000
 ```
 
 ### Scale Deployments
@@ -2376,6 +2501,9 @@ echo ""
 echo "=== Staging Pods ==="
 kubectl get pods -n staging
 echo ""
+echo "=== Production Pods ==="
+kubectl get pods -n production
+echo ""
 echo "=== ArgoCD Applications ==="
 kubectl get application -n argocd
 echo ""
@@ -2390,14 +2518,20 @@ chmod +x ~/check-k8s.sh
 ### Restart Services
 
 ```bash
-# Restart all pods in namespace
+# Restart all pods in staging namespace
 kubectl rollout restart deployment -n staging
 
-# Restart specific deployment
+# Restart all pods in production namespace
+kubectl rollout restart deployment -n production
+
+# Restart specific deployment (staging)
 kubectl rollout restart deployment/lookout-staging-lookout-app -n staging
 
+# Restart specific deployment (production)
+kubectl rollout restart deployment/lookout-production-lookout-app -n production
+
 # Delete and recreate Gateway
-kubectl delete gateway lookout-staging -n staging
+kubectl delete gateway lookout -n staging
 kubectl apply -f k8s/argocd/staging-application.yaml
 ```
 
@@ -2416,16 +2550,17 @@ kubectl apply -f k8s/argocd/staging-application.yaml
 
 ```bash
 # 1. Check Gateway status
-kubectl describe gateway lookout-staging -n staging
+kubectl describe gateway lookout -n staging
 
 # 2. Check TLS secret exists
 kubectl get secret lookout-tls -n staging
+kubectl get secret lookout-tls -n production
 
 # 3. Check Envoy Gateway pods
 kubectl get pods -n envoy-gateway-system
 
 # 4. Check Envoy logs
-kubectl logs -n envoy-gateway-system -l gateway.envoyproxy.io/owning-gateway-name=lookout-staging
+kubectl logs -n envoy-gateway-system -l gateway.envoyproxy.io/owning-gateway-name=lookout
 
 # 5. Verify EnvoyProxy configuration
 kubectl get envoyproxy -n staging
@@ -2446,7 +2581,7 @@ kubectl delete secret lookout-tls -n staging
 ./scripts/setup-fixed-nodeports.sh
 
 # Recreate Gateway
-kubectl delete gateway lookout-staging -n staging
+kubectl delete gateway lookout -n staging
 # ArgoCD will recreate it, or manually:
 kubectl apply -f helm/lookout/templates/gateway.yaml
 ```
@@ -2491,9 +2626,13 @@ export GITHUB_TOKEN=<new-token>
 kubectl patch application lookout-staging -n argocd \
   --type merge -p '{"operation":{"sync":{}}}'
 
-# Delete and recreate application
+# Delete and recreate application (staging)
 kubectl delete application lookout-staging -n argocd
 kubectl apply -f k8s/argocd/staging-application.yaml
+
+# Delete and recreate application (production)
+kubectl delete application lookout-production -n argocd
+kubectl apply -f k8s/argocd/production-application.yaml
 ```
 
 ### Pods Not Starting
@@ -2561,11 +2700,11 @@ docker ps | grep lookout-control-plane
 ./scripts/setup-fixed-nodeports.sh
 
 # Recreate Gateway
-kubectl delete gateway lookout-staging -n staging
+kubectl delete gateway lookout -n staging
 kubectl apply -f k8s/argocd/staging-application.yaml
 
 # Verify NodePorts
-kubectl get svc -n envoy-gateway-system -l gateway.envoyproxy.io/owning-gateway-name=lookout-staging
+kubectl get svc -n envoy-gateway-system -l gateway.envoyproxy.io/owning-gateway-name=lookout
 ```
 
 ### DNS/Routing Issues
@@ -2592,7 +2731,7 @@ kubectl get svc lookout-staging-lookout-app -n staging
 curl -H "Host: lookout-stg.timonier.io" http://localhost:32080/health
 
 # 5. Check Envoy routing configuration
-kubectl logs -n envoy-gateway-system -l gateway.envoyproxy.io/owning-gateway-name=lookout-staging | grep -i route
+kubectl logs -n envoy-gateway-system -l gateway.envoyproxy.io/owning-gateway-name=lookout | grep -i route
 ```
 
 **Solutions:**
@@ -2709,13 +2848,16 @@ helm install eg oci://docker.io/envoyproxy/gateway-helm \
   --create-namespace
 
 kubectl create namespace staging
+kubectl create namespace production
 ./scripts/setup-gateway.sh
 ./scripts/setup-fixed-nodeports.sh
 ./scripts/setup-argocd.sh
 ./scripts/create-ghcr-secret.sh staging
+./scripts/create-ghcr-secret.sh production
 ./scripts/setup-argocd-github-repo.sh
 
 kubectl apply -f k8s/argocd/staging-application.yaml
+kubectl apply -f k8s/argocd/production-application.yaml
 ```
 
 ---
@@ -2744,7 +2886,7 @@ kubectl get pods,svc,httproute -n staging
 
 # Logs
 kubectl logs -n staging -l app.kubernetes.io/name=lookout-app -f
-kubectl logs -n envoy-gateway-system -l gateway.envoyproxy.io/owning-gateway-name=lookout-staging -f
+kubectl logs -n envoy-gateway-system -l gateway.envoyproxy.io/owning-gateway-name=lookout -f
 
 # Health checks
 curl -H "Host: lookout-stg.timonier.io" http://localhost:32080/health

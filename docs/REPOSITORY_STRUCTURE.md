@@ -19,7 +19,12 @@ lookout/
 ├── scripts/                    # Automation scripts
 │   ├── deploy.sh               # Deployment script (staging/production)
 │   ├── setup-registry.sh       # Docker registry setup for Kind
-│   └── generate-certs.sh       # TLS certificate generation
+│   ├── generate-certs.sh       # TLS certificate generation
+│   ├── setup-alb.sh              # AWS ALB setup (staging + production)
+│   ├── setup-basic-auth.sh       # Basic auth setup (configurable per env)
+│   ├── setup-external-secrets.sh # External Secrets Operator setup
+│   ├── setup-fixed-nodeports.sh  # Gateway fixed NodePort config
+│   └── setup-health-httproute.sh # ALB health check route
 │
 ├── helm/                       # Helm charts
 │   └── lookout/
@@ -28,6 +33,11 @@ lookout/
 │       ├── values.staging.yaml # Staging overrides
 │       ├── values.production.yaml # Production overrides
 │       └── templates/          # Kubernetes manifests
+│
+├── k8s/                        # Kubernetes manifests
+│   └── argocd/
+│       ├── staging-application.yaml    # ArgoCD staging app
+│       └── production-application.yaml # ArgoCD production app
 │
 ├── pkg/                        # Go packages
 │   ├── cli/                    # CLI interface
@@ -45,6 +55,8 @@ lookout/
 │
 └── examples/                   # Example files for testing
     ├── cyclonedx-sbom-example.json
+    ├── spdx-npm-sbom-example.json
+    ├── trivy-results-example.json
     └── text-file-example.txt
 ```
 
@@ -128,8 +140,8 @@ Generates self-signed TLS certificates for nginx.
 ### Helm Values
 
 - **values.yaml** - Base configuration
-- **values.staging.yaml** - Staging overrides (lower resources, main branch)
-- **values.production.yaml** - Production overrides (higher resources, git tags)
+- **values.staging.yaml** - Staging overrides (single replica, main branch image, basic auth)
+- **values.production.yaml** - Production overrides (single replica, semver tags, cross-namespace gateway, basic auth)
 
 ### Environment Variables
 
@@ -170,9 +182,12 @@ EC2_HOST=ubuntu@<your-ec2-ip>  # Required for deploy.sh
 
 3. **Deploy to Production:**
    ```bash
+   # Apply ArgoCD production application
+   kubectl apply -f k8s/argocd/production-application.yaml
+
+   # Create and push semver tag to trigger deployment
    git tag -a v1.0.0 -m "Release 1.0.0"
    git push origin v1.0.0
-   ./scripts/deploy.sh production
    ```
 
 ## Related Documentation

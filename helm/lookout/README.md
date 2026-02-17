@@ -37,20 +37,15 @@ EOF
 ### Production Deployment
 
 ```bash
-# Create namespace
+# Production is managed by ArgoCD with semver image updater
+# Deploy the ArgoCD application:
+kubectl apply -f k8s/argocd/production-application.yaml
+
+# Prerequisites in production namespace:
 kubectl create namespace production
-
-# Create TLS secret for HTTPS
-kubectl create secret tls lookout-tls \
-  --cert=path/to/cert.pem \
-  --key=path/to/key.pem \
-  -n production
-
-# Install chart
-helm install lookout ./helm/lookout \
-  --namespace production \
-  --values helm/lookout/values.production.yaml \
-  --set lookout-app.secrets.NVD_API_KEY="your-api-key-here"
+kubectl create secret tls lookout-tls --cert=path/to/cert.pem --key=path/to/key.pem -n production
+kubectl create secret docker-registry ghcr-secret --docker-server=ghcr.io ... -n production
+kubectl create secret generic aws-credentials --from-literal=access-key-id=... --from-literal=secret-access-key=... -n production
 ```
 
 ### Staging Deployment
@@ -88,6 +83,12 @@ helm install lookout ./helm/lookout \
 | `dgraph.zero.replicaCount` | Dgraph zero replicas | `1` |
 | `dgraph.alpha.replicaCount` | Dgraph alpha replicas | `1` |
 | `dgraph.alpha.persistence.size` | Dgraph data volume size | `50Gi` |
+| `gateway.allowRoutesFromAllNamespaces` | Allow cross-namespace HTTPRoutes | `false` |
+| `httproute.gatewayNamespace` | Gateway namespace for cross-namespace ref | `""` |
+| `basicAuth.enabled` | Enable HTTP basic auth | `false` |
+| `basicAuth.externalSecret.enabled` | Use ESO for basic auth credentials | `false` |
+| `lookout-app.trivyCache.persistence.enabled` | Enable persistent Trivy DB cache | `false` |
+| `lookout-app.trivyCache.persistence.size` | Trivy cache PVC size | `2Gi` |
 
 ### Full Values Override
 
@@ -122,6 +123,19 @@ Then install:
 ```bash
 helm install lookout ./helm/lookout -f values.yaml -n production
 ```
+
+### Staging vs Production
+
+| Feature | Staging | Production |
+|---------|---------|------------|
+| Image tag | `main` (latest commit) | Semver tags (`v1.0.0`) |
+| ArgoCD strategy | Digest (auto-deploy on push) | Semver (deploy on tag) |
+| Gateway | Owns the shared `lookout` gateway | No gateway (cross-namespace HTTPRoute) |
+| Hostnames | `lookout-stg.timonier.io` | `lookout-prod.timonier.io`, `lookout.timonier.io` |
+| Basic auth | Enabled (username: staging) | Enabled (username: production) |
+| Replicas | 1 (Kind cluster) | 1 (Kind cluster) |
+| Image pull | Always | IfNotPresent |
+| Trivy cache | PVC-backed (2Gi) | PVC-backed (2Gi) |
 
 ## Upgrading the Chart
 
@@ -376,7 +390,50 @@ spec:
 
 ## ArgoCD Integration
 
-Create an Application manifest:
+Both staging and production environments are managed by ArgoCD Application manifests:
+
+```yaml
+# Staging Application (k8s/argocd/staging-application.yaml)
+# - Watches main branch
+# - Uses digest-based image updater
+# - Deploys to staging namespace
+
+# Production Application (k8s/argocd/production-application.yaml)
+# - Watches main branch for Helm chart changes
+# - Uses semver-based image updater (v*.*.*)
+# - Deploys to production namespace
+# - No Gateway resource (uses cross-namespace ref to staging gateway)
+```
+
+### Staging ArgoCD Application
+
+```yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: lookout-staging
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/timoniersystems/lookout.git
+    targetRevision: main
+    path: helm/lookout
+    helm:
+      valueFiles:
+        - values.staging.yaml
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: staging
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=false
+```
+
+### Production ArgoCD Application
 
 ```yaml
 apiVersion: argoproj.io/v1alpha1
