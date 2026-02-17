@@ -61,8 +61,6 @@ Web-based interface built with Echo framework and Go templates.
 - Session-based results storage (auto-expires after 1 hour)
 - Dgraph visualization via Ratel
 - Real-time dependency graph exploration
-- TLS/HTTPS support via nginx reverse proxy
-
 **Key Packages:**
 - `pkg/ui/echo` - Echo server setup and routing
 - `pkg/common/handler` - HTTP request handlers (async SBOM, progress, results)
@@ -122,6 +120,7 @@ Web-based interface built with Echo framework and Go templates.
 - **nvd**: NVD API client with rate limiting and retry logic
 - **trivy**: Trivy scanner integration
 - **cyclonedx**: CycloneDX SBOM parser with tests
+- **spdx**: SPDX SBOM parser
 - **processor**: File processing utilities (CVE lists, Trivy JSON)
 - **fileutil**: Temporary file handling (refactored for DRY)
 - **handler**: HTTP handlers (async processing, progress, results storage)
@@ -364,6 +363,6 @@ SBOM dependency traversal requires Dgraph.
 - **Unit Tests**: Package-level logic
 - **Integration Tests**: Service layer with mocks
 - **E2E Tests**: Docker Compose setup
-- **Coverage Target**: 80% (current: 25.4%)
+- **Coverage Threshold**: 25% (CI warning, non-blocking)
 
 See [DEVELOPMENT.md](DEVELOPMENT.md) for testing guide.

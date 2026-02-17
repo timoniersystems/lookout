@@ -7,7 +7,7 @@ This document describes the organization of the Lookout repository.
 ```
 lookout/
 ├── docs/                       # All documentation
-│   ├── KUBERNETES_DEPLOYMENT.md # Complete K8s guide (Kind, Gateway, ArgoCD, ALB)
+│   ├── KUBERNETES_SETUP.md     # Complete K8s guide (Kind, Gateway, ArgoCD, ALB)
 │   ├── ARCHITECTURE.md         # System architecture
 │   ├── DEVELOPMENT.md          # Development guide
 │   ├── DOCKER_COMPOSE.md       # Docker Compose setup
@@ -17,57 +17,104 @@ lookout/
 │   └── USAGE.md                # Usage guide
 │
 ├── scripts/                    # Automation scripts
-│   ├── deploy.sh               # Deployment script (staging/production)
+│   ├── create-ghcr-secret.sh   # Create GHCR pull secret in a namespace
+│   ├── deploy.sh               # Legacy deployment script
+│   ├── generate-certs.sh       # TLS certificate generation for nginx
+│   ├── generate-favicon.py     # Favicon generator
+│   ├── setup-alb.sh            # AWS ALB setup (staging + production)
+│   ├── setup-argocd.sh         # ArgoCD installation
+│   ├── setup-argocd-github-repo.sh    # ArgoCD GitHub repo connection
+│   ├── setup-argocd-image-updater.sh  # ArgoCD Image Updater installation
+│   ├── setup-basic-auth.sh     # Basic auth setup (configurable per env)
+│   ├── setup-external-secrets.sh      # External Secrets Operator setup
+│   ├── setup-fixed-nodeports.sh       # Gateway fixed NodePort config
+│   ├── setup-gateway.sh        # Envoy Gateway setup
+│   ├── setup-health-httproute.sh      # ALB health check route
+│   ├── setup-kind-nodeport-forwarding.sh  # Kind NodePort forwarding
 │   ├── setup-registry.sh       # Docker registry setup for Kind
-│   ├── generate-certs.sh       # TLS certificate generation
-│   ├── setup-alb.sh              # AWS ALB setup (staging + production)
-│   ├── setup-basic-auth.sh       # Basic auth setup (configurable per env)
-│   ├── setup-external-secrets.sh # External Secrets Operator setup
-│   ├── setup-fixed-nodeports.sh  # Gateway fixed NodePort config
-│   └── setup-health-httproute.sh # ALB health check route
+│   └── sync-to-ec2.sh          # Rsync code to EC2 instance
 │
 ├── helm/                       # Helm charts
 │   └── lookout/
 │       ├── Chart.yaml
-│       ├── values.yaml         # Default values
-│       ├── values.staging.yaml # Staging overrides
-│       ├── values.production.yaml # Production overrides
-│       └── templates/          # Kubernetes manifests
+│       ├── README.md            # Helm chart documentation
+│       ├── values.yaml          # Default values
+│       ├── values.staging.yaml  # Staging: main branch image, shared gateway, basic auth
+│       ├── values.production.yaml # Production: semver tags, cross-namespace gateway, basic auth
+│       └── templates/
+│           ├── _helpers.tpl
+│           ├── gateway.yaml
+│           ├── httproute.yaml
+│           ├── securitypolicy.yaml
+│           ├── externalsecret-basic-auth.yaml
+│           └── NOTES.txt
 │
 ├── k8s/                        # Kubernetes manifests
 │   └── argocd/
-│       ├── staging-application.yaml    # ArgoCD staging app
-│       └── production-application.yaml # ArgoCD production app
-│
-├── pkg/                        # Go packages
-│   ├── cli/                    # CLI interface
-│   ├── gui/                    # Web UI
-│   ├── common/                 # Shared code
-│   └── repository/             # Database layer
+│       ├── staging-application.yaml    # ArgoCD staging app (digest image updater)
+│       └── production-application.yaml # ArgoCD production app (semver image updater)
 │
 ├── cmd/                        # Application entrypoints
 │   ├── cli/                    # CLI binary
-│   └── gui/                    # Web server binary
+│   └── ui/                     # Web server binary
+│
+├── pkg/                        # Go packages
+│   ├── cli/
+│   │   └── cli_processor/      # CLI argument parsing and formatting
+│   ├── common/
+│   │   ├── cyclonedx/          # CycloneDX SBOM parsing
+│   │   ├── spdx/               # SPDX SBOM parsing
+│   │   ├── fileutil/           # File utilities
+│   │   ├── handler/            # HTTP handlers (upload, results, progress)
+│   │   ├── nvd/                # NVD API client
+│   │   ├── processor/          # File processing
+│   │   ├── progress/           # Progress tracking (SSE)
+│   │   └── trivy/              # Trivy integration
+│   ├── config/                 # Configuration management
+│   ├── graph/                  # Dgraph database operations
+│   ├── interfaces/             # Interface definitions
+│   ├── logging/                # Structured logging
+│   ├── repository/             # Data access layer
+│   ├── service/                # Business logic layer
+│   ├── ui/
+│   │   └── echo/               # Echo server setup
+│   └── validation/             # Input validation
 │
 ├── assets/                     # Web UI assets
 │   ├── static/                 # CSS, JS, images
 │   └── templates/              # HTML templates
 │
-└── examples/                   # Example files for testing
-    ├── cyclonedx-sbom-example.json
-    ├── spdx-npm-sbom-example.json
-    ├── trivy-results-example.json
-    └── text-file-example.txt
+├── nginx/                      # Nginx reverse proxy config (Docker Compose)
+│
+├── examples/                   # Example files for testing
+│   ├── cyclonedx-sbom-example.json
+│   ├── spdx-npm-example.spdx.json
+│   ├── spdx-debian-example.spdx.json
+│   ├── spdx-maven-example.spdx.json
+│   ├── spdx-appbomination-example.spdx.json
+│   ├── trivy-results-example.json
+│   ├── text-file-example.txt
+│   └── ... (additional CycloneDX/SPDX samples)
+│
+├── .github/
+│   ├── workflows/
+│   │   ├── ci.yml              # Test, lint, build, security scan
+│   │   ├── coverage.yml        # Coverage reports and badge
+│   │   ├── docker.yml          # Docker build, Trivy scan, push to GHCR
+│   │   └── release.yml         # Binary releases and Docker publish
+│   └── dependabot.yml          # Dependency update automation
+│
+├── Dockerfile                  # Multi-stage build (Go + Trivy DB)
+├── docker-compose.yml          # Local dev stack (Dgraph, nginx, app)
+├── Makefile                    # Build, test, install targets
+├── .golangci.yml               # Linter configuration
+└── go.mod / go.sum             # Go module dependencies
 ```
 
 ## Key Documentation
 
 ### Deployment & Operations
-- **[KUBERNETES_DEPLOYMENT.md](KUBERNETES_DEPLOYMENT.md)** - **START HERE** - Complete guide covering:
-  - Chapter 1: Kind Cluster Setup
-  - Chapter 2: Gateway API Setup (with fixed NodePorts)
-  - Chapter 3: ArgoCD GitOps Setup
-  - Chapter 4: AWS ALB Integration
+- **[KUBERNETES_SETUP.md](KUBERNETES_SETUP.md)** - Complete guide: Kind cluster, Gateway API, ArgoCD GitOps, AWS ALB, production deployment
 - **[DOCKER_COMPOSE.md](DOCKER_COMPOSE.md)** - Local development with Docker Compose
 
 ### Development
@@ -76,130 +123,35 @@ lookout/
 - **[USAGE.md](USAGE.md)** - How to use Lookout (CLI and Web UI)
 
 ### Infrastructure
-- **[TLS_SETUP.md](TLS_SETUP.md)** - TLS certificate configuration
-- **[CI_CD.md](CI_CD.md)** - Continuous integration and deployment
-
-## Deployment Scripts
-
-### `scripts/deploy.sh`
-
-Automates deployment to Kind cluster on EC2.
-
-**Requirements:**
-- Set `EC2_HOST` environment variable
-
-**Usage:**
-```bash
-# Export EC2 host
-export EC2_HOST=ubuntu@<your-ec2-ip>
-
-# Deploy to staging
-./scripts/deploy.sh staging
-
-# Deploy to production (requires git tag)
-git tag -a v1.0.0 -m "Release 1.0.0"
-./scripts/deploy.sh production
-```
-
-**What it does:**
-1. Syncs code to EC2
-2. Builds Docker image
-3. Tags and pushes to local registry
-4. Deploys with Helm
-5. Verifies deployment
-
-### `scripts/setup-registry.sh`
-
-Sets up HTTPS Docker registry for Kind cluster.
-
-**Usage:**
-```bash
-# On EC2 instance
-./scripts/setup-registry.sh
-```
-
-**What it does:**
-1. Creates certificate directory
-2. Generates self-signed TLS certificate
-3. Starts registry with HTTPS
-4. Connects to Kind network
-5. Installs cert in Kind nodes
-6. Restarts containerd
-
-### `scripts/generate-certs.sh`
-
-Generates self-signed TLS certificates for nginx.
-
-**Usage:**
-```bash
-./scripts/generate-certs.sh
-```
-
-## Configuration Files
-
-### Helm Values
-
-- **values.yaml** - Base configuration
-- **values.staging.yaml** - Staging overrides (single replica, main branch image, basic auth)
-- **values.production.yaml** - Production overrides (single replica, semver tags, cross-namespace gateway, basic auth)
-
-### Environment Variables
-
-Configuration via `.env` file:
-```bash
-GO_VERSION=1.26.0
-TRIVY_VERSION=0.69.1
-NVD_API_KEY=<your-key>
-DGRAPH_HOST=dgraph-alpha
-DGRAPH_PORT=9080
-```
-
-For deployment:
-```bash
-EC2_HOST=ubuntu@<your-ec2-ip>  # Required for deploy.sh
-```
-
-## Security Notes
-
-- All documentation uses placeholders (`<EC2_INSTANCE_IP>`) instead of hardcoded IPs
-- `.env` file is gitignored and contains sensitive data
-- TLS certificates are gitignored
-- Deploy script requires explicit EC2_HOST configuration
+- **[TLS_SETUP.md](TLS_SETUP.md)** - TLS certificate configuration (Docker Compose)
+- **[CI_CD.md](CI_CD.md)** - GitHub Actions workflows and releases
 
 ## Getting Started
 
-1. **Local Development:**
+1. **Local Development (Docker Compose):**
    ```bash
    ./scripts/generate-certs.sh
-   docker-compose up -d
+   docker compose up -d
+   # Access at https://localhost:7443
    ```
 
-2. **Deploy to Staging:**
-   ```bash
-   export EC2_HOST=ubuntu@<your-ec2-ip>
-   ./scripts/deploy.sh staging
-   ```
+2. **Kubernetes Staging:**
+   Managed by ArgoCD. Push to `main` triggers automatic deployment via image digest strategy.
 
-3. **Deploy to Production:**
+3. **Kubernetes Production:**
    ```bash
-   # Apply ArgoCD production application
-   kubectl apply -f k8s/argocd/production-application.yaml
-
-   # Create and push semver tag to trigger deployment
+   # Tag a release to trigger production deployment
    git tag -a v1.0.0 -m "Release 1.0.0"
    git push origin v1.0.0
    ```
+   ArgoCD Image Updater (semver strategy) detects the new tag and deploys automatically.
 
 ## Related Documentation
 
 - Main README: `../README.md`
+- Helm Chart: `../helm/lookout/README.md`
 - API Documentation: Run `godoc -http=:6060`
-- Helm Chart: `helm/lookout/README.md`
 
 ## Contributing
 
-See [DEVELOPMENT.md](DEVELOPMENT.md) for:
-- Code style guidelines
-- Testing requirements
-- Build process
-- Development workflow
+See [DEVELOPMENT.md](DEVELOPMENT.md) for code style, testing, and development workflow.

@@ -27,7 +27,7 @@ lookout -sbom mybom.json -dep-path "pkg:npm/lodash@4.17.20"
 ./scripts/generate-certs.sh
 
 # Start all services
-docker-compose up -d
+docker compose up -d
 
 # Access UI (HTTPS - recommended)
 open https://localhost:7443
@@ -42,14 +42,14 @@ open http://localhost:7080
 
 ```bash
 # Clone repository
-git clone https://github.com/<username>/lookout.git
+git clone https://github.com/timoniersystems/lookout.git
 cd lookout
 
 # Generate TLS certificates (first time only)
 ./scripts/generate-certs.sh
 
 # Start services
-docker-compose up -d
+docker compose up -d
 
 # Access web UI (HTTPS)
 open https://localhost:7443
@@ -57,16 +57,16 @@ open https://localhost:7443
 
 ### Binary Download
 
-Download from [Releases](https://github.com/<username>/lookout/releases):
+Download from [Releases](https://github.com/timoniersystems/lookout/releases):
 
 ```bash
 # Linux AMD64
-wget https://github.com/<username>/lookout/releases/download/v1.0.0/lookout-linux-amd64
+wget https://github.com/timoniersystems/lookout/releases/download/v1.0.0/lookout-linux-amd64
 chmod +x lookout-linux-amd64
 sudo mv lookout-linux-amd64 /usr/local/bin/lookout
 
 # macOS ARM64 (Apple Silicon)
-wget https://github.com/<username>/lookout/releases/download/v1.0.0/lookout-darwin-arm64
+wget https://github.com/timoniersystems/lookout/releases/download/v1.0.0/lookout-darwin-arm64
 chmod +x lookout-darwin-arm64
 sudo mv lookout-darwin-arm64 /usr/local/bin/lookout
 
@@ -77,7 +77,7 @@ lookout -version
 ### Build from Source
 
 ```bash
-git clone https://github.com/<username>/lookout.git
+git clone https://github.com/timoniersystems/lookout.git
 cd lookout
 
 # Build CLI
@@ -248,7 +248,7 @@ CVE-2022-23307
 ./scripts/generate-certs.sh
 
 # Start all services
-docker-compose up -d
+docker compose up -d
 ```
 
 Access at: https://localhost:7443 (or http://localhost:7080 which redirects to HTTPS)
@@ -403,7 +403,7 @@ lookout -sbom release-sbom.json -severity high
 
     # Scan with Lookout
     docker run --rm -v $(pwd):/work \
-      ghcr.io/<username>/lookout:latest \
+      ghcr.io/timoniersystems/lookout:latest \
       -sbom /work/sbom.json -severity high
 
     # Fail if critical vulnerabilities
@@ -418,7 +418,7 @@ lookout -sbom release-sbom.json -severity high
 **Start server:**
 ```bash
 ./scripts/generate-certs.sh  # First time only
-docker-compose up -d
+docker compose up -d
 ```
 
 **API endpoints (via HTTPS):**
@@ -523,13 +523,13 @@ lookout -cve-file vulnerabilities.txt
 
 ```bash
 # Check if Dgraph is running
-docker-compose ps
+docker compose ps
 
 # Restart Dgraph
-docker-compose restart alpha
+docker compose restart alpha
 
 # View logs
-docker-compose logs alpha
+docker compose logs alpha
 ```
 
 ### Invalid SBOM Format
@@ -591,5 +591,5 @@ A: No, requires NVD API access for CVE data.
 ## Getting Help
 
 - **Documentation**: [docs/](.)
-- **Issues**: [GitHub Issues](https://github.com/<username>/lookout/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/<username>/lookout/discussions)
+- **Issues**: [GitHub Issues](https://github.com/timoniersystems/lookout/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/timoniersystems/lookout/discussions)
