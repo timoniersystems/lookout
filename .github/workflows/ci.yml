@@ -93,9 +93,17 @@ jobs:
       uses: golangci/golangci-lint-action@v7
       with:
         version: v2.9.0
-        args: --timeout=5m
+        args: --timeout=5m --output.json.path=lint-report.json
         skip-cache: true
         install-mode: binary
+
+    - name: Upload lint report
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: lint-report
+        path: lint-report.json
+        retention-days: 30
 
   build:
     name: Build

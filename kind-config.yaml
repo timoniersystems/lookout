@@ -23,11 +23,11 @@ nodes:
     apiServer:
       certSANs:
       # Add your EC2 instance's public IP and private IP here
-      - "10.0.3.142"
+      - "<EC2_PRIVATE_IP>"
       # Add the instance's public IP if it has one (replace with actual IP)
       # - "x.x.x.x"
       # Also add localhost for local access
       - "localhost"
       - "127.0.0.1"
     # Advertise the API server on the host's IP
-    controlPlaneEndpoint: "10.0.3.142:33299"
+    controlPlaneEndpoint: "<EC2_PRIVATE_IP>:33299"

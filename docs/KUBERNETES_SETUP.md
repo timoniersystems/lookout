@@ -31,7 +31,7 @@ This guide covers the complete Kubernetes deployment stack for Lookout:
 
 ### Environment
 
-**EC2 Instance:** `10.0.3.142`
+**EC2 Instance:** `<EC2_PRIVATE_IP>`
 - OS: Ubuntu 24.04 (Linux 6.14.0-1018-aws)
 - RAM: 7.6GB
 - Disk: 234GB available
@@ -73,7 +73,7 @@ This guide covers the complete Kubernetes deployment stack for Lookout:
                 └───────────────┬────────────────┘
                                 │
                 ┌───────────────▼────────────────┐
-                │  EC2 Instance: 10.0.3.142      │
+                │  EC2 Instance: <EC2_PRIVATE_IP>      │
                 │  ┌──────────────────────────┐  │
                 │  │  Kind Cluster            │  │
                 │  │  ┌────────────────────┐  │  │
@@ -491,7 +491,7 @@ kubectl -n argocd get secret argocd-initial-admin-secret \
 From your local machine, create an SSH tunnel:
 
 ```bash
-ssh -L 8080:localhost:8080 ubuntu@10.0.3.142 \
+ssh -L 8080:localhost:8080 ubuntu@<EC2_PRIVATE_IP> \
   'kubectl port-forward svc/argocd-server -n argocd 8080:443'
 ```
 
@@ -864,7 +864,7 @@ Before configuring ALB:
    - HTTP NodePort: `32080`
    - HTTPS NodePort: `32443`
 2. AWS account with appropriate IAM permissions
-3. VPC with EC2 instance at `10.0.3.142`
+3. VPC with EC2 instance at `<EC2_PRIVATE_IP>`
 4. Domain `timonier.io` managed in Route53
 5. SSL certificate for `*.timonier.io` or `lookout-stg.timonier.io` in AWS Certificate Manager
 
@@ -885,7 +885,7 @@ Run the automated script to forward NodePorts from the Kind container to the EC2
 
 ```bash
 # SSH to EC2
-ssh ubuntu@10.0.3.142
+ssh ubuntu@<EC2_PRIVATE_IP>
 
 # Run the NodePort forwarding script
 ./scripts/setup-kind-nodeport-forwarding.sh
@@ -1581,7 +1581,7 @@ kubectl apply -f k8s/argocd/staging-application.yaml
                 └───────────────┬────────────────┘
                                 │
                 ┌───────────────▼────────────────┐
-                │  EC2 Instance: 10.0.3.142      │
+                │  EC2 Instance: <EC2_PRIVATE_IP>      │
                 │  ┌──────────────────────────┐  │
                 │  │  Kind Cluster            │  │
                 │  │  ┌────────────────────┐  │  │
@@ -2383,7 +2383,7 @@ See [Chapter 5 Troubleshooting](#56-troubleshooting) for ExternalSecret debuggin
 
 ```bash
 # SSH to EC2
-ssh ubuntu@10.0.3.142
+ssh ubuntu@<EC2_PRIVATE_IP>
 
 # Check cluster status
 kubectl cluster-info
@@ -2893,7 +2893,7 @@ curl -H "Host: lookout-stg.timonier.io" http://localhost:32080/health
 curl -k -H "Host: lookout-stg.timonier.io" https://localhost:32443/health
 
 # ArgoCD access
-ssh -L 8080:localhost:8080 ubuntu@10.0.3.142 \
+ssh -L 8080:localhost:8080 ubuntu@<EC2_PRIVATE_IP> \
   'kubectl port-forward svc/argocd-server -n argocd 8080:443'
 
 # Sync application
@@ -2925,4 +2925,4 @@ kubectl patch application lookout-staging -n argocd \
 
 **Setup Date:** 2026-02-15
 **Cluster:** lookout (Kind v0.27.0, K8s v1.32.2)
-**Location:** EC2 instance 10.0.3.142
+**Location:** EC2 instance <EC2_PRIVATE_IP>
