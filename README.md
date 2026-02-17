@@ -2,8 +2,8 @@
 
 > SBOM (CycloneDX & SPDX) and CVE vulnerability analysis tool with dependency path tracing
 
-[![CI](https://github.com/<username>/lookout/actions/workflows/ci.yml/badge.svg)](https://github.com/<username>/lookout/actions/workflows/ci.yml)
-[![Go Report Card](https://goreportcard.com/badge/github.com/<username>/lookout)](https://goreportcard.com/report/github.com/<username>/lookout)
+[![CI](https://github.com/timoniersystems/lookout/actions/workflows/ci.yml/badge.svg)](https://github.com/timoniersystems/lookout/actions/workflows/ci.yml)
+[![Go Report Card](https://goreportcard.com/badge/github.com/timoniersystems/lookout)](https://goreportcard.com/report/github.com/timoniersystems/lookout)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ## What is Lookout?
@@ -22,7 +22,6 @@ Lookout helps you understand and fix vulnerabilities in your software dependenci
 - **Multi-Interface** - CLI for automation, Web UI with real-time progress tracking
 - **Graph Database** - Dgraph-powered dependency graph visualization
 - **Async Processing** - Background SBOM processing with SSE progress updates
-- **TLS/HTTPS** - Secure communication via nginx reverse proxy
 - **Session Management** - Results storage with auto-expiration
 - **Severity Filtering** - Filter vulnerabilities by CRITICAL, HIGH, MEDIUM, LOW
 
@@ -32,7 +31,7 @@ Lookout helps you understand and fix vulnerabilities in your software dependenci
 
 ```bash
 # Clone and build
-git clone https://github.com/<username>/lookout.git
+git clone https://github.com/timoniersystems/lookout.git
 cd lookout
 make build && make install
 
@@ -86,16 +85,16 @@ See [Docker Compose Guide](docs/DOCKER_COMPOSE.md) for detailed setup and config
 
 ### Binary Download
 
-Download from [Releases](https://github.com/<username>/lookout/releases):
+Download from [Releases](https://github.com/timoniersystems/lookout/releases):
 
 ```bash
 # Linux
-wget https://github.com/<username>/lookout/releases/latest/download/lookout-linux-amd64
+wget https://github.com/timoniersystems/lookout/releases/latest/download/lookout-linux-amd64
 chmod +x lookout-linux-amd64
 sudo mv lookout-linux-amd64 /usr/local/bin/lookout
 
 # macOS (Apple Silicon)
-wget https://github.com/<username>/lookout/releases/latest/download/lookout-darwin-arm64
+wget https://github.com/timoniersystems/lookout/releases/latest/download/lookout-darwin-arm64
 chmod +x lookout-darwin-arm64
 sudo mv lookout-darwin-arm64 /usr/local/bin/lookout
 
@@ -111,7 +110,7 @@ lookout -version
 - Trivy (optional, for SBOM scanning)
 
 ```bash
-git clone https://github.com/<username>/lookout.git
+git clone https://github.com/timoniersystems/lookout.git
 cd lookout
 
 # Build CLI
@@ -331,8 +330,8 @@ MIT License - see [LICENSE](LICENSE) for details.
 ## Support
 
 - 📚 [Documentation](docs/)
-- 🐛 [Report Issues](https://github.com/<username>/lookout/issues)
-- 💬 [Discussions](https://github.com/<username>/lookout/discussions)
+- 🐛 [Report Issues](https://github.com/timoniersystems/lookout/issues)
+- 💬 [Discussions](https://github.com/timoniersystems/lookout/discussions)
 
 ---
 
