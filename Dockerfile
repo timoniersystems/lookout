@@ -21,6 +21,10 @@ RUN TRIVY_VER="${TRIVY_VERSION}" && \
     chmod +x /usr/local/bin/trivy && \
     trivy --version
 
+# Download Trivy vulnerability database at build time so it's baked into the image
+# This avoids runtime DB downloads in the distroless container
+RUN trivy filesystem --download-db-only --cache-dir /trivy-cache
+
 WORKDIR /app
 
 # Tell Go this module is private (don't try to fetch from GitHub)
@@ -40,6 +44,13 @@ COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 
 # Copy Trivy binary from builder with correct ownership
 COPY --from=builder --chown=65532:65532 /usr/local/bin/trivy /usr/local/bin/trivy
+
+# Copy pre-downloaded Trivy vulnerability database to a path NOT overlaid by emptyDir mounts
+COPY --from=builder --chown=65532:65532 /trivy-cache /opt/trivy-cache
+
+# Tell Trivy where to find its cache and skip DB updates at runtime
+ENV TRIVY_CACHE_DIR=/opt/trivy-cache
+ENV TRIVY_SKIP_DB_UPDATE=true
 
 # Set working directory first
 WORKDIR /app
