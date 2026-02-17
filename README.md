@@ -21,7 +21,6 @@ Lookout helps you understand and fix vulnerabilities in your software dependenci
 - **Multi-Interface** - CLI for automation, Web UI with real-time progress tracking
 - **Graph Database** - Dgraph-powered dependency graph visualization
 - **Async Processing** - Background SBOM processing with SSE progress updates
-- **Session Management** - Results storage with auto-expiration
 - **Severity Filtering** - Filter vulnerabilities by CRITICAL, HIGH, MEDIUM, LOW
 
 ## Quick Start
