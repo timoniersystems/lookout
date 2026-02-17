@@ -18,30 +18,72 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
-    // Form submission feedback
+    // Form submission with error handling via fetch
     const forms = document.querySelectorAll('form');
     forms.forEach(form => {
         form.addEventListener('submit', function(e) {
+            e.preventDefault();
+
             const button = form.querySelector('button[type="submit"]');
+            const originalText = button ? button.textContent : '';
+
             if (button) {
                 button.textContent = 'Processing...';
                 button.disabled = true;
                 button.style.opacity = '0.7';
                 button.style.cursor = 'wait';
+            }
 
-                // Add a helpful message for long-running operations
-                const formAction = form.getAttribute('action');
-                if (formAction && (formAction.includes('cyclonedx-bom') || formAction.includes('sbom-process'))) {
-                    let helpText = form.querySelector('.processing-help');
-                    if (!helpText) {
-                        helpText = document.createElement('div');
-                        helpText.className = 'processing-help';
-                        helpText.style.cssText = 'margin-top: 1rem; padding: 1rem; background: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 0.5rem; font-size: 0.875rem; color: #92400e;';
-                        helpText.innerHTML = '<strong>⏳ This may take several minutes</strong><br>Fetching CVE data and building dependency graphs...';
-                        button.parentElement.appendChild(helpText);
-                    }
+            // Add helpful message for long-running SBOM operations
+            const formAction = form.getAttribute('action');
+            let helpText = null;
+            if (formAction && (formAction.includes('cyclonedx-bom') || formAction.includes('sbom-process'))) {
+                helpText = form.querySelector('.processing-help');
+                if (!helpText) {
+                    helpText = document.createElement('div');
+                    helpText.className = 'processing-help';
+                    helpText.style.cssText = 'margin-top: 1rem; padding: 1rem; background: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 0.5rem; font-size: 0.875rem; color: #92400e;';
+                    helpText.innerHTML = '<strong>⏳ This may take several minutes</strong><br>Fetching CVE data and building dependency graphs...';
+                    button.parentElement.appendChild(helpText);
                 }
             }
+
+            const formData = new FormData(form);
+
+            fetch(form.action, {
+                method: 'POST',
+                body: formData,
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(data => {
+                        throw new Error(data.error || 'An unexpected error occurred');
+                    });
+                }
+                // Success - replace the page with the response HTML
+                return response.text().then(html => {
+                    document.open();
+                    document.write(html);
+                    document.close();
+                });
+            })
+            .catch(error => {
+                // Show error in modal
+                showErrorModal(error.message);
+
+                // Reset button state
+                if (button) {
+                    button.textContent = originalText;
+                    button.disabled = false;
+                    button.style.opacity = '';
+                    button.style.cursor = '';
+                }
+
+                // Remove help text if present
+                if (helpText) {
+                    helpText.remove();
+                }
+            });
         });
     });
 
@@ -62,4 +104,34 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Add smooth scroll behavior
     document.documentElement.style.scrollBehavior = 'smooth';
+});
+
+function showErrorModal(message) {
+    const modal = document.getElementById('errorModal');
+    const messageEl = document.getElementById('errorModalMessage');
+    if (modal && messageEl) {
+        messageEl.textContent = message;
+        modal.style.display = 'flex';
+    }
+}
+
+function closeErrorModal() {
+    const modal = document.getElementById('errorModal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
+// Close modal on overlay click
+document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('error-modal-overlay')) {
+        closeErrorModal();
+    }
+});
+
+// Close modal on Escape key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeErrorModal();
+    }
 });

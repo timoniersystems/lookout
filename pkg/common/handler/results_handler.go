@@ -25,6 +25,7 @@ func GetSBOMResults(c echo.Context) error {
 	// Render the unified results page with vulnerability and dependency path data
 	return c.Render(http.StatusOK, "cve_vulnerability_results.html", map[string]interface{}{
 		"CVEPURLPairs":     results.CVEPURLPairs,
+		"Components":       results.Components,
 		"SeverityFilters":  results.SeverityFilters,
 		"TotalVulns":       results.TotalVulns,
 		"FilteredVulns":    results.FilteredVulns,

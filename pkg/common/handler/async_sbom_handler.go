@@ -220,7 +220,7 @@ func processSBOMWithProgress(sessionID string, tempFilePath string, severityFilt
 	tracker.SendProgress("complete", progress.StatusActive, "Preparing final report...", 95)
 
 	// Store results for retrieval with severity filter information
-	StoreResults(sessionID, pageData.CVEPURLPairs, resultMap, severityFilters, totalCount)
+	StoreResults(sessionID, pageData.CVEPURLPairs, resultMap, severityFilters, totalCount, bom.Components)
 
 	tracker.SendProgress("complete", progress.StatusComplete, "Analysis complete!", 100)
 

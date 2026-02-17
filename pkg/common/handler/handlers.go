@@ -458,7 +458,7 @@ func UploadBOMAndInsertData(deps *HandlerDependencies) echo.HandlerFunc {
 			})
 		}
 
-		var pageData nvd.ResultsPageData
+		var cvePURLPairs []nvd.CVEPURLPair
 		for _, data := range aggregatedData {
 			// Filter by severity
 			if !filterBySeverity(data, severityFilters) {
@@ -474,10 +474,16 @@ func UploadBOMAndInsertData(deps *HandlerDependencies) echo.HandlerFunc {
 					break
 				}
 			}
-			pageData.CVEPURLPairs = append(pageData.CVEPURLPairs, data)
+			cvePURLPairs = append(cvePURLPairs, data)
 		}
 
-		return c.Render(http.StatusOK, "cve_vulnerability_results.html", pageData)
+		return c.Render(http.StatusOK, "cve_vulnerability_results.html", map[string]interface{}{
+			"CVEPURLPairs":    cvePURLPairs,
+			"Components":      bom.Components,
+			"SeverityFilters": severityFilters,
+			"TotalVulns":      len(aggregatedData),
+			"FilteredVulns":   len(cvePURLPairs),
+		})
 	}
 }
 
