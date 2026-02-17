@@ -352,23 +352,6 @@ func UploadBOMAndInsertData(deps *HandlerDependencies) echo.HandlerFunc {
 		}
 		logging.Debug("Severity filters: %v", severityFilters)
 
-		// Drop existing data and setup schema
-		if err := deps.Repo.DropAllData(ctx); err != nil {
-			logging.Error("Failed to drop existing data: %v", err)
-			return c.JSON(http.StatusInternalServerError, map[string]interface{}{
-				"error": "Failed to clear database",
-			})
-		}
-
-		// Re-setup schema after dropping all data
-		client := dgraph.DgraphClient()
-		if err := dgraph.SetupSchema(client); err != nil {
-			logging.Error("Failed to setup schema: %v", err)
-			return c.JSON(http.StatusInternalServerError, map[string]interface{}{
-				"error": "Failed to initialize database schema",
-			})
-		}
-
 		// Use fileutil to handle temporary file creation
 		tempFileHandle, err := fileutil.CreateTempFromFormFile(c, "cyclonedx-bom-file")
 		if err != nil {
@@ -421,11 +404,26 @@ func UploadBOMAndInsertData(deps *HandlerDependencies) echo.HandlerFunc {
 			})
 		}
 
-		if err := deps.Repo.InsertComponents(ctx, bom); err != nil {
-			logging.Error("Failed to insert BOM data into Dgraph: %v", err)
-			return c.JSON(http.StatusInternalServerError, map[string]interface{}{
-				"error": "Failed to insert BOM data into Dgraph",
-			})
+		// Build dependency graph (non-fatal - CVE results still shown if Dgraph is unavailable)
+		dgraphAvailable := true
+		if err := deps.Repo.DropAllData(ctx); err != nil {
+			logging.Warn("Failed to drop existing data (Dgraph may be unavailable): %v", err)
+			dgraphAvailable = false
+		}
+
+		if dgraphAvailable {
+			client := dgraph.DgraphClient()
+			if err := dgraph.SetupSchema(client); err != nil {
+				logging.Warn("Failed to setup schema: %v", err)
+				dgraphAvailable = false
+			}
+		}
+
+		if dgraphAvailable {
+			if err := deps.Repo.InsertComponents(ctx, bom); err != nil {
+				logging.Warn("Failed to insert BOM data into Dgraph: %v", err)
+				dgraphAvailable = false
+			}
 		}
 
 		trivyResults, err := trivy.RunTrivy(tempFileHandle.Path)
@@ -444,18 +442,22 @@ func UploadBOMAndInsertData(deps *HandlerDependencies) echo.HandlerFunc {
 			})
 		}
 
-		if err := deps.Repo.UpdateVulnerabilities(ctx, cvePurlMap); err != nil {
-			logging.Warn("Failed to update vulnerabilities: %v", err)
+		if dgraphAvailable {
+			if err := deps.Repo.UpdateVulnerabilities(ctx, cvePurlMap); err != nil {
+				logging.Warn("Failed to update vulnerabilities: %v", err)
+			}
 		}
 
 		aggregatedData := nvd.AggregateCVEData(cvePurlMap)
 
-		resultMap, err := deps.Repo.RetrieveVulnerablePURLs(ctx, cvePurlMap)
-		if err != nil {
-			logging.Error("Failed to retrieve vulnerable PURLs: %v", err)
-			return c.JSON(http.StatusInternalServerError, map[string]interface{}{
-				"error": "Failed to retrieve vulnerability data",
-			})
+		resultMap := make(map[string]dgraph.Component)
+		if dgraphAvailable {
+			var pathErr error
+			resultMap, pathErr = deps.Repo.RetrieveVulnerablePURLs(ctx, cvePurlMap)
+			if pathErr != nil {
+				logging.Warn("Failed to retrieve vulnerable PURLs: %v", pathErr)
+				resultMap = make(map[string]dgraph.Component)
+			}
 		}
 
 		var cvePURLPairs []nvd.CVEPURLPair

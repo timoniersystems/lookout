@@ -131,33 +131,35 @@ func processSBOMWithProgress(sessionID string, tempFilePath string, severityFilt
 	}
 	tracker.SendProgress("parse", progress.StatusComplete, fmt.Sprintf("Parsed %d components", componentCount), 20)
 
-	// Step 3: Clear database and setup schema
-	tracker.SendProgress("db", progress.StatusActive, "Clearing existing data...", 25)
+	// Step 3: Build dependency graph (non-fatal - CVE results still shown if Dgraph is unavailable)
+	dgraphAvailable := true
+	tracker.SendProgress("db", progress.StatusActive, "Building dependency graph...", 25)
 
 	client := dgraph.DgraphClient()
 	if err := dgraph.DropAllData(client); err != nil {
-		logging.Error("Failed to drop existing data: %v", err)
-		tracker.SendError("Failed to clear database")
-		return
+		logging.Warn("Failed to drop existing data (Dgraph may be unavailable): %v", err)
+		dgraphAvailable = false
 	}
 
-	tracker.SendProgress("db", progress.StatusActive, "Initializing database schema...", 30)
-
-	if err := dgraph.SetupSchema(client); err != nil {
-		logging.Info("Failed to setup schema: %v", err)
-		tracker.SendError("Failed to initialize database schema")
-		return
+	if dgraphAvailable {
+		if err := dgraph.SetupSchema(client); err != nil {
+			logging.Warn("Failed to setup schema: %v", err)
+			dgraphAvailable = false
+		}
 	}
 
-	tracker.SendProgress("db", progress.StatusActive, "Building dependency graph...", 35)
-
-	if err := dgraph.InsertComponentsAndDependencies(dgraph.DgraphClient(), bom); err != nil {
-		logging.Info("Failed to insert BOM data into Dgraph: %v", err)
-		tracker.SendError("Failed to insert BOM data into database")
-		return
+	if dgraphAvailable {
+		if err := dgraph.InsertComponentsAndDependencies(dgraph.DgraphClient(), bom); err != nil {
+			logging.Warn("Failed to insert BOM data into Dgraph: %v", err)
+			dgraphAvailable = false
+		}
 	}
 
-	tracker.SendProgress("db", progress.StatusComplete, "Dependency graph built successfully", 45)
+	if dgraphAvailable {
+		tracker.SendProgress("db", progress.StatusComplete, "Dependency graph built successfully", 45)
+	} else {
+		tracker.SendProgress("db", progress.StatusComplete, "Dependency graph unavailable - continuing with vulnerability scan", 45)
+	}
 
 	// Step 4: Run Trivy scan
 	tracker.SendProgress("scan", progress.StatusActive, "Running Trivy vulnerability scanner...", 50)
@@ -182,8 +184,10 @@ func processSBOMWithProgress(sessionID string, tempFilePath string, severityFilt
 	// Step 5: Fetch CVE data
 	tracker.SendProgress("cve", progress.StatusActive, fmt.Sprintf("Fetching CVE data for %d vulnerabilities...", vulnCount), 65)
 
-	// Update Dgraph with CVE info
-	dgraph.QueryAndUpdatePurl(cvePurlMap)
+	// Update Dgraph with CVE info (non-fatal)
+	if dgraphAvailable {
+		dgraph.QueryAndUpdatePurl(cvePurlMap)
+	}
 
 	// Fetch CVE data from NVD
 	tracker.SendProgress("cve", progress.StatusActive, "Retrieving vulnerability details from NVD (may be slow due to rate limits)...", 70)
@@ -191,19 +195,25 @@ func processSBOMWithProgress(sessionID string, tempFilePath string, severityFilt
 
 	tracker.SendProgress("cve", progress.StatusComplete, fmt.Sprintf("Retrieved data for %d CVEs", len(aggregatedData)), 75)
 
-	// Step 6: Trace dependency paths
-	tracker.SendProgress("paths", progress.StatusActive, "Tracing dependency paths to vulnerable packages...", 78)
+	// Step 6: Trace dependency paths (non-fatal)
+	resultMap := make(map[string]dgraph.Component)
+	if dgraphAvailable {
+		tracker.SendProgress("paths", progress.StatusActive, "Tracing dependency paths to vulnerable packages...", 78)
 
-	logging.Info("[Session %s] Starting RetrieveVulnerablePURLs for %d CVEs", sessionID, len(cvePurlMap))
-	resultMap, err := dgraph.RetrieveVulnerablePURLs(cvePurlMap)
-	if err != nil {
-		logging.Info("[Session %s] Failed to retrieve vulnerable PURLs: %v", sessionID, err)
-		tracker.SendError(fmt.Sprintf("Failed to retrieve vulnerability data: %v", err))
-		return
+		logging.Info("[Session %s] Starting RetrieveVulnerablePURLs for %d CVEs", sessionID, len(cvePurlMap))
+		var pathErr error
+		resultMap, pathErr = dgraph.RetrieveVulnerablePURLs(cvePurlMap)
+		if pathErr != nil {
+			logging.Warn("[Session %s] Failed to retrieve vulnerable PURLs: %v", sessionID, pathErr)
+			resultMap = make(map[string]dgraph.Component)
+		} else {
+			logging.Info("[Session %s] RetrieveVulnerablePURLs completed, got %d results", sessionID, len(resultMap))
+		}
+
+		tracker.SendProgress("paths", progress.StatusComplete, "Dependency paths traced", 82)
+	} else {
+		tracker.SendProgress("paths", progress.StatusComplete, "Dependency path tracing skipped (Dgraph unavailable)", 82)
 	}
-	logging.Info("[Session %s] RetrieveVulnerablePURLs completed, got %d results", sessionID, len(resultMap))
-
-	tracker.SendProgress("paths", progress.StatusComplete, "Dependency paths traced successfully", 82)
 
 	// Step 7: Filter by severity
 	tracker.SendProgress("filter", progress.StatusActive, "Filtering results by severity...", 85)
