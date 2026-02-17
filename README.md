@@ -3,7 +3,6 @@
 > SBOM (CycloneDX & SPDX) and CVE vulnerability analysis tool with dependency path tracing
 
 [![CI](https://github.com/timoniersystems/lookout/actions/workflows/ci.yml/badge.svg)](https://github.com/timoniersystems/lookout/actions/workflows/ci.yml)
-[![Go Report Card](https://goreportcard.com/badge/github.com/timoniersystems/lookout)](https://goreportcard.com/report/github.com/timoniersystems/lookout)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ## What is Lookout?
