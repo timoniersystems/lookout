@@ -50,7 +50,7 @@ func (t *DgraphTxnWrapper) QueryWithVars(ctx context.Context, query string, vars
 
 // Discard discards the transaction
 func (t *DgraphTxnWrapper) Discard(ctx context.Context) {
-	t.txn.Discard(ctx)
+	_ = t.txn.Discard(ctx)
 }
 
 // DgraphResponseWrapper wraps a Dgraph response

@@ -57,7 +57,7 @@ func UploadBOMWithProgress(c echo.Context) error {
 	bomFormat, err := validation.DetectBOMFormat(tempFilePath)
 	if err != nil {
 		logging.Warn("[Session %s] SBOM validation failed: %v", sessionID, err)
-		os.Remove(tempFilePath)
+		_ = os.Remove(tempFilePath)
 		return c.JSON(http.StatusBadRequest, map[string]interface{}{
 			"error": err.Error(),
 		})
@@ -67,7 +67,7 @@ func UploadBOMWithProgress(c echo.Context) error {
 	case "cyclonedx":
 		if err := validation.ValidateCycloneDXBOM(tempFilePath); err != nil {
 			logging.Warn("[Session %s] SBOM validation failed: %v", sessionID, err)
-			os.Remove(tempFilePath)
+			_ = os.Remove(tempFilePath)
 			return c.JSON(http.StatusBadRequest, map[string]interface{}{
 				"error": err.Error(),
 			})
@@ -75,7 +75,7 @@ func UploadBOMWithProgress(c echo.Context) error {
 	case "spdx":
 		if err := validation.ValidateSPDXBOM(tempFilePath); err != nil {
 			logging.Warn("[Session %s] SBOM validation failed: %v", sessionID, err)
-			os.Remove(tempFilePath)
+			_ = os.Remove(tempFilePath)
 			return c.JSON(http.StatusBadRequest, map[string]interface{}{
 				"error": err.Error(),
 			})
@@ -94,7 +94,7 @@ func UploadBOMWithProgress(c echo.Context) error {
 		"SessionID": sessionID,
 	}); err != nil {
 		logging.Info("Failed to render progress page: %v", err)
-		os.Remove(tempFilePath)
+		_ = os.Remove(tempFilePath)
 		tracker.Close()
 		return err
 	}
@@ -104,7 +104,7 @@ func UploadBOMWithProgress(c echo.Context) error {
 
 func processSBOMWithProgress(sessionID string, tempFilePath string, severityFilters []string, tracker *progress.Tracker, bomFormat string) {
 	defer tracker.Close()
-	defer os.Remove(tempFilePath)
+	defer func() { _ = os.Remove(tempFilePath) }()
 
 	// Step 1: File already uploaded (already sent before calling this function)
 
@@ -186,7 +186,7 @@ func processSBOMWithProgress(sessionID string, tempFilePath string, severityFilt
 
 	// Update Dgraph with CVE info (non-fatal)
 	if dgraphAvailable {
-		dgraph.QueryAndUpdatePurl(cvePurlMap)
+		_ = dgraph.QueryAndUpdatePurl(cvePurlMap)
 	}
 
 	// Fetch CVE data from NVD
@@ -236,24 +236,6 @@ func processSBOMWithProgress(sessionID string, tempFilePath string, severityFilt
 
 	// Send completion with redirect
 	tracker.SendComplete("/results/" + sessionID)
-}
-
-func buildResultsPageData(aggregatedData []nvd.CVEPURLPair, resultMap map[string]dgraph.Component) nvd.ResultsPageData {
-	var pageData nvd.ResultsPageData
-
-	for _, data := range aggregatedData {
-		// Match CVE with dependency data from Dgraph
-		purl := data.PURL
-		for _, component := range resultMap {
-			if component.Purl == purl {
-				data.DgraphData = component
-				break
-			}
-		}
-		pageData.CVEPURLPairs = append(pageData.CVEPURLPairs, data)
-	}
-
-	return pageData
 }
 
 // buildFilteredResultsPageData builds results with severity filtering

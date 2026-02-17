@@ -60,7 +60,7 @@ func resolveOutputPath(trivyResultsFilename ...string) (outputFile, outputDirect
 		if err != nil {
 			return "", "", fmt.Errorf("error creating temporary file: %w", err)
 		}
-		defer tempFile.Close()
+		defer func() { _ = tempFile.Close() }()
 
 		outputFile = tempFile.Name()
 	}

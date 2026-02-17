@@ -19,18 +19,6 @@ const (
 	colorDim     = "\033[2m"
 )
 
-// Box drawing characters
-const (
-	boxTopLeft     = "┌"
-	boxTopRight    = "┐"
-	boxBottomLeft  = "└"
-	boxBottomRight = "┘"
-	boxHorizontal  = "─"
-	boxVertical    = "│"
-	boxTee         = "├"
-	boxTeeRight    = "┤"
-)
-
 // CVEFormatter handles formatted output of CVE data
 type CVEFormatter struct {
 	writer         io.Writer
@@ -319,52 +307,6 @@ func (f *CVEFormatter) getSeverityColor(severity string) string {
 func (f *CVEFormatter) coloredSeverity(severity string) string {
 	color := f.getSeverityColor(severity)
 	return fmt.Sprintf("%s%s%s", color, severity, colorReset)
-}
-
-// truncate truncates a string to maxLen, adding "..." if truncated
-func (f *CVEFormatter) truncate(s string, maxLen int) string {
-	if len(s) <= maxLen {
-		return s
-	}
-	if maxLen <= 3 {
-		return s[:maxLen]
-	}
-	return s[:maxLen-3] + "..."
-}
-
-// printWrapped prints text wrapped to fit within the box with proper padding
-func (f *CVEFormatter) printWrapped(text string, maxWidth int, indent string) {
-	words := strings.Fields(text)
-	if len(words) == 0 {
-		fmt.Fprintf(f.writer, "%s%s%-*s %s\n", boxVertical, indent, maxWidth, "", boxVertical)
-		return
-	}
-
-	line := ""
-	for _, word := range words {
-		testLine := line
-		if testLine != "" {
-			testLine += " "
-		}
-		testLine += word
-
-		if len(testLine) > maxWidth {
-			// Print current line
-			padding := maxWidth - len(line)
-			fmt.Fprintf(f.writer, "%s%s%s%s %s\n",
-				boxVertical, indent, line, strings.Repeat(" ", padding), boxVertical)
-			line = word
-		} else {
-			line = testLine
-		}
-	}
-
-	// Print remaining text
-	if line != "" {
-		padding := maxWidth - len(line)
-		fmt.Fprintf(f.writer, "%s%s%s%s %s\n",
-			boxVertical, indent, line, strings.Repeat(" ", padding), boxVertical)
-	}
 }
 
 // formatCPE extracts readable information from CPE string

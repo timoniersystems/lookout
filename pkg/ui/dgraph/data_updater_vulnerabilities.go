@@ -33,7 +33,7 @@ func QueryAndUpdatePurl(cvePurlMap map[string]string) error {
 		vars := map[string]string{"$purl": purl}
 
 		txn := client.NewTxn()
-		defer txn.Discard(ctx)
+		defer func() { _ = txn.Discard(ctx) }()
 
 		resp, err := txn.QueryWithVars(ctx, query, vars)
 		if err != nil {

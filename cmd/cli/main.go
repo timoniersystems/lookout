@@ -182,12 +182,13 @@ func printASCIITree(result dgraph.FilteredResult, searchedPURL string) {
 		// Build the tree structure
 		var prefix, line, icon string
 
-		if isFirst {
+		switch {
+		case isFirst:
 			// First item (root package)
 			icon = "🏠"
 			prefix = "     "
 			line = fmt.Sprintf("%s %s", icon, dep)
-		} else if isLast {
+		case isLast:
 			// Last item (vulnerable component)
 			icon = "⚠️"
 			prefix = "     "
@@ -195,7 +196,7 @@ func printASCIITree(result dgraph.FilteredResult, searchedPURL string) {
 				prefix += "│    "
 			}
 			line = fmt.Sprintf("%s└──> %s %s", prefix, icon, dep)
-		} else {
+		default:
 			// Middle items (dependencies)
 			icon = "📦"
 			prefix = "     "

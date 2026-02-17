@@ -99,7 +99,7 @@ func ParseCLIArgs(args []string) CLIArgs {
 	flags.BoolVar(&showHelp, "help", false, "Show help message")
 	flags.BoolVar(&showVersion, "version", false, "Show version information")
 
-	flags.Parse(args)
+	_ = flags.Parse(args)
 
 	// Handle help flag
 	if showHelp {

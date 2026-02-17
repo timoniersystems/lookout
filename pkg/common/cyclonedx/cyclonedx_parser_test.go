@@ -205,13 +205,13 @@ func TestParseBOM_InvalidFile(t *testing.T) {
 			if err != nil {
 				t.Fatalf("Failed to create temp file: %v", err)
 			}
-			defer os.Remove(tmpFile.Name())
+			defer func() { _ = os.Remove(tmpFile.Name()) }()
 
 			// Write invalid content
 			if _, err := tmpFile.WriteString(tc.content); err != nil {
 				t.Fatalf("Failed to write temp file: %v", err)
 			}
-			tmpFile.Close()
+			_ = tmpFile.Close()
 
 			// Try to parse - should fail
 			_, err = ParseBOM(tmpFile.Name())

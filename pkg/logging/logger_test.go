@@ -127,10 +127,10 @@ func TestParseLevel(t *testing.T) {
 func TestInitFromEnv(t *testing.T) {
 	// Save and restore original env
 	originalLevel := os.Getenv("LOG_LEVEL")
-	defer os.Setenv("LOG_LEVEL", originalLevel)
+	defer func() { _ = os.Setenv("LOG_LEVEL", originalLevel) }()
 
 	// Test with DEBUG level
-	os.Setenv("LOG_LEVEL", "DEBUG")
+	_ = os.Setenv("LOG_LEVEL", "DEBUG")
 
 	var buf bytes.Buffer
 	defaultLogger.SetOutput(&buf)

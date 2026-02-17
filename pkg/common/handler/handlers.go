@@ -77,12 +77,10 @@ func filterBySeverity(pair nvd.CVEPURLPair, severityFilters []string) bool {
 				logging.Debug(" CVE %s (severity=%s) MATCHED filter", vuln.CVE.ID, severity)
 				return true
 			}
-		} else {
+		} else if allSeveritiesSelected {
 			// No CVSS v3.1 metrics available
-			if allSeveritiesSelected {
-				logging.Debug(" CVE %s has no CvssMetricV31 data, including because all severities selected", vuln.CVE.ID)
-				return true
-			}
+			logging.Debug(" CVE %s has no CvssMetricV31 data, including because all severities selected", vuln.CVE.ID)
+			return true
 		}
 	}
 
@@ -175,7 +173,7 @@ func CVES(c echo.Context) error {
 				"error": "Failed to process uploaded file",
 			})
 		}
-		defer tempFileHandle.Cleanup()
+		defer func() { _ = tempFileHandle.Cleanup() }()
 
 		// Validate file content based on extension
 		ext := strings.ToLower(filepath.Ext(tempFileHandle.Path))
@@ -237,7 +235,7 @@ func UploadAndProcess(c echo.Context) error {
 			"error": "Failed to retrieve the file",
 		})
 	}
-	defer tempFileHandle.Cleanup()
+	defer func() { _ = tempFileHandle.Cleanup() }()
 
 	logging.Debug("Processing uploaded file at: %s", tempFileHandle.Path)
 
@@ -271,9 +269,7 @@ func UploadAndProcess(c echo.Context) error {
 	aggregatedData := nvd.AggregateCVEData(cvePurlMap)
 
 	var pageData nvd.ResultsPageData
-	for _, data := range aggregatedData {
-		pageData.CVEPURLPairs = append(pageData.CVEPURLPairs, data)
-	}
+	pageData.CVEPURLPairs = append(pageData.CVEPURLPairs, aggregatedData...)
 
 	// Sort results by severity (CRITICAL → HIGH → MEDIUM → LOW → N/A) and score
 	sortCVEPURLPairs(pageData.CVEPURLPairs)
@@ -305,7 +301,7 @@ func RunTrivyAndProcess(c echo.Context) error {
 			"error": "Failed to retrieve the file",
 		})
 	}
-	defer tempFileHandle.Cleanup()
+	defer func() { _ = tempFileHandle.Cleanup() }()
 
 	logging.Info("Running Trivy on uploaded file: %s", tempFileHandle.Path)
 
@@ -360,7 +356,7 @@ func UploadBOMAndInsertData(deps *HandlerDependencies) echo.HandlerFunc {
 				"error": "Failed to retrieve the BOM file",
 			})
 		}
-		defer tempFileHandle.Cleanup()
+		defer func() { _ = tempFileHandle.Cleanup() }()
 
 		logging.Info("Processing BOM file: %s", tempFileHandle.Path)
 
@@ -512,7 +508,7 @@ func PurlTraversal(deps *HandlerDependencies) echo.HandlerFunc {
 				"error": "Invalid request body",
 			})
 		}
-		defer tempFileHandle.Cleanup()
+		defer func() { _ = tempFileHandle.Cleanup() }()
 
 		// Drop existing data and setup schema
 		if err := deps.Repo.DropAllData(ctx); err != nil {
@@ -573,19 +569,19 @@ func CreateTempFromRequestBody(c echo.Context, fileExtension string) (*fileutil.
 
 	bytesWritten, err := io.Copy(tempFile, c.Request().Body)
 	if err != nil {
-		tempFile.Close()
-		os.Remove(tempFile.Name())
+		_ = tempFile.Close()
+		_ = os.Remove(tempFile.Name())
 		return nil, fmt.Errorf("failed to copy request body: %w", err)
 	}
 
 	if bytesWritten == 0 {
-		tempFile.Close()
-		os.Remove(tempFile.Name())
+		_ = tempFile.Close()
+		_ = os.Remove(tempFile.Name())
 		return nil, fmt.Errorf("request body is empty")
 	}
 
 	if err := tempFile.Close(); err != nil {
-		os.Remove(tempFile.Name())
+		_ = os.Remove(tempFile.Name())
 		return nil, fmt.Errorf("failed to close temporary file: %w", err)
 	}
 

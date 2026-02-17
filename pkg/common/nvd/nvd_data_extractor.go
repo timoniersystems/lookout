@@ -142,7 +142,7 @@ func FetchCVEData(cveID string) (CVEData, error) {
 		var resp *http.Response
 		resp, err = httpClient.Do(req)
 		if err == nil {
-			defer resp.Body.Close()
+			defer func() { _ = resp.Body.Close() }()
 
 			// Handle different HTTP status codes
 			switch resp.StatusCode {
@@ -279,27 +279,3 @@ func AggregateCVEData(cvePurlMap map[string]string) []CVEPURLPair {
 	return pairs
 }
 
-func outputToJsonFile(pair CVEPURLPair) error {
-	for _, vulnerability := range pair.Data.Vulnerabilities {
-		fileName := fmt.Sprintf("%s.json", vulnerability.CVE.ID)
-		jsonData, err := json.MarshalIndent(pair, "", "  ")
-		if err != nil {
-			return err
-		}
-
-		err = os.WriteFile(fileName, jsonData, 0644)
-		if err != nil {
-			return err
-		}
-
-		fmt.Printf("CVE data for %s has been saved to %s\n", vulnerability.CVE.ID, fileName)
-		return nil
-	}
-
-	if len(pair.Data.Vulnerabilities) == 0 {
-		return fmt.Errorf("No vulnerabilities found to save to JSON")
-	}
-
-	return nil
-
-}

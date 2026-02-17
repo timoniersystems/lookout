@@ -12,7 +12,6 @@ import (
 	"github.com/dgraph-io/dgo/v210"
 	"github.com/dgraph-io/dgo/v210/protos/api"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/connectivity"
 	"google.golang.org/grpc/credentials/insecure"
 )
 
@@ -81,12 +80,11 @@ func (m *DgraphClientManager) Connect() error {
 	address := fmt.Sprintf("%s:%s", m.host, m.port)
 
 	for i := 0; i < m.maxRetries; i++ {
-		conn, err = grpc.Dial(address,
+		conn, err = grpc.NewClient(address,
 			grpc.WithTransportCredentials(insecure.NewCredentials()),
-			grpc.WithBlock(),
 			grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(10*1024*1024)), // 10MB
 		)
-		if err == nil && conn.GetState() == connectivity.Ready {
+		if err == nil {
 			break
 		}
 		if i < m.maxRetries-1 {

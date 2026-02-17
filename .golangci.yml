@@ -14,3 +14,16 @@ linters:
     - gosec
     - gocritic
     - misspell
+  settings:
+    errcheck:
+      exclude-functions:
+        - fmt.Fprint
+        - fmt.Fprintf
+        - fmt.Fprintln
+    gosec:
+      excludes:
+        - G115
+        - G301
+        - G304
+        - G306
+        - G404

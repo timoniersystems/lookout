@@ -25,8 +25,8 @@ func TestCreateTempFromFormFile(t *testing.T) {
 	}
 
 	testContent := "test file content"
-	part.Write([]byte(testContent))
-	writer.Close()
+	_, _ = part.Write([]byte(testContent))
+	_ = writer.Close()
 
 	// Create HTTP request
 	req := httptest.NewRequest(http.MethodPost, "/", body)
@@ -89,8 +89,8 @@ func TestCreateTempFromMultipartFile(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create form file: %v", err)
 	}
-	part.Write([]byte(content))
-	writer.Close()
+	_, _ = part.Write([]byte(content))
+	_ = writer.Close()
 
 	// Parse the multipart form
 	req := httptest.NewRequest(http.MethodPost, "/", body)
@@ -105,7 +105,7 @@ func TestCreateTempFromMultipartFile(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to open file: %v", err)
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	// Test the function
 	result, err := CreateTempFromMultipartFile(file, "test.txt")

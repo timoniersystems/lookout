@@ -42,12 +42,12 @@ func TestLoad_Defaults(t *testing.T) {
 
 func TestLoad_FromEnvironment(t *testing.T) {
 	// Set environment variables
-	os.Setenv("SERVER_PORT", "8080")
-	os.Setenv("DGRAPH_HOST", "localhost")
-	os.Setenv("DGRAPH_PORT", "9999")
-	os.Setenv("DGRAPH_MAX_RETRIES", "10")
-	os.Setenv("NVD_MAX_RETRIES", "30")
-	os.Setenv("TRIVY_OUTPUT_DIR", "/tmp/trivy")
+	_ = os.Setenv("SERVER_PORT", "8080")
+	_ = os.Setenv("DGRAPH_HOST", "localhost")
+	_ = os.Setenv("DGRAPH_PORT", "9999")
+	_ = os.Setenv("DGRAPH_MAX_RETRIES", "10")
+	_ = os.Setenv("NVD_MAX_RETRIES", "30")
+	_ = os.Setenv("TRIVY_OUTPUT_DIR", "/tmp/trivy")
 
 	defer clearEnvVars()
 
@@ -82,7 +82,7 @@ func TestLoad_FromEnvironment(t *testing.T) {
 }
 
 func TestLoad_InvalidIntegerUsesDefault(t *testing.T) {
-	os.Setenv("SERVER_PORT", "invalid")
+	_ = os.Setenv("SERVER_PORT", "invalid")
 	defer clearEnvVars()
 
 	config, err := Load()
@@ -137,13 +137,13 @@ func TestGetRatelBaseURL(t *testing.T) {
 }
 
 func clearEnvVars() {
-	os.Unsetenv("SERVER_PORT")
-	os.Unsetenv("DGRAPH_HOST")
-	os.Unsetenv("DGRAPH_PORT")
-	os.Unsetenv("DGRAPH_MAX_RETRIES")
-	os.Unsetenv("DGRAPH_RETRY_DELAY_MS")
-	os.Unsetenv("DGRAPH_MAX_TRAVERSAL_DEPTH")
-	os.Unsetenv("NVD_MAX_RETRIES")
-	os.Unsetenv("NVD_INITIAL_RETRY_DELAY_MS")
-	os.Unsetenv("TRIVY_OUTPUT_DIR")
+	_ = os.Unsetenv("SERVER_PORT")
+	_ = os.Unsetenv("DGRAPH_HOST")
+	_ = os.Unsetenv("DGRAPH_PORT")
+	_ = os.Unsetenv("DGRAPH_MAX_RETRIES")
+	_ = os.Unsetenv("DGRAPH_RETRY_DELAY_MS")
+	_ = os.Unsetenv("DGRAPH_MAX_TRAVERSAL_DEPTH")
+	_ = os.Unsetenv("NVD_MAX_RETRIES")
+	_ = os.Unsetenv("NVD_INITIAL_RETRY_DELAY_MS")
+	_ = os.Unsetenv("TRIVY_OUTPUT_DIR")
 }

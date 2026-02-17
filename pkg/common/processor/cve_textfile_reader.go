@@ -16,7 +16,7 @@ func ReadCVEIDsFromTextFile(filePath string) (map[string]string, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error opening file: %w", err)
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	cvePurlMap := make(map[string]string)
 	scanner := bufio.NewScanner(file)

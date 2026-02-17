@@ -41,7 +41,7 @@ func ParseTrivyJSONFile(filePath string) (map[string]string, error) {
 	cvePurlMap := make(map[string]string)
 	for _, result := range trivy.Results {
 		for _, vuln := range result.Vulnerabilities {
-			if strings.HasPrefix(strings.ToLower(vuln.VulnerabilityID), "cve") { //Temporary. Will change when we add other DBs in.
+			if strings.HasPrefix(strings.ToLower(vuln.VulnerabilityID), "cve") { // Temporary. Will change when we add other DBs in.
 				cvePurlMap[vuln.VulnerabilityID] = vuln.PkgIdentifier.PURL
 			} else {
 				log.Printf("Skipping VulnerabilityID %s as it does not start with 'cve'", vuln.VulnerabilityID)

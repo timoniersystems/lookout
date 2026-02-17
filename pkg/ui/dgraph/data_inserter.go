@@ -117,7 +117,7 @@ func RetrieveExistingComponents(txn *dgo.Txn) (map[string]string, error) {
 func InsertComponentsAndDependencies(client *dgo.Dgraph, bom *cyclonedx.Bom) error {
 	ctx := context.Background()
 	txn := client.NewTxn()
-	defer txn.Discard(ctx)
+	defer func() { _ = txn.Discard(ctx) }()
 
 	existingComponents, err := RetrieveExistingComponents(txn)
 	if err != nil {

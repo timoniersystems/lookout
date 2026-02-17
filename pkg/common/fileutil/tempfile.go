@@ -32,7 +32,7 @@ func CreateTempFromFormFile(c echo.Context, formKey string) (*TempFileResult, er
 	if err != nil {
 		return nil, fmt.Errorf("failed to open uploaded file: %w", err)
 	}
-	defer src.Close()
+	defer func() { _ = src.Close() }()
 
 	// Create temporary file
 	tempFile, err := os.CreateTemp("", "upload-*"+filepath.Ext(fileHeader.Filename))
@@ -42,14 +42,14 @@ func CreateTempFromFormFile(c echo.Context, formKey string) (*TempFileResult, er
 
 	// Copy uploaded file to temp file
 	if _, err := io.Copy(tempFile, src); err != nil {
-		tempFile.Close()
-		os.Remove(tempFile.Name())
+		_ = tempFile.Close()
+		_ = os.Remove(tempFile.Name())
 		return nil, fmt.Errorf("failed to copy file content: %w", err)
 	}
 
 	// Close the temp file
 	if err := tempFile.Close(); err != nil {
-		os.Remove(tempFile.Name())
+		_ = os.Remove(tempFile.Name())
 		return nil, fmt.Errorf("failed to close temporary file: %w", err)
 	}
 
@@ -75,14 +75,14 @@ func CreateTempFromMultipartFile(file multipart.File, filename string) (*TempFil
 
 	// Copy uploaded file to temp file
 	if _, err := io.Copy(tempFile, file); err != nil {
-		tempFile.Close()
-		os.Remove(tempFile.Name())
+		_ = tempFile.Close()
+		_ = os.Remove(tempFile.Name())
 		return nil, fmt.Errorf("failed to copy file content: %w", err)
 	}
 
 	// Close the temp file
 	if err := tempFile.Close(); err != nil {
-		os.Remove(tempFile.Name())
+		_ = os.Remove(tempFile.Name())
 		return nil, fmt.Errorf("failed to close temporary file: %w", err)
 	}
 
