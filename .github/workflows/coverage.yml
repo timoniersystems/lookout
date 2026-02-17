@@ -62,7 +62,7 @@ jobs:
         color: ${{ steps.coverage.outputs.coverage > 80 && 'green' || steps.coverage.outputs.coverage > 60 && 'yellow' || 'red' }}
 
     - name: Upload coverage report
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: coverage-report
         path: |
