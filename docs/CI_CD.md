@@ -17,7 +17,8 @@ Lookout uses GitHub Actions for continuous integration and deployment.
    - Coverage uploaded to Codecov
 2. **Lint** - Code quality checks with golangci-lint v2.9.0 (5-minute timeout)
 3. **Build** - Compile CLI and UI binaries, upload as artifacts (7-day retention)
-4. **Security Scan** - Gosec scanner with SARIF output (`-no-fail` mode)
+4. **Security Scan** - Gosec scanner with SARIF upload to GitHub Security tab (`-no-fail` mode)
+5. **Secret Scan** - Gitleaks scans git history for leaked secrets (API keys, tokens, passwords)
 
 ### Coverage Workflow (`coverage.yml`)
 

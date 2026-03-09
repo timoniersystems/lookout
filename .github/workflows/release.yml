@@ -7,9 +7,6 @@ on:
 
 permissions:
   contents: write
-  # Attestations require GitHub Enterprise Cloud
-  # id-token: write
-  # attestations: write
 
 jobs:
   release:
@@ -45,18 +42,6 @@ jobs:
     - name: Generate checksums
       run: |
         sha256sum lookout-* > checksums.txt
-
-    # Attestations require GitHub Enterprise Cloud
-    # - name: Attest build provenance
-    #   uses: actions/attest-build-provenance@v2
-    #   with:
-    #     subject-path: |
-    #       lookout-linux-amd64
-    #       lookout-linux-arm64
-    #       lookout-darwin-amd64
-    #       lookout-darwin-arm64
-    #       lookout-windows-amd64.exe
-    #       lookout-ui-linux-amd64
 
     - name: Generate changelog
       id: changelog
@@ -123,9 +108,6 @@ jobs:
     permissions:
       contents: read
       packages: write
-      # Attestations require GitHub Enterprise Cloud
-      # id-token: write
-      # attestations: write
 
     steps:
     - name: Checkout code
@@ -161,11 +143,3 @@ jobs:
           COMMIT=${{ github.sha }}
         cache-from: type=gha
         cache-to: type=gha,mode=max
-
-    # Attestations require GitHub Enterprise Cloud
-    # - name: Attest Docker image
-    #   uses: actions/attest-build-provenance@v2
-    #   with:
-    #     subject-name: ghcr.io/${{ github.repository }}
-    #     subject-digest: ${{ steps.docker_push.outputs.digest }}
-    #     push-to-registry: true

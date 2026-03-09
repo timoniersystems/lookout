@@ -106,7 +106,7 @@ See [TLS/HTTPS Setup](#tlshttps-setup) section below for details.
 Dgraph cluster coordinator and metadata server.
 
 **Container:** `lookout-dgraph-zero`
-**Image:** `dgraph/dgraph:v24.0.0`
+**Image:** `dgraph/dgraph:v25.0.0`
 **Ports:**
 - 5080 (cluster communication)
 - 6080 (HTTP API)
@@ -121,7 +121,7 @@ Dgraph cluster coordinator and metadata server.
 Dgraph graph database server for dependency graph storage.
 
 **Container:** `lookout-dgraph-alpha`
-**Image:** `dgraph/dgraph:v24.0.0`
+**Image:** `dgraph/dgraph:v25.0.0`
 **Ports:**
 - 8080 (HTTP API)
 - 9080 (gRPC API)

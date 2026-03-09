@@ -42,16 +42,6 @@ jobs:
         go-version: ${{ matrix.go-version }}
         cache-dependency-path: go.sum
 
-    # - name: Cache Go modules
-    #   uses: actions/cache@v4
-    #   with:
-    #     path: |
-    #       ~/.cache/go-build
-    #       ~/go/pkg/mod
-    #     key: ${{ runner.os }}-go-${{ matrix.go-version }}-${{ hashFiles('**/go.sum') }}
-    #     restore-keys: |
-    #       ${{ runner.os }}-go-${{ matrix.go-version }}-
-
     - name: Run tests
       run: go test -v -race -timeout 5m ./...
 
@@ -146,6 +136,9 @@ jobs:
   security:
     name: Security Scan
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
     env:
       GO111MODULE: on
       GOPROXY: direct
@@ -165,7 +158,23 @@ jobs:
       with:
         args: '-no-fail -fmt sarif -out results.sarif ./...'
 
-    # - name: Upload SARIF file
-    #   uses: github/codeql-action/upload-sarif@v4
-    #   with:
-    #     sarif_file: results.sarif
+    - name: Upload SARIF file
+      uses: github/codeql-action/upload-sarif@v4
+      continue-on-error: true
+      with:
+        sarif_file: results.sarif
+
+  secrets:
+    name: Secret Scan
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v6
+      with:
+        fetch-depth: 0
+
+    - name: Run gitleaks
+      uses: gitleaks/gitleaks-action@v2
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

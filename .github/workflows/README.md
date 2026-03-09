@@ -8,13 +8,14 @@ This directory contains CI/CD workflows for the Lookout project.
 **Triggers:** Push to `main`/`develop`, Pull Requests
 
 **Jobs:**
-- **Test**: Runs tests on Go 1.21 and 1.22 with race detection
+- **Test**: Runs tests on Go 1.26 with race detection
 - **Lint**: Runs golangci-lint for code quality
 - **Build**: Builds CLI and GUI binaries, uploads as artifacts
-- **Security**: Runs Gosec security scanner
+- **Security**: Runs Gosec security scanner, uploads SARIF results
+- **Secrets**: Gitleaks scan for leaked secrets in git history
 
 **Features:**
-- Matrix testing across Go versions
+- Go 1.26
 - Coverage reporting to Codecov
 - Dependency caching for faster builds
 - SARIF security reports
@@ -82,16 +83,6 @@ git push origin v1.0.0
 
 ---
 
-### 🔒 CodeQL (`codeql.yml`)
-**Triggers:** Push to `main`, Pull Requests, Weekly schedule (Mondays 6 AM UTC)
-
-**Jobs:**
-- Runs GitHub's CodeQL security analysis
-- Scans for security vulnerabilities and code quality issues
-- Uses extended security queries
-
----
-
 ### 🤖 Dependabot (`../dependabot.yml`)
 **Schedule:** Weekly (Mondays 6 AM UTC)
 
@@ -150,7 +141,6 @@ Add these to your README.md:
 ![CI](https://github.com/<username>/lookout/actions/workflows/ci.yml/badge.svg)
 ![Coverage](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/<username>/<gist-id>/raw/lookout-coverage.json)
 ![Docker](https://github.com/<username>/lookout/actions/workflows/docker.yml/badge.svg)
-![CodeQL](https://github.com/<username>/lookout/actions/workflows/codeql.yml/badge.svg)
 [![Go Report Card](https://goreportcard.com/badge/github.com/<username>/lookout)](https://goreportcard.com/report/github.com/<username>/lookout)
 ```
 
@@ -202,6 +192,6 @@ Check workflow status at:
 - Check `contents: write` permission in workflow
 
 ### Tests failing in CI but passing locally
-- Check Go version matches (1.21 or 1.22)
+- Check Go version matches (1.26)
 - Verify all dependencies are in `go.mod`
 - Look for race conditions (CI runs with `-race`)

@@ -103,7 +103,7 @@ lookout -version
 ### Build from Source
 
 **Requirements:**
-- Go 1.21+
+- Go 1.26+
 - Docker & Docker Compose (for UI and dependency tracing)
 - Trivy (optional, for SBOM scanning)
 
@@ -298,7 +298,7 @@ We welcome contributions! Please see [DEVELOPMENT.md](docs/DEVELOPMENT.md) for:
 ## Requirements
 
 **For CLI:**
-- Go 1.21+ (build only)
+- Go 1.26+ (build only)
 - Trivy (optional, for SBOM scanning)
 - Dgraph (optional, for dependency tracing)
 
