@@ -241,7 +241,7 @@ SERVER_PORT=3000
 
 # Build arguments (optional)
 GO_VERSION=1.26.0
-TRIVY_VERSION=0.69.1
+TRIVY_VERSION=0.69.3
 # Note: Runtime uses distroless/static-debian12 for security
 ```
 
@@ -255,7 +255,7 @@ TRIVY_VERSION=0.69.1
 
 **Build arguments:**
 - `GO_VERSION` - Go version for builder stage (default: 1.26.0)
-- `TRIVY_VERSION` - Trivy scanner version (default: 0.69.1)
+- `TRIVY_VERSION` - Trivy scanner version (default: 0.69.3)
 - Runtime uses distroless/static-debian12:nonroot for minimal attack surface
 
 ---

@@ -299,7 +299,7 @@ LOG_LEVEL=info             # Log level: debug, info, warn, error
 ```bash
 VERSION=1.0.0              # Application version
 GO_VERSION=1.26.0          # Go version for Docker builds
-TRIVY_VERSION=0.69.1       # Trivy version for Docker
+TRIVY_VERSION=0.69.3       # Trivy version for Docker
 # Note: Runtime uses distroless/static-debian12 for minimal attack surface
 ```
 

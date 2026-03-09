@@ -138,7 +138,7 @@ jobs:
         build-args: |
           GO_VERSION=1.26.0
           ALPINE_VERSION=3.23
-          TRIVY_VERSION=0.69.1
+          TRIVY_VERSION=0.69.3
           VERSION=${{ github.ref_name }}
           COMMIT=${{ github.sha }}
         cache-from: type=gha

@@ -41,7 +41,7 @@ Lookout uses GitHub Actions for continuous integration and deployment.
 
 1. **Build** - Build Docker image (linux/amd64) with Buildx
    - Source hash-based cache key for invalidation on code changes
-   - Build args: `GO_VERSION=1.26.0`, `TRIVY_VERSION=0.69.1`
+   - Build args: `GO_VERSION=1.26.0`, `TRIVY_VERSION=0.69.3`
    - Image exported as artifact for downstream jobs
 
 2. **Trivy Scan** - Vulnerability scanning in 3 parallel matrix configurations:

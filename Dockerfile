@@ -1,6 +1,6 @@
 # Build arguments for version control
 ARG GO_VERSION=1.26.0
-ARG TRIVY_VERSION=0.69.1
+ARG TRIVY_VERSION=0.69.3
 
 # Build stage - builds for native platform automatically using Debian-based image
 FROM golang:${GO_VERSION}-bookworm AS builder
