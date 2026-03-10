@@ -4,11 +4,14 @@ metadata:
   name: lookout-staging
   namespace: argocd
   annotations:
+    argocd.argoproj.io/sync-options: "Replace=true"
     # ArgoCD Image Updater configuration
     argocd-image-updater.argoproj.io/image-list: lookout=ghcr.io/timoniersystems/lookout:main
-    argocd-image-updater.argoproj.io/lookout.update-strategy: latest
+    argocd-image-updater.argoproj.io/lookout.update-strategy: digest
     argocd-image-updater.argoproj.io/lookout.force-update: "true"
-    argocd-image-updater.argoproj.io/lookout.pull-secret: pullsecret:staging/ghcr-secret
+    argocd-image-updater.argoproj.io/lookout.pull-secret: pullsecret:argocd/ghcr-secret
+    argocd-image-updater.argoproj.io/lookout.helm.image-name: lookout-app.image.repository
+    argocd-image-updater.argoproj.io/lookout.helm.image-tag: lookout-app.image.tag
     argocd-image-updater.argoproj.io/write-back-method: argocd
   finalizers:
     - resources-finalizer.argocd.argoproj.io
