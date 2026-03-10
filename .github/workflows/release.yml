@@ -143,3 +143,30 @@ jobs:
           COMMIT=${{ github.sha }}
         cache-from: type=gha
         cache-to: type=gha,mode=max
+
+  update-production:
+    name: Update Production Image Tag
+    needs: publish-docker
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v6
+      with:
+        ref: main
+
+    - name: Extract version
+      id: version
+      run: echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+    - name: Update production values
+      run: |
+        sed -i "s/tag: \".*\"  # Managed by ArgoCD Image Updater (semver)/tag: \"${{ steps.version.outputs.version }}\"  # Managed by ArgoCD Image Updater (semver)/" helm/lookout/values.production.yaml
+
+    - name: Commit and push
+      run: |
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+        git add helm/lookout/values.production.yaml
+        git commit -m "[skip ci] Update production image tag to ${{ steps.version.outputs.version }}"
+        git push origin main
