@@ -12,13 +12,21 @@ This directory contains CI/CD workflows for the Lookout project.
 - **Lint**: Runs golangci-lint for code quality
 - **Build**: Builds CLI and GUI binaries, uploads as artifacts
 - **Security**: Runs Gosec security scanner, uploads SARIF results
-- **Secrets**: Gitleaks scan for leaked secrets in git history
 
 **Features:**
 - Go 1.26
 - Coverage reporting to Codecov
 - Dependency caching for faster builds
 - SARIF security reports
+
+---
+
+### 🔐 Secret Scan (`secrets.yml`)
+**Triggers:** Push to `main`/`develop`, Pull Requests (no path filters)
+
+**Jobs:**
+- Runs Gitleaks to detect leaked secrets (API keys, tokens, passwords, private keys)
+- Scans full git history on push, diff-only on PRs
 
 ---
 

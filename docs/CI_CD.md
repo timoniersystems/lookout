@@ -18,7 +18,13 @@ Lookout uses GitHub Actions for continuous integration and deployment.
 2. **Lint** - Code quality checks with golangci-lint v2.9.0 (5-minute timeout)
 3. **Build** - Compile CLI and UI binaries, upload as artifacts (7-day retention)
 4. **Security Scan** - Gosec scanner with SARIF upload to GitHub Security tab (`-no-fail` mode)
-5. **Secret Scan** - Gitleaks scans git history for leaked secrets (API keys, tokens, passwords)
+
+### Secret Scan Workflow (`secrets.yml`)
+
+**Triggers:** Push to `main`/`develop` and pull requests to `main`/`develop`
+**No path filters** - runs on every push regardless of file type.
+
+Runs [Gitleaks](https://github.com/gitleaks/gitleaks) to scan git history for leaked secrets (API keys, tokens, passwords, private keys).
 
 ### Coverage Workflow (`coverage.yml`)
 
