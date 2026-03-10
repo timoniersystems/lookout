@@ -48,13 +48,15 @@ def comment(text, t):
 def blank(t):
     return [[round(t, 4), "o", "\r\n"]], t + 0.1
 
-def trim(text, max_lines):
-    """Keep first max_lines lines, append a dimmed ellipsis if truncated."""
+def trim_middle(text, keep_start, keep_end):
+    """Keep first keep_start lines, a dimmed ellipsis, then last keep_end lines."""
     lines = text.splitlines(keepends=True)
-    if len(lines) <= max_lines:
+    total = len(lines)
+    if total <= keep_start + keep_end:
         return text
-    kept = "".join(lines[:max_lines])
-    return kept + "\033[2m  ... (truncated for brevity)\033[0m\r\n"
+    omitted = total - keep_start - keep_end
+    sep = f"\033[2m  ···  ({omitted} lines omitted)  ···\033[0m\r\n"
+    return "".join(lines[:keep_start]) + sep + "".join(lines[total - keep_end:])
 
 # Read captured outputs
 with open("/tmp/cve_out.txt") as f: cve_out = f.read()
@@ -62,10 +64,15 @@ with open("/tmp/cvefile_out.txt") as f: cvefile_out = f.read()
 with open("/tmp/sbom_out.txt") as f: sbom_out = f.read()
 with open("/tmp/deppath_out.txt") as f: deppath_out = f.read()
 
-# Trim long outputs to avoid wall-of-text scrolling
-cve_out     = trim(cve_out, 32)
-cvefile_out = trim(cvefile_out, 35)
-sbom_out    = trim(sbom_out, 38)
+# Trim each output: keep meaningful start (header+description) and end (closing border)
+# cve: keep header+severity+score+description (lines 1-29), cut affected configs, keep closing (lines 44-56)
+cve_out = trim_middle(cve_out, keep_start=29, keep_end=13)
+
+# cvefile: two CVEs — keep both headers+descriptions, cut verbose references from second
+cvefile_out = trim_middle(cvefile_out, keep_start=29, keep_end=20)
+
+# sbom: cut the NONE-severity CVE detail in the middle; keep filtered notices + the CRITICAL CVE at end
+sbom_out = trim_middle(sbom_out, keep_start=9, keep_end=44)
 
 events = []
 t = 0.8
