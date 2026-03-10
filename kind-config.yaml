@@ -1,0 +1,33 @@
+# Kind cluster configuration for remote API server access
+# This configuration exposes the Kubernetes API server on all network interfaces
+# allowing remote access from your local machine
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+networking:
+  # Bind the API server to all interfaces (0.0.0.0) instead of just localhost
+  # This allows the API server to be accessible from outside the host
+  apiServerAddress: "0.0.0.0"
+  # Custom port for the API server (default is random high port)
+  apiServerPort: 33299
+nodes:
+- role: control-plane
+  # Extra port mappings to expose the API server on the host
+  extraPortMappings:
+  - containerPort: 6443
+    hostPort: 33299
+    protocol: TCP
+  # Kubeadm config patches to configure the API server
+  kubeadmConfigPatches:
+  - |
+    kind: ClusterConfiguration
+    apiServer:
+      certSANs:
+      # Add your EC2 instance's public IP and private IP here
+      - "<EC2_PRIVATE_IP>"
+      # Add the instance's public IP if it has one (replace with actual IP)
+      # - "x.x.x.x"
+      # Also add localhost for local access
+      - "localhost"
+      - "127.0.0.1"
+    # Advertise the API server on the host's IP
+    controlPlaneEndpoint: "<EC2_PRIVATE_IP>:33299"

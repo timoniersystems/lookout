@@ -1,0 +1,32 @@
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: EnvoyProxy
+metadata:
+  name: custom-proxy-config
+  namespace: envoy-gateway-system
+spec:
+  provider:
+    type: Kubernetes
+    kubernetes:
+      envoyService:
+        type: LoadBalancer
+        # Fixed NodePorts to prevent ALB reconfiguration
+        # HTTP: 32080, HTTPS: 32443
+        annotations:
+          service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+          service.beta.kubernetes.io/aws-load-balancer-scheme: "internet-facing"
+        # Override to specify fixed ports
+        patch:
+          type: StrategicMerge
+          value:
+            spec:
+              ports:
+              - name: http
+                port: 8080
+                targetPort: 8080
+                protocol: TCP
+                nodePort: 32080  # Fixed HTTP NodePort
+              - name: https
+                port: 8443
+                targetPort: 8443
+                protocol: TCP
+                nodePort: 32443  # Fixed HTTPS NodePort
