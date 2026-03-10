@@ -1,0 +1,52 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: lookout-apps
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+
+  source:
+    repoURL: https://github.com/timoniersystems/lookout.git
+    targetRevision: main
+    path: k8s/argocd
+    directory:
+      recurse: false
+      include: '*.yaml'
+      exclude: 'apps.yaml'  # Exclude self to avoid infinite loop
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+      allowEmpty: false
+    syncOptions:
+      - CreateNamespace=false
+      - Replace=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
+
+  # Let the image updater modify helm parameters without triggering self-heal,
+  # but DO enforce destination.namespace and everything else
+  ignoreDifferences:
+    - group: argoproj.io
+      kind: Application
+      name: lookout-staging
+      jsonPointers:
+        - /spec/source/helm/parameters
+        - /metadata/annotations/argocd-image-updater.argoproj.io~1lookout.force-update
+    - group: argoproj.io
+      kind: Application
+      name: lookout-production
+      jsonPointers:
+        - /spec/source/helm/parameters
