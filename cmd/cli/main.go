@@ -229,6 +229,9 @@ func printASCIITree(result dgraph.FilteredResult, searchedPURL string) {
 	fmt.Println(strings.Repeat("═", 70))
 }
 
+// Version is set by -ldflags at build time
+var Version = "dev"
+
 func main() {
 	RunCLI(os.Args[1:])
 }
