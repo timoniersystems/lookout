@@ -1,0 +1,20 @@
+[extend]
+# Extend the default gitleaks config
+useDefault = true
+
+[allowlist]
+description = "Global allowlist for false positives"
+
+# Documentation files contain placeholder credentials (e.g. curl -u user:PASSWORD)
+# SPDX/SBOM example files contain Debian package paths that trigger generic-api-key
+# (e.g. libgssapi-krb5-2:amd64.triggers, libkeyutils1:amd64.triggers)
+paths = [
+    '''docs/.*\.md$''',
+    '''examples/.*\.spdx\.json$''',
+    '''examples/.*sbom.*\.json$''',
+]
+
+# Specific false positive fingerprints from SPDX Debian package metadata
+commits = [
+    "ba091eb6f08ba7a2b7b1a38177c38f9f85c87895",
+]
