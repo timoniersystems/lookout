@@ -4,10 +4,10 @@ metadata:
   name: lookout-production
   namespace: argocd
   annotations:
-    # ArgoCD Image Updater: deploy latest semver tag (e.g., v1.0.0, v1.2.3)
+    # ArgoCD Image Updater: deploy latest semver tag (e.g., 0.9.0, 1.0.0)
     argocd-image-updater.argoproj.io/image-list: lookout=ghcr.io/timoniersystems/lookout
     argocd-image-updater.argoproj.io/lookout.update-strategy: semver
-    argocd-image-updater.argoproj.io/lookout.allow-tags: "regexp:^v[0-9]+\\.[0-9]+\\.[0-9]+$"
+    argocd-image-updater.argoproj.io/lookout.allow-tags: "regexp:^[0-9]+\\.[0-9]+\\.[0-9]+$"
     argocd-image-updater.argoproj.io/lookout.pull-secret: pullsecret:production/ghcr-secret
     argocd-image-updater.argoproj.io/write-back-method: argocd
   finalizers:
@@ -25,8 +25,6 @@ spec:
       parameters:
         - name: lookout-app.image.repository
           value: ghcr.io/timoniersystems/lookout
-        - name: lookout-app.image.tag
-          value: latest
         - name: lookout-app.imagePullSecrets[0].name
           value: ghcr-secret
 
