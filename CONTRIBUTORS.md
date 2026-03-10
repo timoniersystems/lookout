@@ -10,3 +10,4 @@ Thank you to everyone who has contributed to Lookout!
 ## Contributing
 
 Want to contribute? See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+
