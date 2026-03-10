@@ -76,7 +76,10 @@ clean: ## Remove build artifacts
 
 ##@ Test
 
-test: ## Run unit tests
+test: ## Run unit tests with race detector
+	$(GOTEST) -v -race -timeout 5m ./...
+
+test-short: ## Run unit tests (short mode, skip slow tests)
 	$(GOTEST) -v -short ./...
 
 test-integration: ## Run integration tests (requires Dgraph)
@@ -88,8 +91,8 @@ test-all: ## Run all tests including integration
 test-verbose: ## Run tests with verbose output
 	$(GOTEST) -v -count=1 ./...
 
-test-coverage: ## Generate HTML coverage report
-	$(GOTEST) -v -coverprofile=coverage.out ./...
+test-coverage: ## Generate coverage profile (coverage.out) and HTML report
+	$(GOTEST) -v -coverprofile=coverage.out -covermode=atomic ./...
 	$(GOCMD) tool cover -html=coverage.out -o coverage.html
 
 ##@ Local Development (Docker Compose)

@@ -46,10 +46,10 @@ jobs:
         cache-dependency-path: go.sum
 
     - name: Run tests
-      run: go test -v -race -timeout 5m ./...
+      run: make test
 
     - name: Run tests with coverage
-      run: go test -v -coverprofile=coverage.out -covermode=atomic ./...
+      run: make test-coverage
 
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v4
@@ -116,11 +116,8 @@ jobs:
         go-version: '1.26'
         cache-dependency-path: go.sum
 
-    - name: Build CLI
-      run: go build -v -o lookout ./cmd/cli
-
-    - name: Build UI
-      run: go build -v -o lookout-ui ./cmd/ui
+    - name: Build
+      run: make build
 
     - name: Upload CLI artifact
       uses: actions/upload-artifact@v4
