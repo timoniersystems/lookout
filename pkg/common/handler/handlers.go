@@ -194,6 +194,14 @@ func CVES(c echo.Context) error {
 			}
 		}
 
+		// Check for obfuscated or suspicious content
+		if err := validation.DetectObfuscatedContent(tempFileHandle.Path); err != nil {
+			logging.Warn("Upload rejected (obfuscated content): %v", err)
+			return c.JSON(http.StatusBadRequest, map[string]interface{}{
+				"error": err.Error(),
+			})
+		}
+
 		cveIDs, err := processor.ProcessFileInputForCVEs(tempFileHandle.Path)
 		if err != nil {
 			logging.Error("Failed to extract CVE IDs from uploaded file: %v", err)
@@ -256,6 +264,14 @@ func UploadAndProcess(c echo.Context) error {
 				"error": err.Error(),
 			})
 		}
+	}
+
+	// Check for obfuscated or suspicious content
+	if err := validation.DetectObfuscatedContent(tempFileHandle.Path); err != nil {
+		logging.Warn("Upload rejected (obfuscated content): %v", err)
+		return c.JSON(http.StatusBadRequest, map[string]interface{}{
+			"error": err.Error(),
+		})
 	}
 
 	cvePurlMap, err := processor.ProcessFileInput(tempFileHandle.Path)
@@ -384,6 +400,14 @@ func UploadBOMAndInsertData(deps *HandlerDependencies) echo.HandlerFunc {
 					"error": err.Error(),
 				})
 			}
+		}
+
+		// Check for obfuscated or suspicious content
+		if err := validation.DetectObfuscatedContent(tempFileHandle.Path); err != nil {
+			logging.Warn("Upload rejected (obfuscated content): %v", err)
+			return c.JSON(http.StatusBadRequest, map[string]interface{}{
+				"error": err.Error(),
+			})
 		}
 
 		var bom *cyclonedx.Bom

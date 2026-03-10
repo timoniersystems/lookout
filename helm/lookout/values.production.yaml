@@ -20,6 +20,14 @@ basicAuth:
     remoteKey: "lookout/production/basic-auth"
     property: "htpasswd"
 
+# Traffic policies (Envoy Gateway)
+trafficPolicy:
+  maxRequestBodyBytes: 10485760  # 10MB
+  rateLimit:
+    enabled: true
+    requests: 10
+    unit: Minute
+
 httproute:
   enabled: true
   gatewayNamespace: staging  # Cross-namespace reference to staging gateway

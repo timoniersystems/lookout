@@ -32,6 +32,16 @@ gateway:
 basicAuth:
   enabled: false
 
+# Traffic policies (Envoy Gateway)
+trafficPolicy:
+  # Max upload size - applied at gateway level via ClientTrafficPolicy
+  maxRequestBodyBytes: 10485760  # 10MB
+  # Rate limiting - applied per HTTPRoute via BackendTrafficPolicy
+  rateLimit:
+    enabled: true
+    requests: 10
+    unit: Minute
+
 # HTTPRoute configuration
 httproute:
   enabled: true

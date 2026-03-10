@@ -82,6 +82,15 @@ func UploadBOMWithProgress(c echo.Context) error {
 		}
 	}
 
+	// Check for obfuscated or suspicious content
+	if err := validation.DetectObfuscatedContent(tempFilePath); err != nil {
+		logging.Warn("[Session %s] Upload rejected (obfuscated content): %v", sessionID, err)
+		_ = os.Remove(tempFilePath)
+		return c.JSON(http.StatusBadRequest, map[string]interface{}{
+			"error": err.Error(),
+		})
+	}
+
 	// Create tracker BEFORE rendering page to avoid race condition
 	tracker := progress.NewTracker(sessionID)
 	tracker.SendProgress("upload", progress.StatusComplete, "SBOM file uploaded successfully", 10)

