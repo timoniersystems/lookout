@@ -7,7 +7,12 @@
 
 ## Demo
 
+<details>
+<summary>▶ Click to watch CLI demo</summary>
+
 ![Lookout demo](docs/demo.svg)
+
+</details>
 
 ## What is Lookout?
 
