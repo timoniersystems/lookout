@@ -9,7 +9,6 @@ lookout/
 ├── docs/                       # All documentation
 │   ├── KUBERNETES_SETUP.md     # Complete K8s guide (Kind, Gateway, ArgoCD, ALB)
 │   ├── ARCHITECTURE.md         # System architecture
-│   ├── DEVELOPMENT.md          # Development guide
 │   ├── DOCKER_COMPOSE.md       # Docker Compose setup
 │   ├── TLS_SETUP.md            # TLS certificate setup
 │   ├── CI_CD.md                # CI/CD documentation
@@ -60,7 +59,7 @@ lookout/
 │
 ├── pkg/                        # Go packages
 │   ├── cli/
-│   │   └── cli_processor/      # CLI argument parsing and formatting
+│   │   └── cli_processor/      # CVE formatting and output
 │   ├── common/
 │   │   ├── cyclonedx/          # CycloneDX SBOM parsing
 │   │   ├── spdx/               # SPDX SBOM parsing
@@ -118,7 +117,7 @@ lookout/
 - **[DOCKER_COMPOSE.md](DOCKER_COMPOSE.md)** - Local development with Docker Compose
 
 ### Development
-- **[DEVELOPMENT.md](DEVELOPMENT.md)** - Development setup and guidelines
+- **[CONTRIBUTING.md](../CONTRIBUTING.md)** - Development setup and contribution guidelines
 - **[ARCHITECTURE.md](ARCHITECTURE.md)** - System architecture and design
 - **[USAGE.md](USAGE.md)** - How to use Lookout (CLI and Web UI)
 
@@ -130,8 +129,8 @@ lookout/
 
 1. **Local Development (Docker Compose):**
    ```bash
-   ./scripts/generate-certs.sh
-   docker compose up -d
+   make certs
+   make up
    # Access at https://localhost:7443
    ```
 
@@ -154,4 +153,4 @@ lookout/
 
 ## Contributing
 
-See [DEVELOPMENT.md](DEVELOPMENT.md) for code style, testing, and development workflow.
+See [CONTRIBUTING.md](../CONTRIBUTING.md) for code style, testing, and development workflow.

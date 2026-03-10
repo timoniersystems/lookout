@@ -210,8 +210,8 @@ go test -tags=integration ./...
 docker build -t lookout:local .
 
 # Full stack
-./scripts/generate-certs.sh
-docker compose up -d
+make certs
+make up
 curl -k https://localhost:7443/health
 ```
 

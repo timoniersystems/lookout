@@ -8,10 +8,10 @@ This directory contains nginx configuration for TLS termination and reverse prox
 
 ```bash
 # Generate self-signed certificates
-./scripts/generate-certs.sh
+make certs
 
 # Start all services including nginx
-docker-compose up -d
+make up
 
 # Access via HTTPS (will show browser warning for self-signed cert)
 open https://localhost:7443

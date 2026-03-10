@@ -34,26 +34,26 @@ cd lookout
 make build && make install
 
 # Fetch CVE data
-lookout -cve CVE-2021-44228
+lookout cve CVE-2021-44228
 
 # Scan an SBOM
-lookout -sbom examples/cyclonedx-sbom-example.json
+lookout sbom examples/cyclonedx-sbom-example.json
 
 # Trace dependency path (requires Dgraph)
-docker-compose --profile standalone up -d dgraph
+make up-standalone
 export DGRAPH_HOST=localhost
-lookout -sbom examples/cyclonedx-sbom-example.json \
-  -dep-path 'pkg:composer/asm89/stack-cors@1.3.0'
+lookout sbom examples/cyclonedx-sbom-example.json \
+  --dep-path 'pkg:composer/asm89/stack-cors@1.3.0'
 ```
 
 ### Web UI
 
 ```bash
 # Generate TLS certificates
-./scripts/generate-certs.sh
+make certs
 
 # Start all services
-docker-compose up -d
+make up
 
 # Access UI (HTTPS)
 open https://localhost:7443
@@ -68,10 +68,10 @@ open http://localhost:8000
 
 ```bash
 # Generate TLS certificates
-./scripts/generate-certs.sh
+make certs
 
 # Start all services
-docker-compose up -d
+make up
 ```
 
 Access points:
@@ -97,7 +97,7 @@ chmod +x lookout-darwin-arm64
 sudo mv lookout-darwin-arm64 /usr/local/bin/lookout
 
 # Verify
-lookout -version
+lookout version
 ```
 
 ### Build from Source
@@ -110,14 +110,6 @@ lookout -version
 ```bash
 git clone https://github.com/timoniersystems/lookout.git
 cd lookout
-
-# Build CLI
-go build -o lookout ./cmd/cli
-
-# Build UI
-go build -o lookout-ui ./cmd/ui
-
-# Or use Makefile
 make build
 make install
 ```
@@ -129,7 +121,7 @@ make install
 - ☸️ **[Kubernetes Deployment](docs/KUBERNETES_SETUP.md)** - Complete K8s guide: Kind cluster, Gateway API, ArgoCD GitOps, AWS ALB, production deployment
 - 🔒 **[TLS Setup Guide](docs/TLS_SETUP.md)** - HTTPS configuration and security best practices
 - 🏗️ **[Architecture](docs/ARCHITECTURE.md)** - System design and components
-- 💻 **[Development Guide](docs/DEVELOPMENT.md)** - Setup and contribution guide
+- 💻 **[Contributing Guide](CONTRIBUTING.md)** - Development setup and contribution guide
 - 🚀 **[CI/CD Guide](docs/CI_CD.md)** - GitHub Actions workflows and releases
 
 ## Example: Dependency Path Tracing
@@ -137,7 +129,7 @@ make install
 When you find a vulnerability in a transitive dependency, Lookout shows you the path:
 
 ```bash
-lookout -sbom mybom.json -dep-path 'pkg:npm/minimist@1.2.5'
+lookout sbom mybom.json --dep-path 'pkg:npm/minimist@1.2.5'
 ```
 
 Output:
@@ -151,20 +143,20 @@ Output:
 
   Dependency Tree:
 
-     🔍 pkg:npm/minimist@1.2.5
+     🏠 pkg:npm/myapp@1.0.0
      │
-     └──> 📦 pkg:npm/mkdirp@0.5.1
+     └──> 📦 pkg:npm/mocha@8.4.0
           │
-          └──> 📦 pkg:npm/mocha@8.4.0
+          └──> 📦 pkg:npm/mkdirp@0.5.1
                │
-               └──> 🏠 pkg:npm/myapp@1.0.0
+               └──> ⚠️  pkg:npm/minimist@1.2.5
 
 ════════════════════════════════════════════════════════════
 
   Legend:
-    🔍  = Vulnerable component
+    🏠  = Root package (your application)
     📦  = Intermediate dependency
-    🏠  = Your application (upgrade this dependency)
+    ⚠️  = Vulnerable component
 ```
 
 **Action:** Upgrade `mocha` to get the patched `minimist`.
@@ -212,14 +204,14 @@ See [Usage Guide](docs/USAGE.md#environment-variables) for all options.
 
 ```bash
 # Scan your SBOM for vulnerabilities
-lookout -sbom path/to/sbom.json -severity high
+lookout sbom path/to/sbom.json --severity high
 ```
 
 ### 2. Investigate Specific CVE
 
 ```bash
 # Get detailed CVE information
-lookout -cve CVE-2021-44228
+lookout cve CVE-2021-44228
 ```
 
 ### 3. Batch CVE Processing
@@ -230,17 +222,17 @@ cat cves.txt
 CVE-2021-44228
 CVE-2022-23305
 
-lookout -cve-file cves.txt
+lookout cve-file cves.txt
 ```
 
 ### 4. Fix Transitive Vulnerability
 
 ```bash
 # 1. Scan and identify vulnerable package
-lookout -sbom mybom.json
+lookout sbom mybom.json
 
 # 2. Trace dependency path
-lookout -sbom mybom.json -dep-path 'pkg:npm/lodash@4.17.20'
+lookout sbom mybom.json --dep-path 'pkg:npm/lodash@4.17.20'
 
 # 3. Upgrade the direct dependency shown in path
 ```
@@ -250,11 +242,11 @@ lookout -sbom mybom.json -dep-path 'pkg:npm/lodash@4.17.20'
 ```
 lookout/
 ├── cmd/
-│   ├── cli/              # CLI application entry point
+│   ├── cli/              # CLI application entry point (Cobra commands)
 │   └── ui/               # Web UI application entry point
 ├── pkg/
 │   ├── cli/
-│   │   └── cli_processor/ # CLI formatting and output
+│   │   └── cli_processor/ # CVE formatting and output
 │   ├── common/
 │   │   ├── cyclonedx/    # CycloneDX SBOM parsing
 │   │   ├── spdx/         # SPDX SBOM parsing
@@ -283,7 +275,7 @@ lookout/
 
 ## Contributing
 
-We welcome contributions! Please see [DEVELOPMENT.md](docs/DEVELOPMENT.md) for:
+We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for:
 - Development setup
 - Code style guidelines
 - Testing requirements

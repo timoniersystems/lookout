@@ -267,8 +267,7 @@ The Gateway API provides a modern, Kubernetes-native ingress solution using Envo
 Run the automated setup script:
 
 ```bash
-cd ~/lookout
-./scripts/setup-fixed-nodeports.sh
+make kind-nodeports
 ```
 
 This creates an `EnvoyProxy` resource with fixed NodePort configuration:
@@ -307,8 +306,7 @@ spec:
 ### 2.4 Create GatewayClass
 
 ```bash
-cd ~/lookout
-./scripts/setup-gateway.sh
+make gateway
 ```
 
 This script:
@@ -457,8 +455,7 @@ ArgoCD provides GitOps-based continuous deployment, automatically syncing your K
 ### 3.2 Install ArgoCD
 
 ```bash
-cd ~/lookout
-./scripts/setup-argocd.sh
+make argocd
 ```
 
 This script:
@@ -510,12 +507,8 @@ Create a secret to pull images from ghcr.io:
 export GITHUB_USERNAME=<your-github-username>
 export GITHUB_TOKEN=<your-github-token>
 
-# Run the script
-cd ~/lookout
-./scripts/create-ghcr-secret.sh staging
-
-# Create GHCR secret for production namespace too
-./scripts/create-ghcr-secret.sh production
+make ghcr-secret NAMESPACE=staging
+make ghcr-secret NAMESPACE=production
 ```
 
 **Creating a GitHub Token:**
@@ -544,9 +537,7 @@ For private GitHub repositories, create repository credentials:
 export GITHUB_USERNAME=<your-github-username>
 export GITHUB_TOKEN=<your-github-token>  # Token with 'repo' scope
 
-# Run the script
-cd ~/lookout
-./scripts/setup-argocd-github-repo.sh
+make argocd-github
 ```
 
 This creates a secret with repository credentials that ArgoCD uses to access your Helm charts.
@@ -597,8 +588,7 @@ kubectl get all -n staging
 For automatic image updates when new images are pushed to ghcr.io:
 
 ```bash
-cd ~/lookout
-./scripts/setup-argocd-image-updater.sh
+make argocd-image-updater
 ```
 
 This enables ArgoCD to automatically detect new images and update deployments.
@@ -887,8 +877,7 @@ Run the automated script to forward NodePorts from the Kind container to the EC2
 # SSH to EC2
 ssh ubuntu@<EC2_PRIVATE_IP>
 
-# Run the NodePort forwarding script
-./scripts/setup-kind-nodeport-forwarding.sh
+make kind-forward
 ```
 
 This script:
@@ -920,8 +909,7 @@ ps aux | grep "[s]ocat.*3204"
 ALB health checks don't send the `Host: lookout-stg.timonier.io` header. Create an HTTPRoute that accepts `/health` requests without hostname restrictions:
 
 ```bash
-# Run the health check HTTPRoute setup script
-./scripts/setup-health-httproute.sh
+make health-route
 ```
 
 This creates an HTTPRoute that:
@@ -1149,7 +1137,7 @@ For automation, use the provided script or run these AWS CLI commands manually.
 
 #### Quick Setup with Script
 
-Use the automated script ([`scripts/setup-alb.sh`](../scripts/setup-alb.sh)):
+Use `make alb`:
 
 ```bash
 # Set required environment variables
@@ -1165,8 +1153,7 @@ export HOSTED_ZONE_ID=Z0xxxxx
 # Optional: Enable multi-environment support (staging + production)
 export ENABLE_PROD=true
 
-# Run the script
-./scripts/setup-alb.sh
+make alb
 ```
 
 The script will:
@@ -1444,7 +1431,7 @@ aws elbv2 describe-target-health \
 
 #### Complete Script
 
-All commands above are available in the automated script: [`scripts/setup-alb.sh`](../scripts/setup-alb.sh)
+All commands above are available via `make alb` (see [Quick Setup with Script](#quick-setup-with-script) section above).
 
 The script includes:
 - Error handling and validation
@@ -1453,8 +1440,6 @@ The script includes:
 - Progress indicators
 - Health check verification
 - Helpful summary with next steps
-
-See the [Quick Setup with Script](#quick-setup-with-script) section above for usage instructions.
 
 ### 4.8 Step 6: Verify the Setup
 
@@ -1536,7 +1521,7 @@ To reconfigure NodePorts if needed:
 
 ```bash
 # Change NodePort values
-HTTP_NODEPORT=32090 HTTPS_NODEPORT=32453 ./scripts/setup-fixed-nodeports.sh
+make kind-nodeports HTTP_NODEPORT=32090 HTTPS_NODEPORT=32453
 
 # Recreate Gateway to apply
 kubectl delete gateway lookout -n staging
@@ -1696,8 +1681,7 @@ ArgoCD (GitOps)                           │ Mounts as env
 The easiest way to set everything up:
 
 ```bash
-cd ~/lookout
-./scripts/setup-external-secrets.sh
+make external-secrets
 ```
 
 This script will:
@@ -2220,10 +2204,10 @@ The SecurityPolicy targets the HTTPRoute and enforces HTTP Basic Auth before any
 ```bash
 # Staging (default namespace)
 # Interactive — prompts for username and password
-./scripts/setup-basic-auth.sh
+make basic-auth
 
 # Non-interactive
-BASIC_AUTH_PASSWORD='your-password' ./scripts/setup-basic-auth.sh
+make basic-auth BASIC_AUTH_PASSWORD='your-password'
 ```
 
 The script will:
@@ -2237,7 +2221,7 @@ The script will:
 
 ```bash
 # Production
-NAMESPACE=production BASIC_AUTH_PASSWORD='lookout' ./scripts/setup-basic-auth.sh
+make basic-auth NAMESPACE=production BASIC_AUTH_PASSWORD='lookout'
 ```
 
 This creates the basic auth secret in AWS Secrets Manager under the `lookout/production/basic-auth` key and syncs it to the production namespace.
@@ -2287,10 +2271,10 @@ curl -s -o /dev/null -w "%{http_code}" -u staginguser:your-secure-password https
 
 #### Update password
 
-Re-run the setup script — it detects the existing secret and updates it:
+Re-run the setup — it detects the existing secret and updates it:
 
 ```bash
-./scripts/setup-basic-auth.sh
+make basic-auth
 ```
 
 The ExternalSecret will sync the new value within 1 hour (the configured `refreshInterval`).
@@ -2575,10 +2559,10 @@ kubectl get svc -n envoy-gateway-system | grep envoy-staging
 ```bash
 # Recreate TLS secret
 kubectl delete secret lookout-tls -n staging
-./scripts/setup-gateway.sh
+make gateway
 
 # Recreate EnvoyProxy with fixed NodePorts
-./scripts/setup-fixed-nodeports.sh
+make kind-nodeports
 
 # Recreate Gateway
 kubectl delete gateway lookout -n staging
@@ -2619,8 +2603,8 @@ kubectl logs -n argocd deployment/argocd-application-controller
 ```bash
 # Recreate GitHub token (ensure 'repo' scope for private repos)
 export GITHUB_TOKEN=<new-token>
-./scripts/create-ghcr-secret.sh staging
-./scripts/setup-argocd-github-repo.sh
+make ghcr-secret NAMESPACE=staging
+make argocd-github
 
 # Manual sync
 kubectl patch application lookout-staging -n argocd \
@@ -2697,7 +2681,7 @@ docker ps | grep lookout-control-plane
 
 ```bash
 # Recreate EnvoyProxy with fixed NodePorts
-./scripts/setup-fixed-nodeports.sh
+make kind-nodeports
 
 # Recreate Gateway
 kubectl delete gateway lookout -n staging
@@ -2849,12 +2833,12 @@ helm install eg oci://docker.io/envoyproxy/gateway-helm \
 
 kubectl create namespace staging
 kubectl create namespace production
-./scripts/setup-gateway.sh
-./scripts/setup-fixed-nodeports.sh
-./scripts/setup-argocd.sh
-./scripts/create-ghcr-secret.sh staging
-./scripts/create-ghcr-secret.sh production
-./scripts/setup-argocd-github-repo.sh
+make gateway
+make kind-nodeports
+make argocd
+make ghcr-secret NAMESPACE=staging
+make ghcr-secret NAMESPACE=production
+make argocd-github
 
 kubectl apply -f k8s/argocd/staging-application.yaml
 kubectl apply -f k8s/argocd/production-application.yaml

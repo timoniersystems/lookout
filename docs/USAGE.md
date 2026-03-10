@@ -8,26 +8,26 @@ Complete guide to using Lookout for CVE vulnerability analysis and SBOM processi
 
 ```bash
 # Single CVE lookup
-lookout -cve CVE-2021-44228
+lookout cve CVE-2021-44228
 
 # Process CVE list from file
-lookout -cve-file vulnerabilities.txt
+lookout cve-file vulnerabilities.txt
 
 # Scan SBOM for vulnerabilities
-lookout -sbom mybom.json
+lookout sbom mybom.json
 
 # Find dependency path for vulnerable package
-lookout -sbom mybom.json -dep-path "pkg:npm/lodash@4.17.20"
+lookout sbom mybom.json --dep-path "pkg:npm/lodash@4.17.20"
 ```
 
 ### Web UI
 
 ```bash
 # Generate TLS certificates (first time only)
-./scripts/generate-certs.sh
+make certs
 
 # Start all services
-docker compose up -d
+make up
 
 # Access UI (HTTPS - recommended)
 open https://localhost:7443
@@ -46,10 +46,10 @@ git clone https://github.com/timoniersystems/lookout.git
 cd lookout
 
 # Generate TLS certificates (first time only)
-./scripts/generate-certs.sh
+make certs
 
 # Start services
-docker compose up -d
+make up
 
 # Access web UI (HTTPS)
 open https://localhost:7443
@@ -71,7 +71,7 @@ chmod +x lookout-darwin-arm64
 sudo mv lookout-darwin-arm64 /usr/local/bin/lookout
 
 # Verify installation
-lookout -version
+lookout version
 ```
 
 ### Build from Source
@@ -79,44 +79,42 @@ lookout -version
 ```bash
 git clone https://github.com/timoniersystems/lookout.git
 cd lookout
-
-# Build CLI
-go build -o lookout ./cmd/cli
-
-# Build UI
-go build -o lookout-ui ./cmd/ui
-
-# Or use Makefile
 make build
 make install
 ```
 
 ## CLI Reference
 
+The CLI uses subcommands. Global flags (`--severity`, `--debug`) apply to all subcommands.
+
+```
+lookout [--severity <level>] [--debug] <command> [args] [flags]
+```
+
 ### Commands
 
-#### CVE Lookup
+#### `cve` — Single CVE Lookup
 
-**Single CVE:**
 ```bash
-lookout -cve CVE-2021-44228
+lookout cve CVE-2021-44228
 ```
 
 Output:
 ```
 Fetching data for CVE: CVE-2021-44228
-┌────────────────────────────────────────────────────────────┐
-│ CVE-2021-44228                                             │
-│ Severity: CRITICAL (10.0)                                  │
-└────────────────────────────────────────────────────────────┘
 
-Description:
-Apache Log4j2 2.0-beta9 through 2.15.0 (excluding security
-releases 2.12.2, 2.12.3, and 2.3.1) JNDI features used in
-configuration...
+══════════════════════════════════════════════════════════════════════
+  CVE ANALYSIS - CRITICAL
+══════════════════════════════════════════════════════════════════════
+
+  🔴  CVE-2021-44228
+
+  Severity:    CRITICAL
+  Score:       10.0/10.0
+  ...
 ```
 
-**Multiple CVEs from file:**
+#### `cve-file` — Batch CVE Processing
 
 Create `cves.txt`:
 ```
@@ -127,26 +125,14 @@ CVE-2022-23307
 
 Run:
 ```bash
-lookout -cve-file cves.txt
+lookout cve-file cves.txt
 ```
 
-**Severity filtering:**
-```bash
-# Show only high and critical
-lookout -cve CVE-2021-44228 -severity high
-
-# Show all severities
-lookout -cve CVE-2021-44228 -severity all
-
-# Show critical only
-lookout -cve CVE-2021-44228 -severity critical
-```
-
-#### SBOM Scanning
+#### `sbom` — SBOM Scanning
 
 **Basic scan:**
 ```bash
-lookout -sbom path/to/sbom.json
+lookout sbom path/to/sbom.json
 ```
 
 This will:
@@ -157,63 +143,84 @@ This will:
 
 **With output file:**
 ```bash
-lookout -sbom mybom.json -output vulnerabilities.json
+lookout sbom mybom.json --output vulnerabilities.json
 ```
 
 **Supported SBOM formats:**
 - CycloneDX 1.4+ (JSON)
 - SPDX 2.3+ (JSON)
 
-#### Dependency Traversal
+#### `sbom --dep-path` — Dependency Traversal
 
 Find how a vulnerable package is included in your project:
 
 ```bash
-lookout -sbom mybom.json -dep-path "pkg:npm/lodash@4.17.20"
+lookout sbom mybom.json --dep-path "pkg:npm/lodash@4.17.20"
 ```
 
 Output:
 ```
-════════════════════════════════════════════════════════════
+══════════════════════════════════════════════════════════════════════
   DEPENDENCY PATH ANALYSIS
-════════════════════════════════════════════════════════════
+══════════════════════════════════════════════════════════════════════
 
   Searched: pkg:npm/lodash@4.17.20
   Depth:    3 level(s)
 
   Dependency Tree:
 
-     🔍 pkg:npm/lodash@4.17.20
+     🏠 pkg:npm/myapp@1.0.0
      │
-     └──> 📦 pkg:npm/async@2.6.3
+     └──> 📦 pkg:npm/mocha@8.4.0
           │
-          └──> 📦 pkg:npm/mocha@8.4.0
+          └──> 📦 pkg:npm/async@2.6.3
                │
-               └──> 🏠 pkg:npm/myapp@1.0.0
+               └──> ⚠️  pkg:npm/lodash@4.17.20
 
-════════════════════════════════════════════════════════════
+══════════════════════════════════════════════════════════════════════
 
   Legend:
-    🔍  = Searched component (vulnerability entry point)
-    📦  = Intermediate dependency
     🏠  = Root package (your application)
-
-════════════════════════════════════════════════════════════
+    📦  = Intermediate dependency
+    ⚠️  = Vulnerable component
 ```
 
-### Flags
+#### `version` — Show Version
+
+```bash
+lookout version
+```
+
+### Global Flags
+
+| Flag | Description | Default | Example |
+|------|-------------|---------|---------|
+| `--severity` | Minimum severity to display | `high` | `--severity critical` |
+| `--debug` | Enable debug logging | `false` | `--debug` |
+| `--help` | Show help | | `lookout --help`, `lookout sbom --help` |
+
+### `sbom` Subcommand Flags
 
 | Flag | Description | Example |
 |------|-------------|---------|
-| `-cve` | Single CVE ID | `-cve CVE-2021-44228` |
-| `-cve-file` | File with CVE IDs | `-cve-file cves.txt` |
-| `-sbom` | SBOM file path | `-sbom mybom.json` |
-| `-dep-path` | Package URL to trace | `-dep-path "pkg:npm/lodash@4.17.20"` |
-| `-output` | Output file path | `-output results.json` |
-| `-severity` | Severity filter | `-severity high` |
-| `-debug` | Enable debug logging | `-debug` |
-| `-h, -help` | Show help | `-help` |
-| `-version` | Show version | `-version` |
+| `--output <file>` | Save Trivy results to file | `--output results.json` |
+| `--dep-path <purl>` | Trace transitive dependency path | `--dep-path "pkg:npm/lodash@4.17.20"` |
+
+### Severity Levels
+
+```bash
+# Show only critical
+lookout --severity critical cve CVE-2021-44228
+
+# Show high and critical (default)
+lookout --severity high sbom mybom.json
+
+# Show medium and above
+lookout --severity medium sbom mybom.json
+
+# Show everything
+lookout --severity all sbom mybom.json
+```
 
 ### Input File Formats
 
@@ -245,15 +252,15 @@ CVE-2022-23307
 
 ```bash
 # Generate TLS certificates (first time only)
-./scripts/generate-certs.sh
+make certs
 
 # Start all services
-docker compose up -d
+make up
 ```
 
 Access at: https://localhost:7443 (or http://localhost:7080 which redirects to HTTPS)
 
-**Note:** Browser will show security warning for self-signed certificates in development. Click "Advanced" and "Proceed" to continue.
+**Note:** Browser will show a security warning for self-signed certificates in development. Click "Advanced" and "Proceed" to continue.
 
 ### Features
 
@@ -336,10 +343,10 @@ Query examples:
 
 ```bash
 # Get CVE details
-lookout -cve CVE-2021-44228
+lookout cve CVE-2021-44228
 
 # Check if you're affected
-lookout -sbom your-app.json | grep -i log4j
+lookout sbom your-app.json | grep -i log4j
 ```
 
 ### Workflow 2: Continuous Vulnerability Monitoring
@@ -354,7 +361,7 @@ lookout -sbom your-app.json | grep -i log4j
 syft packages dir:. -o cyclonedx-json > sbom.json
 
 # Scan for vulnerabilities
-lookout -sbom sbom.json -output vuln-$(date +%Y%m%d).json
+lookout sbom sbom.json --output vuln-$(date +%Y%m%d).json
 
 # Compare with previous
 diff vuln-20240101.json vuln-$(date +%Y%m%d).json
@@ -366,10 +373,10 @@ diff vuln-20240101.json vuln-$(date +%Y%m%d).json
 
 ```bash
 # 1. Scan SBOM and find vulnerable package
-lookout -sbom mybom.json
+lookout sbom mybom.json
 
 # 2. Trace dependency path
-lookout -sbom mybom.json -dep-path "pkg:npm/minimist@1.2.5"
+lookout sbom mybom.json --dep-path "pkg:npm/minimist@1.2.5"
 
 # 3. Review the path
 # 4. Decide: upgrade parent dependency or exclude vulnerable package
@@ -384,7 +391,7 @@ lookout -sbom mybom.json -dep-path "pkg:npm/minimist@1.2.5"
 syft packages . -o cyclonedx-json > release-sbom.json
 
 # 2. Scan for high/critical vulnerabilities
-lookout -sbom release-sbom.json -severity high
+lookout sbom release-sbom.json --severity high
 
 # 3. Block release if critical vulnerabilities found
 # 4. Document known vulnerabilities if acceptable risk
@@ -404,7 +411,7 @@ lookout -sbom release-sbom.json -severity high
     # Scan with Lookout
     docker run --rm -v $(pwd):/work \
       ghcr.io/timoniersystems/lookout:latest \
-      -sbom /work/sbom.json -severity high
+      sbom /work/sbom.json --severity high
 
     # Fail if critical vulnerabilities
     if [ $? -ne 0 ]; then
@@ -417,8 +424,8 @@ lookout -sbom release-sbom.json -severity high
 
 **Start server:**
 ```bash
-./scripts/generate-certs.sh  # First time only
-docker compose up -d
+make certs  # first time only
+make up
 ```
 
 **API endpoints (via HTTPS):**
@@ -461,7 +468,7 @@ Get API key from https://nvd.nist.gov/developers/request-an-api-key
 
 ```bash
 export NVD_API_KEY=your_key_here
-lookout -cve CVE-2021-44228
+lookout cve CVE-2021-44228
 ```
 
 Benefits:
@@ -474,10 +481,10 @@ Benefits:
 Focus on what matters:
 ```bash
 # Production: Only high/critical
-lookout -sbom prod.json -severity high
+lookout sbom prod.json --severity high
 
 # Development: All severities
-lookout -sbom dev.json -severity all
+lookout sbom dev.json --severity all
 ```
 
 ### 4. SBOM Generation
@@ -504,10 +511,9 @@ brew install trivy  # macOS
 # or: https://aquasecurity.github.io/trivy/latest/getting-started/installation/
 ```
 
-Or skip Trivy scan:
+Or skip Trivy scan by passing pre-scanned data:
 ```bash
-# Use pre-scanned SBOM
-lookout -cve-file vulnerabilities.txt
+lookout cve-file vulnerabilities.txt
 ```
 
 ### Rate Limiting
@@ -526,10 +532,10 @@ lookout -cve-file vulnerabilities.txt
 docker compose ps
 
 # Restart Dgraph
-docker compose restart alpha
+docker compose restart dgraph-alpha
 
 # View logs
-docker compose logs alpha
+docker compose logs dgraph-alpha
 ```
 
 ### Invalid SBOM Format
@@ -543,14 +549,9 @@ docker compose logs alpha
 
 **Validate:**
 ```bash
-# Install jq
 cat sbom.json | jq .
-
-# Check CycloneDX format
-cat sbom.json | jq '.bomFormat'
-
-# Check SPDX format
-cat sbom.json | jq '.spdxVersion'
+cat sbom.json | jq '.bomFormat'   # CycloneDX
+cat sbom.json | jq '.spdxVersion' # SPDX
 ```
 
 ## Environment Variables

@@ -348,7 +348,7 @@ services:
 - Security headers (HSTS, CSP, X-Frame-Options)
 - Rate limiting on upload endpoints
 - Gzip compression
-- Self-signed certificates for development (via scripts/generate-certs.sh)
+- Self-signed certificates for development (via `make certs`)
 
 ### Standalone CLI
 Binary can run independently without Dgraph for:
@@ -365,4 +365,4 @@ SBOM dependency traversal requires Dgraph.
 - **E2E Tests**: Docker Compose setup
 - **Coverage Threshold**: 25% (CI warning, non-blocking)
 
-See [DEVELOPMENT.md](DEVELOPMENT.md) for testing guide.
+See [CONTRIBUTING.md](../CONTRIBUTING.md) for testing guide.
