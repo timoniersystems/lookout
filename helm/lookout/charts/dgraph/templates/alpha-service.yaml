@@ -1,0 +1,27 @@
+{{- if .Values.alpha.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: dgraph-alpha
+  labels:
+    app.kubernetes.io/name: dgraph
+    app.kubernetes.io/component: alpha
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+spec:
+  type: {{ .Values.alpha.service.type }}
+  clusterIP: None  # Headless service for StatefulSet
+  ports:
+  - name: http
+    port: {{ .Values.alpha.service.ports.http }}
+    targetPort: http
+    protocol: TCP
+  - name: grpc
+    port: {{ .Values.alpha.service.ports.grpc }}
+    targetPort: grpc
+    protocol: TCP
+  selector:
+    app.kubernetes.io/name: dgraph
+    app.kubernetes.io/component: alpha
+    app.kubernetes.io/instance: {{ .Release.Name }}
+{{- end }}

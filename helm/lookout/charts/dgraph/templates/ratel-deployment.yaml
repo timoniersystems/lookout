@@ -1,0 +1,37 @@
+{{- if .Values.ratel.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dgraph-ratel
+  labels:
+    app.kubernetes.io/name: dgraph
+    app.kubernetes.io/component: ratel
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+spec:
+  replicas: {{ .Values.ratel.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: dgraph
+      app.kubernetes.io/component: ratel
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: dgraph
+        app.kubernetes.io/component: ratel
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+      securityContext:
+        {{- toYaml .Values.ratel.securityContext | nindent 8 }}
+      containers:
+      - name: ratel
+        image: "{{ .Values.ratel.image.repository }}:{{ .Values.ratel.image.tag }}"
+        imagePullPolicy: {{ .Values.ratel.image.pullPolicy }}
+        ports:
+        - name: http
+          containerPort: {{ .Values.ratel.service.port }}
+          protocol: TCP
+        resources:
+          {{- toYaml .Values.ratel.resources | nindent 12 }}
+{{- end }}

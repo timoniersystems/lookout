@@ -1,0 +1,157 @@
+# Production environment values for Lookout
+global:
+  environment: production
+  gatewayAPI:
+    enabled: true
+    gatewayClassName: eg
+
+# No Gateway in production - uses staging Gateway via cross-namespace HTTPRoute
+gateway:
+  enabled: false
+  name: lookout  # Reference to the shared gateway in staging namespace
+
+# Basic authentication for production
+basicAuth:
+  enabled: true
+  externalSecret:
+    enabled: true
+    refreshInterval: "1h"
+    secretStoreName: "aws-secrets-manager"
+    remoteKey: "lookout/production/basic-auth"
+    property: "htpasswd"
+
+httproute:
+  enabled: true
+  gatewayNamespace: staging  # Cross-namespace reference to staging gateway
+  hostnames:
+    - "lookout-prod.timonier.io"
+    - "lookout.timonier.io"
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: lookout-production-lookout-app
+          port: 3000
+      timeouts:
+        request: "600s"
+        backendRequest: "600s"
+
+lookout-app:
+  enabled: true
+  replicaCount: 1  # Single replica for Kind cluster
+
+  # Persistent Trivy DB cache - stays fresh across pod restarts
+  trivyCache:
+    persistence:
+      enabled: true
+      size: 2Gi
+
+  image:
+    repository: ghcr.io/timoniersystems/lookout
+    pullPolicy: IfNotPresent
+    tag: "latest"  # Managed by ArgoCD Image Updater (semver)
+
+  imagePullSecrets:
+    - name: ghcr-secret
+
+  service:
+    type: ClusterIP
+    port: 3000
+
+  resources:
+    limits:
+      cpu: 250m
+      memory: 512Mi
+    requests:
+      cpu: 100m
+      memory: 256Mi
+
+  autoscaling:
+    enabled: false  # Disabled for Kind cluster
+
+  env:
+    DGRAPH_HOST: "dgraph-alpha"
+    DGRAPH_PORT: "9080"
+
+  secrets:
+    NVD_API_KEY: ""  # Managed by External Secrets
+
+  externalSecrets:
+    enabled: true
+    refreshInterval: "1h"
+    aws:
+      region: "us-west-2"
+      role: ""
+      credentialsSecret: "aws-credentials"
+    secretStore:
+      name: "aws-secrets-manager"
+    secrets:
+      - secretKey: NVD_API_KEY
+        remoteKey: "lookout/production/nvd-api-key"
+        property: NVD_API_KEY
+
+dgraph:
+  enabled: true
+
+  zero:
+    enabled: true
+    replicaCount: 1  # Single replica for Kind cluster
+
+    image:
+      repository: dgraph/dgraph
+      tag: v25.0.0
+      pullPolicy: IfNotPresent
+
+    resources:
+      limits:
+        cpu: 250m
+        memory: 512Mi
+      requests:
+        cpu: 100m
+        memory: 256Mi
+
+    persistence:
+      enabled: true
+      size: 10Gi
+      storageClass: ""
+
+  alpha:
+    enabled: true
+    replicaCount: 1  # Single replica for Kind cluster
+
+    image:
+      repository: dgraph/dgraph
+      tag: v25.0.0
+      pullPolicy: IfNotPresent
+
+    resources:
+      limits:
+        cpu: 500m
+        memory: 1536Mi
+      requests:
+        cpu: 200m
+        memory: 768Mi
+
+    persistence:
+      enabled: true
+      size: 30Gi
+      storageClass: ""
+
+  ratel:
+    enabled: true
+    replicaCount: 1
+
+    image:
+      repository: dgraph/ratel
+      tag: v21.03.0
+      pullPolicy: IfNotPresent
+
+    resources:
+      limits:
+        cpu: 100m
+        memory: 256Mi
+      requests:
+        cpu: 50m
+        memory: 128Mi

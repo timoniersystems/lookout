@@ -1,0 +1,173 @@
+# Staging environment values for Lookout
+global:
+  environment: staging
+  gatewayAPI:
+    enabled: true
+    gatewayClassName: eg
+
+gateway:
+  enabled: true
+  name: lookout
+  allowRoutesFromAllNamespaces: true  # Allow production HTTPRoute to reference this gateway
+  # Infrastructure configuration for fixed NodePorts
+  infrastructure:
+    parametersRef:
+      group: gateway.envoyproxy.io
+      kind: EnvoyProxy
+      name: custom-proxy-config
+  listeners:
+    http:
+      port: 8080  # Different port for staging
+      protocol: HTTP
+    https:
+      port: 8443  # Different port for staging
+      protocol: HTTPS
+      tls:
+        enabled: true
+        certificateRef:
+          name: lookout-tls
+          kind: Secret
+
+# Basic authentication for staging
+basicAuth:
+  enabled: true
+  externalSecret:
+    enabled: true
+    refreshInterval: "1h"
+    secretStoreName: "aws-secrets-manager"  # Same SecretStore as NVD API key
+    remoteKey: "lookout/staging/basic-auth"
+    property: "htpasswd"
+
+httproute:
+  enabled: true
+  hostnames:
+    - "lookout-stg.timonier.io"  # Staging subdomain
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: lookout-staging-lookout-app
+          port: 3000
+      timeouts:
+        request: "600s"  # 10 minutes for long-running SBOM processing
+        backendRequest: "600s"
+
+lookout-app:
+  enabled: true
+  replicaCount: 1  # Single replica for kind cluster
+
+  # Persistent Trivy DB cache - stays fresh across pod restarts
+  trivyCache:
+    persistence:
+      enabled: true
+      size: 2Gi
+
+  image:
+    repository: ghcr.io/timoniersystems/lookout
+    pullPolicy: Always  # Always pull latest in staging
+    tag: "main"
+
+  imagePullSecrets:
+    - name: ghcr-secret
+
+  service:
+    type: ClusterIP
+    port: 3000
+
+  resources:
+    limits:
+      cpu: 250m
+      memory: 512Mi
+    requests:
+      cpu: 100m
+      memory: 256Mi
+
+  autoscaling:
+    enabled: false  # Disabled for staging
+
+  env:
+    DGRAPH_HOST: "dgraph-alpha"
+    DGRAPH_PORT: "9080"
+
+  secrets:
+    NVD_API_KEY: ""  # Managed by External Secrets
+
+  externalSecrets:
+    enabled: true
+    refreshInterval: "1h"
+    aws:
+      region: "us-west-2"
+      role: ""  # Set for EKS/IRSA
+      credentialsSecret: "aws-credentials"  # K8s secret with access-key-id and secret-access-key
+    secretStore:
+      name: "aws-secrets-manager"
+    secrets:
+      - secretKey: NVD_API_KEY
+        remoteKey: "lookout/staging/nvd-api-key"
+        property: NVD_API_KEY
+
+dgraph:
+  enabled: true
+
+  zero:
+    enabled: true
+    replicaCount: 1  # Single replica for staging
+
+    image:
+      repository: dgraph/dgraph
+      tag: v25.0.0
+      pullPolicy: IfNotPresent
+
+    resources:
+      limits:
+        cpu: 250m
+        memory: 512Mi
+      requests:
+        cpu: 100m
+        memory: 256Mi
+
+    persistence:
+      enabled: true
+      size: 10Gi  # Smaller for staging
+      storageClass: ""
+
+  alpha:
+    enabled: true
+    replicaCount: 1  # Single replica for staging
+
+    image:
+      repository: dgraph/dgraph
+      tag: v25.0.0
+      pullPolicy: IfNotPresent
+
+    resources:
+      limits:
+        cpu: 500m
+        memory: 1536Mi
+      requests:
+        cpu: 200m
+        memory: 768Mi
+
+    persistence:
+      enabled: true
+      size: 30Gi  # Smaller for staging
+      storageClass: ""
+
+  ratel:
+    enabled: true
+    replicaCount: 1
+
+    image:
+      repository: dgraph/ratel
+      tag: v21.03.0
+      pullPolicy: IfNotPresent
+
+    resources:
+      limits:
+        cpu: 100m
+        memory: 256Mi
+      requests:
+        cpu: 50m
+        memory: 128Mi

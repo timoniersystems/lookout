@@ -1,0 +1,43 @@
+{{- if .Values.gateway.enabled }}
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: {{ .Values.gateway.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: {{ include "lookout.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+spec:
+  gatewayClassName: {{ .Values.global.gatewayAPI.gatewayClassName }}
+  {{- if .Values.gateway.infrastructure }}
+  infrastructure:
+    {{- toYaml .Values.gateway.infrastructure | nindent 4 }}
+  {{- end }}
+  listeners:
+  {{- if .Values.gateway.listeners.http }}
+  - name: http
+    protocol: {{ .Values.gateway.listeners.http.protocol }}
+    port: {{ .Values.gateway.listeners.http.port }}
+    {{- if .Values.gateway.allowRoutesFromAllNamespaces }}
+    allowedRoutes:
+      namespaces:
+        from: All
+    {{- end }}
+  {{- end }}
+  {{- if and .Values.gateway.listeners.https .Values.gateway.listeners.https.tls.enabled }}
+  - name: https
+    protocol: {{ .Values.gateway.listeners.https.protocol }}
+    port: {{ .Values.gateway.listeners.https.port }}
+    tls:
+      mode: Terminate
+      certificateRefs:
+      - kind: {{ .Values.gateway.listeners.https.tls.certificateRef.kind }}
+        name: {{ .Values.gateway.listeners.https.tls.certificateRef.name }}
+    {{- if .Values.gateway.allowRoutesFromAllNamespaces }}
+    allowedRoutes:
+      namespaces:
+        from: All
+    {{- end }}
+  {{- end }}
+{{- end }}

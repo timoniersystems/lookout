@@ -1,0 +1,98 @@
+# Dgraph Zero (cluster coordinator)
+zero:
+  enabled: true
+  replicaCount: 1
+
+  image:
+    repository: dgraph/dgraph
+    tag: v25.0.0
+    pullPolicy: IfNotPresent
+
+  service:
+    type: ClusterIP
+    ports:
+      grpc: 5080
+      http: 6080
+
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+
+  persistence:
+    enabled: true
+    size: 10Gi
+    storageClass: ""
+    accessModes:
+      - ReadWriteOnce
+
+  securityContext:
+    runAsUser: 0
+    runAsGroup: 0
+    fsGroup: 0
+
+# Dgraph Alpha (data server)
+alpha:
+  enabled: true
+  replicaCount: 1
+
+  image:
+    repository: dgraph/dgraph
+    tag: v25.0.0
+    pullPolicy: IfNotPresent
+
+  service:
+    type: ClusterIP
+    ports:
+      http: 8080
+      grpc: 9080
+
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 2Gi
+    requests:
+      cpu: 500m
+      memory: 1Gi
+
+  persistence:
+    enabled: true
+    size: 50Gi
+    storageClass: ""
+    accessModes:
+      - ReadWriteOnce
+
+  securityContext:
+    runAsUser: 0
+    runAsGroup: 0
+    fsGroup: 0
+
+# Dgraph Ratel (UI)
+ratel:
+  enabled: true
+  replicaCount: 1
+
+  image:
+    repository: dgraph/ratel
+    tag: v21.03.0
+    pullPolicy: IfNotPresent
+
+  service:
+    type: ClusterIP
+    port: 8000
+
+  resources:
+    limits:
+      cpu: 200m
+      memory: 256Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+
+  securityContext:
+    runAsUser: 0
+    runAsGroup: 0
+    fsGroup: 0
