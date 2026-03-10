@@ -1,0 +1,130 @@
+services:
+  # Dgraph Zero - cluster coordinator
+  dgraph-zero:
+    image: dgraph/dgraph:v25.0.0
+    container_name: lookout-dgraph-zero
+    ports:
+      - "5080:5080"
+      - "6080:6080"
+    restart: on-failure
+    command: dgraph zero --my=dgraph-zero:5080
+    networks:
+      - lookout-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:6080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  # Dgraph Alpha - data server
+  dgraph-alpha:
+    image: dgraph/dgraph:v25.0.0
+    container_name: lookout-dgraph-alpha
+    ports:
+      - "8080:8080"  # HTTP API
+      - "9080:9080"  # gRPC API
+    restart: on-failure
+    command: dgraph alpha --my=dgraph-alpha:7080 --zero=dgraph-zero:5080 --security "whitelist=0.0.0.0/0" --bindall=true
+    depends_on:
+      dgraph-zero:
+        condition: service_healthy
+    networks:
+      - lookout-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  # Dgraph Ratel - UI for exploring data (optional)
+  dgraph-ratel:
+    image: dgraph/ratel:v21.03.0
+    container_name: lookout-dgraph-ratel
+    ports:
+      - "8000:8000"
+    networks:
+      - lookout-net
+
+  # Lookout web application
+  lookout:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - GO_VERSION=${GO_VERSION:-1.26.0}
+        - ALPINE_VERSION=${ALPINE_VERSION:-3.23}
+        - TRIVY_VERSION=${TRIVY_VERSION:-0.69.3}
+    container_name: lookout-app
+    # Don't expose port 3000 externally - only via nginx
+    expose:
+      - "3000"
+    depends_on:
+      dgraph-alpha:
+        condition: service_healthy
+    networks:
+      - lookout-net
+    environment:
+      - DGRAPH_HOST=dgraph-alpha
+      - DGRAPH_PORT=9080
+      - NVD_API_KEY=${NVD_API_KEY}
+    volumes:
+      - lookout-data:/app
+    # Note: distroless doesn't support shell-based healthchecks
+    # Health is monitored via nginx reverse proxy healthcheck
+
+  # Nginx reverse proxy with TLS termination
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: lookout-nginx
+    ports:
+      - "7080:80"    # HTTP (redirects to HTTPS)
+      - "7443:443"   # HTTPS
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./nginx/certs:/etc/nginx/certs:ro
+      - ./nginx/auth:/etc/nginx/auth:ro
+    depends_on:
+      - lookout
+    networks:
+      - lookout-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+
+  # Convenience service - just Dgraph without the web app
+  dgraph:
+    image: dgraph/dgraph:v25.0.0
+    container_name: lookout-dgraph-standalone
+    ports:
+      - "5080:5080"
+      - "6080:6080"
+      - "8080:8080"
+      - "9080:9080"
+    restart: on-failure
+    command: |
+      sh -c "dgraph zero --my=localhost:5080 &
+             sleep 2 &&
+             dgraph alpha --my=localhost:7080 --zero=localhost:5080 --security 'whitelist=0.0.0.0/0' --bindall=true"
+    profiles:
+      - standalone
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+networks:
+  lookout-net:
+    driver: bridge
+
+volumes:
+  lookout-data:
+    driver: local 
