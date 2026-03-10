@@ -51,7 +51,7 @@ lookout-app:
   image:
     repository: ghcr.io/timoniersystems/lookout
     pullPolicy: IfNotPresent
-    tag: "latest"  # Managed by ArgoCD Image Updater (semver)
+    tag: "0.9.0"  # Managed by ArgoCD Image Updater (semver)
 
   imagePullSecrets:
     - name: ghcr-secret
