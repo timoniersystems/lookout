@@ -125,7 +125,7 @@ jobs:
         docker load -i /tmp/image.tar
 
     - name: Run Trivy vulnerability scanner
-      uses: aquasecurity/trivy-action@0.34.2
+      uses: aquasecurity/trivy-action@0.35.0
       continue-on-error: ${{ matrix.continue-on-error == true }}
       with:
         image-ref: ${{ needs.build.outputs.image-id }}
