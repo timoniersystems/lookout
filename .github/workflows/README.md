@@ -204,3 +204,7 @@ Check workflow status at:
 - Check Go version matches (1.26)
 - Verify all dependencies are in `go.mod`
 - Look for race conditions (CI runs with `-race`)
+
+### Release PR not auto-merging
+- Ensure "Allow GitHub Actions to create and approve pull requests" is enabled in org Settings → Actions → General
+- Ensure `RELEASE_BOT_PAT` secret is set (classic PAT with `repo` scope)
