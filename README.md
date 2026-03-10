@@ -5,6 +5,12 @@
 [![CI](https://github.com/timoniersystems/lookout/actions/workflows/ci.yml/badge.svg)](https://github.com/timoniersystems/lookout/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
+## Demo
+
+<!-- After recording, replace the line below with: ![Lookout demo](docs/demo.svg) -->
+> **Record your own demo:** `asciinema rec demo.cast --command ./scripts/demo.sh`
+> Then convert to SVG: `svg-term --in demo.cast --out docs/demo.svg --window --width 100 --height 40`
+
 ## What is Lookout?
 
 Lookout helps you understand and fix vulnerabilities in your software dependencies. It answers critical questions:
