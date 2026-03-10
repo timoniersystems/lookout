@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lookout - CVE Analysis & SBOM Scanner</title>
+    <link rel="icon" type="image/svg+xml" href="/static/images/logo.svg">
+    <link rel="stylesheet" href="../static/css/style.css?v=17.0">
+</head>
+<body>
+    <div class="header">
+        <div class="header-content">
+            <h1>🔍 <a href="/" class="logo-link">Lookout</a></h1>
+            <p class="subtitle">CVE vulnerability analysis and SBOM dependency path tracing</p>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="feature-grid">
+            <!-- CVE Vulnerability Lookup -->
+            <div class="feature-card">
+                <div class="card-header">
+                    <span class="icon">🔎</span>
+                    <h2>CVE Vulnerability Lookup</h2>
+                </div>
+                <p class="card-description">Look up CVE details from the National Vulnerability Database - search by ID or upload multiple CVEs from a file</p>
+
+                <!-- Single CVE Form -->
+                <form action="/process" method="post" class="card-form" style="margin-bottom: 1.5rem;">
+                    <label for="cveID">Single CVE ID</label>
+                    <input
+                        type="text"
+                        name="cveID"
+                        id="cveID"
+                        placeholder="CVE-2021-44228"
+                        pattern="CVE-\d{4}-\d{4,}"
+                        title="Format: CVE-YYYY-NNNNN">
+                    <button type="submit" class="btn-primary">Lookup CVE</button>
+                </form>
+
+                <div style="text-align: center; color: #6b7280; font-weight: 600; margin: 1rem 0;">— OR —</div>
+
+                <!-- Batch CVE Form -->
+                <form action="/upload" method="post" enctype="multipart/form-data" class="card-form">
+                    <label for="file">Batch CVE File</label>
+                    <div class="file-input-wrapper">
+                        <input type="file" name="file" id="file" accept=".txt,.json">
+                        <span class="file-input-label">Choose file...</span>
+                    </div>
+                    <button type="submit" class="btn-primary">Process File</button>
+                </form>
+
+                <div class="card-footer">
+                    <span class="format-info">Batch file accepts: Text file with one CVE ID per line (.txt), or Trivy scan results in JSON format (.json)</span>
+                </div>
+            </div>
+
+            <!-- Scan SBOM and Trace Dependency Paths -->
+            <div class="feature-card featured">
+                <div class="card-header">
+                    <span class="icon">🛡️</span>
+                    <h2>Scan SBOM and Trace Dependency Paths</h2>
+                </div>
+                <p class="card-description">Upload SBOM to scan for vulnerabilities, build dependency graph, and trace the path from each vulnerable package to the main package</p>
+                <form action="/upload-cyclonedx-bom" method="post" enctype="multipart/form-data" class="card-form" id="sbom-analysis-form">
+                    <label for="cyclonedx-bom-file">Upload SBOM</label>
+                    <div class="file-input-wrapper">
+                        <input type="file" name="cyclonedx-bom-file" id="cyclonedx-bom-file" accept=".json,.xml">
+                        <span class="file-input-label">Choose SBOM...</span>
+                    </div>
+                    <div class="severity-filters" style="margin: 1rem 0;">
+                        <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: #1f2937;">Filter by Severity:</label>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+                            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                                <input type="checkbox" name="severity" value="CRITICAL" checked style="width: 1.125rem; height: 1.125rem; cursor: pointer;">
+                                <span style="color: #dc2626; font-weight: 600;">🔴 Critical</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                                <input type="checkbox" name="severity" value="HIGH" checked style="width: 1.125rem; height: 1.125rem; cursor: pointer;">
+                                <span style="color: #ea580c; font-weight: 600;">🟠 High</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                                <input type="checkbox" name="severity" value="MEDIUM" style="width: 1.125rem; height: 1.125rem; cursor: pointer;">
+                                <span style="color: #ca8a04; font-weight: 600;">🟡 Medium</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                                <input type="checkbox" name="severity" value="LOW" style="width: 1.125rem; height: 1.125rem; cursor: pointer;">
+                                <span style="color: #16a34a; font-weight: 600;">🟢 Low</span>
+                            </label>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-featured">Analyze SBOM</button>
+                    <div class="async-status" style="display: none; margin-top: 1rem;"></div>
+                </form>
+                <div class="card-footer">
+                    <div class="feature-badge">🌟 Complete Analysis</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Info Section -->
+        <div class="info-section">
+            <h3>💡 How It Works</h3>
+            <div class="info-grid">
+                <div class="info-item">
+                    <strong>1. Analyze</strong>
+                    <p>Search CVE database or scan your SBOM</p>
+                </div>
+                <div class="info-item">
+                    <strong>2. Discover</strong>
+                    <p>Find vulnerabilities and affected packages</p>
+                </div>
+                <div class="info-item">
+                    <strong>3. Trace</strong>
+                    <p>Identify dependency paths from vulnerable packages to root package</p>
+                </div>
+                <div class="info-item">
+                    <strong>4. Fix</strong>
+                    <p>Know exactly which dependency to upgrade</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- CLI Alternative -->
+        <div class="cli-section">
+            <h3>⚡ Prefer Command Line?</h3>
+            <code class="cli-example">
+                # Analyze single CVE<br>
+                lookout -cve CVE-2021-44228<br>
+                <br>
+                # Scan SBOM<br>
+                lookout -sbom mybom.json<br>
+                <br>
+                # Trace dependency path<br>
+                lookout -sbom mybom.json -dep-path 'pkg:npm/lodash@4.17.20'
+            </code>
+            <p class="cli-note">Install CLI: <code>make build && make install</code></p>
+        </div>
+    </div>
+
+    <footer>
+        <p>Powered by <a href="https://nvd.nist.gov/" target="_blank">NVD</a> •
+           <a href="https://github.com/aquasecurity/trivy" target="_blank">Trivy</a> •
+           <a href="https://dgraph.io/" target="_blank">Dgraph</a></p>
+        <p class="timonier-credit">Built by <a href="https://www.timoniersystems.com/" target="_blank">Timonier Systems</a></p>
+    </footer>
+
+    <!-- Error Modal -->
+    <div id="errorModal" class="error-modal-overlay" style="display: none;">
+        <div class="error-modal">
+            <div class="error-modal-header">
+                <span class="error-modal-icon">&#x26A0;</span>
+                <h3>Invalid File</h3>
+                <button class="error-modal-close" onclick="closeErrorModal()">&times;</button>
+            </div>
+            <div class="error-modal-body">
+                <p id="errorModalMessage"></p>
+            </div>
+            <div class="error-modal-footer">
+                <button class="btn-primary" onclick="closeErrorModal()">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="../static/javascript/script.js"></script>
+</body>
+</html>

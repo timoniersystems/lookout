@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CVE Analysis Results - Lookout</title>
+    <link rel="icon" type="image/svg+xml" href="/static/images/logo.svg">
+    <link rel="stylesheet" href="../static/css/style.css?v=13.0">
+</head>
+<body>
+    <div class="header">
+        <div class="header-content">
+            <h1>🔍 <a href="/" class="logo-link">Lookout</a></h1>
+            <p class="subtitle">CVE Analysis Results</p>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="results-header">
+            <a href="/" class="btn-back">← Back to Home</a>
+        </div>
+
+        {{range .Vulnerabilities}}
+        <div class="cve-card">
+            <!-- CVE Header with ID and Dates -->
+            <div class="cve-header">
+                <div class="cve-title-section">
+                    <h2 class="cve-id">{{.CVE.ID}}</h2>
+                    <div class="cve-meta">
+                        <span class="meta-item">📅 Published: {{.CVE.Published}}</span>
+                        <span class="meta-item">🔄 Last Modified: {{.CVE.LastModified}}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Severity Score Section -->
+            {{if .CVE.Metrics.CvssMetricV31}}
+            <div class="severity-section">
+                <div class="severity-container">
+                    <div class="severity-badge severity-{{(index .CVE.Metrics.CvssMetricV31 0).CvssData.BaseSeverity}}">
+                        <div class="severity-score">{{(index .CVE.Metrics.CvssMetricV31 0).CvssData.BaseScore}}</div>
+                        <div class="severity-label">{{(index .CVE.Metrics.CvssMetricV31 0).CvssData.BaseSeverity}}</div>
+                    </div>
+                    <div class="severity-explanation">
+                        <h3>🎯 Risk Assessment</h3>
+                        <p class="severity-description">
+                            This vulnerability has been assigned a <strong>{{(index .CVE.Metrics.CvssMetricV31 0).CvssData.BaseSeverity}}</strong> severity rating
+                            with a CVSS v3.1 base score of <strong>{{(index .CVE.Metrics.CvssMetricV31 0).CvssData.BaseScore}}/10.0</strong>.
+                            {{if eq (index .CVE.Metrics.CvssMetricV31 0).CvssData.BaseSeverity "CRITICAL"}}
+                            Critical vulnerabilities require immediate attention and should be patched as soon as possible.
+                            {{else if eq (index .CVE.Metrics.CvssMetricV31 0).CvssData.BaseSeverity "HIGH"}}
+                            High severity vulnerabilities pose significant risk and should be addressed promptly.
+                            {{else if eq (index .CVE.Metrics.CvssMetricV31 0).CvssData.BaseSeverity "MEDIUM"}}
+                            Medium severity vulnerabilities should be scheduled for remediation in your security roadmap.
+                            {{else if eq (index .CVE.Metrics.CvssMetricV31 0).CvssData.BaseSeverity "LOW"}}
+                            Low severity vulnerabilities should be monitored and addressed during regular maintenance cycles.
+                            {{else}}
+                            This vulnerability has been identified but may have minimal impact on your system.
+                            {{end}}
+                        </p>
+                        <div class="cvss-metrics">
+                            <span class="metric-tag">CVSS v3.1</span>
+                            <span class="metric-tag">Base Score: {{(index .CVE.Metrics.CvssMetricV31 0).CvssData.BaseScore}}</span>
+                            <span class="metric-tag">Vector: {{(index .CVE.Metrics.CvssMetricV31 0).CvssData.VectorString}}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {{end}}
+
+            <!-- Description Section -->
+            <div class="cve-description">
+                <h3>📝 Vulnerability Description</h3>
+                <p>{{(index .CVE.Descriptions 0).Value}}</p>
+            </div>
+
+            <!-- Remediation Tips Section -->
+            <div class="dependency-section">
+                <h3>💡 Remediation Guidance</h3>
+                <p class="section-description">
+                    Review the configuration details below to identify affected software versions and consult the reference URLs for detailed security advisories and patching guidance.
+                </p>
+
+                <div class="path-tip" style="margin-top: 1rem;">
+                    <span class="tip-icon">🔧</span>
+                    <div class="tip-content">
+                        <strong>Next Steps</strong>
+                        <ol style="margin: 0.5em 0; padding-left: 1.5em;">
+                            <li>Review the configuration details to determine if your software version is affected</li>
+                            <li>Check the reference URLs for official security advisories and patches</li>
+                            <li>Update affected software to a patched version outside the vulnerable range</li>
+                            <li>If no patch is available yet, implement recommended workarounds or mitigations</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+
+            <details class="cve-section">
+                <summary><strong>⚙️ Configuration Details</strong></summary>
+                <div class="table-wrapper">
+                    <table class="config-table">
+                        <thead>
+                            <tr>
+                                <th>Criteria</th>
+                                <th>Version Start (Inc)</th>
+                                <th>Version Start (Exc)</th>
+                                <th>Version End (Inc)</th>
+                                <th>Version End (Exc)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {{range .CVE.Configurations}}
+                                {{range .Nodes}}
+                                    {{range .CPEMatch}}
+                                    <tr>
+                                        <td class="criteria-cell">{{.Criteria}}</td>
+                                        <td>{{if .VersionStartIncluding}}{{.VersionStartIncluding}}{{else}}-{{end}}</td>
+                                        <td>{{if .VersionStartExcluding}}{{.VersionStartExcluding}}{{else}}-{{end}}</td>
+                                        <td>{{if .VersionEndIncluding}}{{.VersionEndIncluding}}{{else}}-{{end}}</td>
+                                        <td>{{if .VersionEndExcluding}}{{.VersionEndExcluding}}{{else}}-{{end}}</td>
+                                    </tr>
+                                    {{end}}
+                                {{end}}
+                            {{end}}
+                        </tbody>
+                    </table>
+                </div>
+            </details>
+
+            <details class="cve-section">
+                <summary><strong>🔗 Reference URLs</strong></summary>
+                <ul class="reference-list">
+                    {{range .CVE.References}}
+                    <li><a href="{{.URL}}" target="_blank" rel="noopener noreferrer">{{.URL}}</a></li>
+                    {{end}}
+                </ul>
+            </details>
+        </div>
+        {{end}}
+    </div>
+
+    <footer>
+        <p>Powered by <a href="https://nvd.nist.gov/" target="_blank">NVD</a> •
+           <a href="https://github.com/aquasecurity/trivy" target="_blank">Trivy</a> •
+           <a href="https://dgraph.io/" target="_blank">Dgraph</a></p>
+        <p class="timonier-credit">Built by <a href="https://www.timoniersystems.com/" target="_blank">Timonier Systems</a></p>
+    </footer>
+
+    <script src="../static/javascript/script.js"></script>
+</body>
+</html>

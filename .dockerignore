@@ -1,0 +1,84 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Documentation
+*.md
+docs/
+LICENSE
+
+# Build artifacts
+lookout
+*.exe
+*.dll
+*.so
+*.dylib
+bin/
+dist/
+build/
+
+# Test files
+*_test.go
+*.test
+coverage.out
+coverage.html
+*.coverprofile
+
+# Output directories
+outputs/
+*.json.tmp
+*.sbom.tmp
+
+# Dependencies
+vendor/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Temporary files
+*.tmp
+*.bak
+*.log
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Debug files
+debug
+__debug_bin
+
+# Database files
+dgraph/
+*.db
+
+# Docker files (not needed in container)
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+.travis.yml
+
+# Example files (may be large)
+examples/bom-keycloak-cyclone-example.json
+examples/bom.json
+examples/defender-bom.json
+examples/proton-bridge-v1.8.0.bom.json
+examples/syft-cyclonedx-docker.io-library-vault.latest.json
+examples/bom-cyclone-example.json
+examples/cyclonedx-sbom-go-service-health-monitor.json

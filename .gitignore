@@ -1,0 +1,78 @@
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+/lookout
+/lookout-ui
+*.test
+*.out
+
+# Go build artifacts
+bin/
+dist/
+build/
+
+# Go workspace file
+go.work
+
+# Test coverage
+*.coverprofile
+coverage.html
+coverage.out
+
+# Output directories
+outputs/
+*.json.tmp
+*.sbom.tmp
+exported_*.json
+exported_bom.json
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Temporary files
+*.tmp
+*.bak
+*.log
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Debug files
+debug
+__debug_bin
+
+# Database files (local development)
+/dgraph/
+*.db
+
+# Helm chart dependencies (but allow our custom subcharts)
+helm/*/charts/
+!helm/lookout/charts/
+!helm/lookout/charts/dgraph/
+!helm/lookout/charts/lookout-app/
+
+# TLS certificates (never commit!)
+nginx/certs/*.pem
+nginx/certs/*.key
+nginx/certs/*.crt
+
+nginx/auth/.htpasswd
+
+# Helm secrets (never commit!)
+helm/**/values*.secrets.yaml
+helm/**/values*.secret.yaml

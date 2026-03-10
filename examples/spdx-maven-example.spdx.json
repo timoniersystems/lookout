@@ -1,0 +1,70 @@
+{
+  "SPDXID" : "SPDXRef-DOCUMENT",
+  "spdxVersion" : "SPDX-2.3",
+  "creationInfo" : {
+    "created" : "2022-10-23T15:44:16Z",
+    "creators" : [ "Person: Gary O'Neall", "Tool: spdx-maven-plugin" ],
+    "licenseListVersion" : "3.18"
+  },
+  "name" : "examplemaven",
+  "dataLicense" : "CC0-1.0",
+  "documentDescribes" : [ "SPDXRef-example" ],
+  "documentNamespace" : "http://spdx.org/documents/examplemaven-0.0.1",
+  "packages" : [ {
+    "SPDXID" : "SPDXRef-junit",
+    "copyrightText" : "UNSPECIFIED",
+    "description" : "JUnit is a regression testing framework written by Erich Gamma and Kent Beck.",
+    "downloadLocation" : "NOASSERTION",
+    "filesAnalyzed" : false,
+    "homepage" : "http://junit.org",
+    "licenseConcluded" : "NOASSERTION",
+    "licenseDeclared" : "CPL-1.0",
+    "name" : "JUnit",
+    "originator" : "Organization: JUnit",
+    "versionInfo" : "3.8.1"
+  }, {
+    "SPDXID" : "SPDXRef-log4jslf4jbinding",
+    "copyrightText" : "UNSPECIFIED",
+    "description" : "The Apache Log4j SLF4J API binding to Log4j 2 Core",
+    "downloadLocation" : "NOASSERTION",
+    "filesAnalyzed" : false,
+    "licenseConcluded" : "NOASSERTION",
+    "licenseDeclared" : "NOASSERTION",
+    "name" : "Apache Log4j SLF4J Binding"
+  }, {
+    "SPDXID" : "SPDXRef-log4jApi",
+    "copyrightText" : "UNSPECIFIED",
+    "description" : "The Apache Log4j API",
+    "downloadLocation" : "NOASSERTION",
+    "filesAnalyzed" : false,
+    "licenseConcluded" : "NOASSERTION",
+    "licenseDeclared" : "NOASSERTION",
+    "name" : "Apache Log4j API"
+  }, {
+    "SPDXID" : "SPDXRef-example",
+    "copyrightText" : "Copyright (c) 2022 Source Auditor Inc.",
+    "description" : "This is a simple example Maven project.",
+    "downloadLocation" : "NOASSERTION",
+    "filesAnalyzed" : true,
+    "homepage" : "https://github.com/spdx/spdx-examples",
+    "licenseConcluded" : "Apache-2.0",
+    "licenseDeclared" : "Apache-2.0",
+    "name" : "examplemaven",
+    "originator" : "Organization: Linux Foundation",
+    "primaryPackagePurpose" : "LIBRARY",
+    "versionInfo" : "0.0.1"
+  } ],
+  "relationships" : [ {
+    "spdxElementId" : "SPDXRef-junit",
+    "relationshipType" : "TEST_DEPENDENCY_OF",
+    "relatedSpdxElement" : "SPDXRef-example"
+  }, {
+    "spdxElementId" : "SPDXRef-example",
+    "relationshipType" : "DYNAMIC_LINK",
+    "relatedSpdxElement" : "SPDXRef-log4jslf4jbinding"
+  }, {
+    "spdxElementId" : "SPDXRef-example",
+    "relationshipType" : "DYNAMIC_LINK",
+    "relatedSpdxElement" : "SPDXRef-log4jApi"
+  } ]
+}
