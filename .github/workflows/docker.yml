@@ -32,7 +32,7 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v6
+      uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
 
     - name: Compute source hash for cache key
       id: source_hash
@@ -43,14 +43,14 @@ jobs:
         echo "Source hash: ${SOURCE_HASH}"
 
     - name: Set up QEMU
-      uses: docker/setup-qemu-action@v3
+      uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130  # v3
 
     - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
+      uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f  # v3
 
     - name: Extract metadata
       id: meta
-      uses: docker/metadata-action@v5
+      uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051  # v5
       with:
         images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
         tags: |
@@ -64,7 +64,7 @@ jobs:
 
     - name: Build Docker image
       id: docker_build
-      uses: docker/build-push-action@v6
+      uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8  # v6
       with:
         context: .
         platforms: linux/amd64  # linux/arm64 commented out for performance
@@ -87,7 +87,7 @@ jobs:
         gzip /tmp/image.tar
 
     - name: Upload Docker image
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
       with:
         name: docker-image-${{ github.sha }}
         path: /tmp/image.tar.gz
@@ -102,7 +102,7 @@ jobs:
 
     steps:
     - name: Download Docker image
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093  # v4
       with:
         name: docker-image-${{ github.sha }}
         path: /tmp
@@ -113,7 +113,7 @@ jobs:
         docker load -i /tmp/image.tar
 
     - name: Run Trivy vulnerability scanner
-      uses: aquasecurity/trivy-action@0.34.2
+      uses: aquasecurity/trivy-action@97e0b3872f55f89b95b2f65b3dbab56962816478  # 0.34.2
       with:
         image-ref: ${{ needs.build.outputs.image-id }}
         format: json
@@ -121,7 +121,7 @@ jobs:
         severity: CRITICAL,HIGH,MEDIUM,LOW
 
     - name: Upload Trivy artifact
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
       with:
         name: trivy-report-${{ github.sha }}
         path: trivy-results.json
@@ -146,7 +146,7 @@ jobs:
 
     steps:
     - name: Download Docker image
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093  # v4
       with:
         name: docker-image-${{ github.sha }}
         path: /tmp
@@ -157,7 +157,7 @@ jobs:
         docker load -i /tmp/image.tar
 
     - name: Run Trivy vulnerability scanner
-      uses: aquasecurity/trivy-action@0.34.2
+      uses: aquasecurity/trivy-action@97e0b3872f55f89b95b2f65b3dbab56962816478  # 0.34.2
       continue-on-error: ${{ matrix.continue-on-error == true }}
       with:
         image-ref: ${{ needs.build.outputs.image-id }}
@@ -167,7 +167,7 @@ jobs:
 
     - name: Upload Trivy results to GitHub Security
       if: matrix.format == 'sarif'
-      uses: github/codeql-action/upload-sarif@v4
+      uses: github/codeql-action/upload-sarif@820e3160e279568db735cee8ed8f8e77a6da7818  # v3
       continue-on-error: true
       with:
         sarif_file: trivy-results.${{ matrix.format }}
@@ -183,7 +183,7 @@ jobs:
 
     steps:
     - name: Download Docker image
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093  # v4
       with:
         name: docker-image-${{ github.sha }}
         path: /tmp
@@ -203,7 +203,7 @@ jobs:
         done
 
     - name: Log in to Container Registry
-      uses: docker/login-action@v3
+      uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9  # v3
       with:
         registry: ${{ env.REGISTRY }}
         username: ${{ github.actor }}
@@ -225,7 +225,7 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v6
+      uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
 
     - name: Create .env file
       run: |

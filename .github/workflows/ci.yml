@@ -30,17 +30,16 @@ jobs:
     env:
       GO111MODULE: on
       GOPROXY: direct
-      GOSUMDB: off
     strategy:
       matrix:
         go-version: ['1.26']
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v6
+      uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
 
     - name: Set up Go
-      uses: actions/setup-go@v6
+      uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff  # v5
       with:
         go-version: ${{ matrix.go-version }}
         cache-dependency-path: go.sum
@@ -52,7 +51,7 @@ jobs:
       run: make test-coverage
 
     - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v4
+      uses: codecov/codecov-action@b9fd7d16f6d7d1b5d2bec1a2887e65ceed900238  # v4
       with:
         file: ./coverage.out
         flags: unittests
@@ -69,10 +68,10 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v6
+      uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
 
     - name: Set up Go
-      uses: actions/setup-go@v6
+      uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff  # v5
       with:
         go-version: '1.26'
 
@@ -83,7 +82,7 @@ jobs:
       run: go mod verify
 
     - name: Run golangci-lint
-      uses: golangci/golangci-lint-action@v7
+      uses: golangci/golangci-lint-action@55c2c1448f86e01eaae002a5a3a9624417608d84  # v6
       with:
         version: v2.9.0
         args: --timeout=5m --output.json.path=lint-report.json
@@ -91,7 +90,7 @@ jobs:
         install-mode: binary
 
     - name: Upload lint report
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
       if: always()
       with:
         name: lint-report
@@ -104,14 +103,13 @@ jobs:
     env:
       GO111MODULE: on
       GOPROXY: direct
-      GOSUMDB: off
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v6
+      uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
 
     - name: Set up Go
-      uses: actions/setup-go@v6
+      uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff  # v5
       with:
         go-version: '1.26'
         cache-dependency-path: go.sum
@@ -120,14 +118,14 @@ jobs:
       run: make build
 
     - name: Upload CLI artifact
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
       with:
         name: lookout-${{ github.sha }}
         path: lookout
         retention-days: 7
 
     - name: Upload UI artifact
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
       with:
         name: lookout-ui-${{ github.sha }}
         path: lookout-ui
@@ -142,25 +140,23 @@ jobs:
     env:
       GO111MODULE: on
       GOPROXY: direct
-      GOSUMDB: off
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v6
+      uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
 
     - name: Set up Go
-      uses: actions/setup-go@v6
+      uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff  # v5
       with:
         go-version: '1.26'
 
     - name: Run Gosec Security Scanner
-      uses: securego/gosec@v2.22.4
+      uses: securego/gosec@6decf96c3d272d5a8bbdcf9fddb5789d0be16a8d  # v2.22.4
       with:
         args: '-no-fail -fmt sarif -out results.sarif ./...'
 
     - name: Upload SARIF file
-      uses: github/codeql-action/upload-sarif@v4
+      uses: github/codeql-action/upload-sarif@820e3160e279568db735cee8ed8f8e77a6da7818  # v3
       continue-on-error: true
       with:
         sarif_file: results.sarif
-

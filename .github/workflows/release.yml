@@ -5,22 +5,23 @@ on:
     tags:
       - 'v*'
 
-permissions:
-  contents: write
+permissions: {}
 
 jobs:
   release:
     name: Create Release
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v6
+      uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
       with:
         fetch-depth: 0
 
     - name: Set up Go
-      uses: actions/setup-go@v6
+      uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff  # v5
       with:
         go-version: '1.26'
 
@@ -65,7 +66,7 @@ jobs:
         echo "EOF" >> $GITHUB_OUTPUT
 
     - name: Create Release
-      uses: softprops/action-gh-release@v1
+      uses: softprops/action-gh-release@a06a81a03ee405af7f2048a818ed3f03bbf83c7b  # v2
       with:
         draft: false
         prerelease: ${{ contains(github.ref_name, '-rc') || contains(github.ref_name, '-beta') || contains(github.ref_name, '-alpha') }}
@@ -111,13 +112,13 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v6
+      uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
 
     - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
+      uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f  # v3
 
     - name: Log in to GitHub Container Registry
-      uses: docker/login-action@v3
+      uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9  # v3
       with:
         registry: ghcr.io
         username: ${{ github.actor }}
@@ -128,7 +129,7 @@ jobs:
       run: echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
 
     - name: Build and push Docker image
-      uses: docker/build-push-action@v6
+      uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8  # v6
       with:
         context: .
         push: true
@@ -148,10 +149,13 @@ jobs:
     name: Update Production Image Tag
     needs: publish-docker
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v6
+      uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
       with:
         ref: main
 
@@ -163,10 +167,32 @@ jobs:
       run: |
         sed -i "s/tag: \".*\"  # Managed by ArgoCD Image Updater (semver)/tag: \"${{ steps.version.outputs.version }}\"  # Managed by ArgoCD Image Updater (semver)/" helm/lookout/values.production.yaml
 
-    - name: Commit and push
+    - name: Create pull request
+      id: pr
       run: |
         git config user.name "github-actions[bot]"
         git config user.email "github-actions[bot]@users.noreply.github.com"
+        BRANCH="release/update-production-tag-${{ steps.version.outputs.version }}"
+        git checkout -b "$BRANCH"
         git add helm/lookout/values.production.yaml
         git commit -m "Update production image tag to ${{ steps.version.outputs.version }}"
-        git push origin main
+        git push origin "$BRANCH"
+        PR_URL=$(gh pr create \
+          --title "Update production image tag to ${{ steps.version.outputs.version }}" \
+          --body "Automated update of production image tag following release of \`${{ github.ref_name }}\`." \
+          --base main \
+          --head "$BRANCH")
+        echo "pr_url=$PR_URL" >> $GITHUB_OUTPUT
+        echo "branch=$BRANCH" >> $GITHUB_OUTPUT
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Approve pull request
+      run: gh pr review "${{ steps.pr.outputs.pr_url }}" --approve
+      env:
+        GH_TOKEN: ${{ secrets.RELEASE_BOT_PAT }}
+
+    - name: Enable auto-merge
+      run: gh pr merge "${{ steps.pr.outputs.pr_url }}" --squash --auto
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
