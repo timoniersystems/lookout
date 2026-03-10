@@ -93,7 +93,41 @@ jobs:
         path: /tmp/image.tar.gz
         retention-days: 1
 
-  scan:
+  scan-json:
+    name: Trivy Scan (JSON)
+    runs-on: ubuntu-latest
+    needs: build
+    permissions:
+      contents: read
+
+    steps:
+    - name: Download Docker image
+      uses: actions/download-artifact@v4
+      with:
+        name: docker-image-${{ github.sha }}
+        path: /tmp
+
+    - name: Load Docker image
+      run: |
+        gunzip /tmp/image.tar.gz
+        docker load -i /tmp/image.tar
+
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@0.34.2
+      with:
+        image-ref: ${{ needs.build.outputs.image-id }}
+        format: json
+        output: trivy-results.json
+        severity: CRITICAL,HIGH,MEDIUM,LOW
+
+    - name: Upload Trivy artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: trivy-report-${{ github.sha }}
+        path: trivy-results.json
+        retention-days: 30
+
+  scan-extra:
     name: Trivy Scan (${{ matrix.format }})
     runs-on: ubuntu-latest
     needs: build
@@ -106,10 +140,6 @@ jobs:
         include:
           - format: sarif
             severity: CRITICAL,HIGH,MEDIUM
-            upload-security: true
-          - format: json
-            severity: CRITICAL,HIGH,MEDIUM,LOW
-            upload-artifact: true
           - format: table
             severity: CRITICAL,HIGH
             continue-on-error: true
@@ -136,24 +166,16 @@ jobs:
         severity: ${{ matrix.severity }}
 
     - name: Upload Trivy results to GitHub Security
-      if: matrix.upload-security
+      if: matrix.format == 'sarif'
       uses: github/codeql-action/upload-sarif@v4
-      continue-on-error: true  # Repository doesn't have GitHub Advanced Security
+      continue-on-error: true
       with:
         sarif_file: trivy-results.${{ matrix.format }}
-
-    - name: Upload Trivy artifact
-      if: matrix.upload-artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: trivy-report-${{ github.sha }}
-        path: trivy-results.${{ matrix.format }}
-        retention-days: 30
 
   push:
     name: Push Docker Image
     runs-on: ubuntu-latest
-    needs: [build, scan]
+    needs: [build, scan-json]
     if: github.event_name != 'pull_request'
     permissions:
       contents: read
