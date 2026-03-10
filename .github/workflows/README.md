@@ -114,6 +114,7 @@ None required for basic functionality. Optional:
 - `CODECOV_TOKEN`: For Codecov integration
 - `GIST_SECRET`: For coverage badge
 - `GIST_ID`: Gist ID for badge storage
+- `RELEASE_BOT_PAT`: Personal access token used to auto-approve release PRs
 
 ### Repository Settings
 
