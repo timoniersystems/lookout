@@ -101,6 +101,14 @@ func FetchCVEDataWithPURLs(cvePurlMap map[string]string) ([]CVEPURLPair, error) 
 	return pairs, nil
 }
 
+// sanitizeLogValue removes newline characters from strings before they are
+// written to log output, preventing log injection attacks.
+func sanitizeLogValue(s string) string {
+	s = strings.ReplaceAll(s, "\n", "\\n")
+	s = strings.ReplaceAll(s, "\r", "\\r")
+	return s
+}
+
 // FetchCVEData fetches CVE data from the NVD API for a single CVE ID.
 // Implements smart retry logic with rate limit handling and exponential backoff.
 // Supports NVD_API_KEY environment variable for higher rate limits (50 req/30s vs 5 req/30s).
@@ -158,7 +166,7 @@ func FetchCVEData(cveID string) (CVEData, error) {
 						if len(preview) > 200 {
 							preview = preview[:200] + "..."
 						}
-						log.Printf("Failed to parse JSON response for %s. Response: %s", cveID, preview)
+						log.Printf("Failed to parse JSON response for %s. Response: %s", sanitizeLogValue(cveID), sanitizeLogValue(preview))
 					}
 					if err == nil {
 						if len(data.Vulnerabilities) == 0 {
@@ -215,14 +223,14 @@ func FetchCVEData(cveID string) (CVEData, error) {
 					waitTime = 30 * time.Second
 				}
 				if attempt < maxRetries {
-					log.Printf("Rate limited (429) for %s. Waiting %v before retry %d/%d...", cveID, waitTime, attempt+1, maxRetries)
+					log.Printf("Rate limited (429) for %s. Waiting %v before retry %d/%d...", sanitizeLogValue(cveID), waitTime, attempt+1, maxRetries)
 					time.Sleep(waitTime)
 				}
 				continue
 
 			case 500, 502, 503, 504:
 				// Server errors - retry with backoff
-				log.Printf("Server error (%d) for %s, will retry...", resp.StatusCode, cveID)
+				log.Printf("Server error (%d) for %s, will retry...", resp.StatusCode, sanitizeLogValue(cveID))
 				// Will retry with exponential backoff below
 
 			default:
@@ -244,7 +252,7 @@ func FetchCVEData(cveID string) (CVEData, error) {
 			}
 
 			if err != nil {
-				log.Printf("Attempt %d/%d failed for %s: %v. Retrying in %v...", attempt, maxRetries, cveID, err, totalDelay)
+				log.Printf("Attempt %d/%d failed for %s: %v. Retrying in %v...", attempt, maxRetries, sanitizeLogValue(cveID), err, totalDelay)
 			}
 			time.Sleep(totalDelay)
 		}
