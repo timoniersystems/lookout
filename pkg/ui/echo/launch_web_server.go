@@ -170,8 +170,9 @@ func LaunchWebServer() {
 	e.POST("/purl-traversal", handler.PurlTraversal(deps))
 
 	// Progress tracking routes
-	e.GET("/progress/:sessionId", handler.ProgressSSE)
-	e.GET("/results/:sessionId", handler.GetSBOMResults) // SBOM analysis results
+	e.GET("/progress-page/:sessionId", handler.ProgressPage) // HTML progress page
+	e.GET("/progress/:sessionId", handler.ProgressSSE)       // SSE stream
+	e.GET("/results/:sessionId", handler.GetSBOMResults)     // SBOM analysis results
 
 	// Get port from environment or use default
 	port := os.Getenv("SERVER_PORT")

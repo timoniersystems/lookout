@@ -10,6 +10,19 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
+// ProgressPage renders the progress HTML page for a given session.
+func ProgressPage(c echo.Context) error {
+	sessionID := c.Param("sessionId")
+	if sessionID == "" {
+		return c.JSON(http.StatusBadRequest, map[string]interface{}{
+			"error": "Session ID required",
+		})
+	}
+	return c.Render(http.StatusOK, "progress.html", map[string]interface{}{
+		"SessionID": sessionID,
+	})
+}
+
 // ProgressSSE streams progress updates via Server-Sent Events
 func ProgressSSE(c echo.Context) error {
 	sessionID := c.Param("sessionId")
