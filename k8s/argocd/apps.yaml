@@ -28,7 +28,6 @@ spec:
       allowEmpty: false
     syncOptions:
       - CreateNamespace=false
-      - Replace=true
     retry:
       limit: 5
       backoff:
