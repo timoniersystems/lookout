@@ -76,3 +76,11 @@ nginx/auth/.htpasswd
 # Helm secrets (never commit!)
 helm/**/values*.secrets.yaml
 helm/**/values*.secret.yaml
+
+# Claude Code
+.claude/
+
+# Local tooling
+cli/
+ui/
+lint-report.json
