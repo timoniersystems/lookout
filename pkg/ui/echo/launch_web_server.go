@@ -100,7 +100,16 @@ func LaunchWebServer() {
 	e.HideBanner = true
 
 	// Middleware
-	e.Use(middleware.Logger())
+	e.Use(middleware.RequestLoggerWithConfig(middleware.RequestLoggerConfig{
+		LogMethod:  true,
+		LogURI:     true,
+		LogStatus:  true,
+		LogLatency: true,
+		LogValuesFunc: func(c echo.Context, v middleware.RequestLoggerValues) error {
+			log.Printf("method=%s uri=%s status=%d latency=%s", v.Method, v.URI, v.Status, v.Latency)
+			return nil
+		},
+	}))
 	e.Use(middleware.Recover())
 	e.Use(middleware.RequestID())
 
@@ -111,7 +120,7 @@ func LaunchWebServer() {
 	// Timeouts
 	// Extended timeout for operations involving NVD API calls (rate limiting can slow things down)
 	// Skip timeout for SSE endpoints (they need to stream indefinitely)
-	e.Use(middleware.TimeoutWithConfig(middleware.TimeoutConfig{
+	e.Use(middleware.ContextTimeoutWithConfig(middleware.ContextTimeoutConfig{
 		Timeout: 5 * time.Minute,
 		Skipper: func(c echo.Context) bool {
 			// Skip timeout for SSE progress endpoints and results pages
