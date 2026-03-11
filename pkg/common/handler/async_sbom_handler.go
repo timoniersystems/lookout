@@ -102,7 +102,7 @@ func UploadBOMWithProgress(c echo.Context) error {
 	// load (preserving cached basic auth credentials). Using document.write() to inline the
 	// progress page would break the browser's credential cache and cause repeated auth prompts.
 	return c.JSON(http.StatusOK, map[string]string{
-		"redirect": "/progress/" + sessionID,
+		"redirect": "/progress-page/" + sessionID,
 	})
 }
 
