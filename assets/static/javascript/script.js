@@ -60,6 +60,16 @@ document.addEventListener('DOMContentLoaded', function () {
                         throw new Error(data.error || 'An unexpected error occurred');
                     });
                 }
+                const contentType = response.headers.get('content-type') || '';
+                if (contentType.includes('application/json')) {
+                    return response.json().then(data => {
+                        if (data.redirect) {
+                            // Navigate as a real browser request so cached basic auth
+                            // credentials are preserved for the SSE connection.
+                            window.location.href = data.redirect;
+                        }
+                    });
+                }
                 // Success - replace the page with the response HTML
                 return response.text().then(html => {
                     document.open();

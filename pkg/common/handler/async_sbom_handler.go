@@ -91,24 +91,19 @@ func UploadBOMWithProgress(c echo.Context) error {
 		})
 	}
 
-	// Create tracker BEFORE rendering page to avoid race condition
+	// Create tracker BEFORE starting processing to avoid race condition
 	tracker := progress.NewTracker(sessionID)
 	tracker.SendProgress("upload", progress.StatusComplete, "SBOM file uploaded successfully", 10)
 
 	// Start async processing with the temp file path, severity filters, and detected format
 	go processSBOMWithProgress(sessionID, tempFilePath, severityFilters, tracker, bomFormat)
 
-	// Render progress page AFTER tracker is created and first update sent
-	if err := c.Render(http.StatusOK, "progress.html", map[string]interface{}{
-		"SessionID": sessionID,
-	}); err != nil {
-		logging.Info("Failed to render progress page: %v", err)
-		_ = os.Remove(tempFilePath)
-		tracker.Close()
-		return err
-	}
-
-	return nil
+	// Return JSON redirect so the browser navigates to /progress/:sessionId as a real page
+	// load (preserving cached basic auth credentials). Using document.write() to inline the
+	// progress page would break the browser's credential cache and cause repeated auth prompts.
+	return c.JSON(http.StatusOK, map[string]string{
+		"redirect": "/progress/" + sessionID,
+	})
 }
 
 func processSBOMWithProgress(sessionID string, tempFilePath string, severityFilters []string, tracker *progress.Tracker, bomFormat string) {
