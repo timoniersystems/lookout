@@ -314,6 +314,22 @@ We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for:
 
 See [Usage Guide](docs/USAGE.md#troubleshooting) for solutions.
 
+## Verifying Releases
+
+All release binaries and container images are signed with [SLSA build provenance](https://slsa.dev/) using GitHub's OIDC token. You can verify that an artifact was produced by this repository's CI and has not been tampered with.
+
+**Container image:**
+```bash
+gh attestation verify oci://ghcr.io/timoniersystems/lookout:latest --owner timoniersystems
+```
+
+**Release binary** (after downloading from the [releases page](https://github.com/timoniersystems/lookout/releases)):
+```bash
+gh attestation verify lookout-linux-amd64 --owner timoniersystems
+```
+
+Requires the [GitHub CLI](https://cli.github.com/) (`gh`).
+
 ## License
 
 MIT License - see [LICENSE](LICENSE) for details.
