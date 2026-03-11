@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1
 # Build arguments for version control
 ARG GO_VERSION=1.26.0
 ARG TRIVY_VERSION=0.69.3
