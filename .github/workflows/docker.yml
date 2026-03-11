@@ -180,6 +180,8 @@ jobs:
     permissions:
       contents: read
       packages: write
+      id-token: write
+      attestations: write
 
     steps:
     - name: Download Docker image
@@ -210,12 +212,24 @@ jobs:
         password: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Push Docker image to registry
+      id: push
       run: |
         # Push all tags to registry
         for tag in $(echo "${{ needs.build.outputs.tags }}" | tr ',' '\n'); do
           echo "Pushing $tag"
           docker push "$tag"
         done
+        # Capture digest for attestation
+        DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' "${{ needs.build.outputs.image-id }}" 2>/dev/null | cut -d@ -f2 || \
+                 docker manifest inspect ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:main --verbose 2>/dev/null | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('Descriptor',{}).get('digest',''))" 2>/dev/null || echo "")
+        echo "digest=$DIGEST" >> $GITHUB_OUTPUT
+
+    - name: Attest container image
+      uses: actions/attest-build-provenance@e8998f949152b193b063cb0ec769d69d929409be  # v2
+      with:
+        subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+        subject-digest: ${{ steps.push.outputs.digest }}
+        push-to-registry: true
 
   docker-compose:
     name: Test Docker Compose

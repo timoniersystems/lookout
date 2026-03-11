@@ -1,0 +1,53 @@
+name: CodeQL
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - '**.go'
+      - 'go.mod'
+      - 'go.sum'
+      - '.github/workflows/codeql.yml'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - '**.go'
+      - 'go.mod'
+      - 'go.sum'
+      - '.github/workflows/codeql.yml'
+  schedule:
+    - cron: '0 6 * * 1'  # Weekly on Monday
+
+permissions: {}
+
+jobs:
+  analyze:
+    name: Analyze (go)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+      security-events: write
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
+
+    - name: Set up Go
+      uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff  # v5
+      with:
+        go-version: '1.26'
+
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@820e3160e279568db735cee8ed8f8e77a6da7818  # v3
+      with:
+        languages: go
+        queries: security-and-quality
+
+    - name: Build
+      run: go build ./...
+
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@820e3160e279568db735cee8ed8f8e77a6da7818  # v3
+      with:
+        category: /language:go
