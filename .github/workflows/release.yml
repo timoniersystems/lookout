@@ -144,7 +144,7 @@ jobs:
           ghcr.io/${{ github.repository }}:${{ steps.version.outputs.version }}
           ghcr.io/${{ github.repository }}:latest
         build-args: |
-          GO_VERSION=1.26.0
+          GO_VERSION=1.26.1
           ALPINE_VERSION=3.23
           TRIVY_VERSION=0.69.3
           VERSION=${{ github.ref_name }}

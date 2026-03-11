@@ -77,7 +77,7 @@ jobs:
         no-cache: false
         pull: true
         build-args: |
-          GO_VERSION=1.26.0
+          GO_VERSION=1.26.1
           TRIVY_VERSION=0.69.3
 
     - name: Export Docker image
