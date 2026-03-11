@@ -39,8 +39,8 @@ trafficPolicy:
   # Rate limiting - applied per HTTPRoute via BackendTrafficPolicy
   rateLimit:
     enabled: true
-    requests: 10
-    unit: Minute
+    requests: 5
+    unit: Second
 
 # HTTPRoute configuration
 httproute:

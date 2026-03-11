@@ -43,8 +43,8 @@ trafficPolicy:
   maxRequestBodyBytes: 10485760  # 10MB
   rateLimit:
     enabled: true
-    requests: 10
-    unit: Minute
+    requests: 5
+    unit: Second
 
 httproute:
   enabled: true
