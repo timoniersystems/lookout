@@ -3,7 +3,7 @@
 # Rebuilt every 6 hours so CI/CD scans skip the slow DB download.
 ARG TRIVY_VERSION=0.69.3
 
-FROM aquasecurity/trivy:${TRIVY_VERSION} AS trivy
+FROM ghcr.io/aquasecurity/trivy:${TRIVY_VERSION} AS trivy
 
 # Download the vulnerability database at build time
 RUN trivy image --download-db-only --db-repository ghcr.io/aquasecurity/trivy-db:2
