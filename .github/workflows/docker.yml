@@ -20,7 +20,7 @@ permissions: {}
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
-  TRIVY_VERSION: "0.69.3"
+  TRIVY_IMAGE: ghcr.io/${{ github.repository }}/trivy-base:latest
 
 jobs:
   build:
@@ -101,6 +101,7 @@ jobs:
     needs: build
     permissions:
       contents: read
+      packages: read
 
     steps:
     - name: Download Docker image
@@ -114,16 +115,25 @@ jobs:
         gunzip /tmp/image.tar.gz
         docker load -i /tmp/image.tar
 
-    - name: Install Trivy
-      run: |
-        curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin "v${TRIVY_VERSION}"
-        trivy --version
+    - name: Log in to Container Registry
+      uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9  # v3
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Pull Trivy base image
+      run: docker pull "${{ env.TRIVY_IMAGE }}"
 
     - name: Run Trivy vulnerability scanner
       run: |
-        trivy image --format json --output trivy-results.json \
+        docker run --rm \
+          -v /var/run/docker.sock:/var/run/docker.sock \
+          "${{ env.TRIVY_IMAGE }}" \
+          image --format json --output /dev/stdout \
           --severity CRITICAL,HIGH,MEDIUM,LOW \
-          "${{ needs.build.outputs.image-id }}"
+          --skip-db-update \
+          "${{ needs.build.outputs.image-id }}" > trivy-results.json
 
     - name: Upload Trivy artifact
       uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
@@ -138,6 +148,7 @@ jobs:
     needs: build
     permissions:
       contents: read
+      packages: read
       security-events: write
     strategy:
       fail-fast: false
@@ -161,17 +172,26 @@ jobs:
         gunzip /tmp/image.tar.gz
         docker load -i /tmp/image.tar
 
-    - name: Install Trivy
-      run: |
-        curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin "v${TRIVY_VERSION}"
-        trivy --version
+    - name: Log in to Container Registry
+      uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9  # v3
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Pull Trivy base image
+      run: docker pull "${{ env.TRIVY_IMAGE }}"
 
     - name: Run Trivy vulnerability scanner
       continue-on-error: ${{ matrix.continue-on-error == true }}
       run: |
-        trivy image --format ${{ matrix.format }} --output trivy-results.${{ matrix.format }} \
+        docker run --rm \
+          -v /var/run/docker.sock:/var/run/docker.sock \
+          "${{ env.TRIVY_IMAGE }}" \
+          image --format ${{ matrix.format }} --output /dev/stdout \
           --severity ${{ matrix.severity }} \
-          "${{ needs.build.outputs.image-id }}"
+          --skip-db-update \
+          "${{ needs.build.outputs.image-id }}" > trivy-results.${{ matrix.format }}
 
     - name: Upload Trivy results to GitHub Security
       if: matrix.format == 'sarif'
