@@ -100,7 +100,9 @@ func (t *Tracker) SendComplete(redirect string) {
 	default:
 	}
 
-	t.Close()
+	// Close inline to avoid deadlock (Close() also locks t.mu)
+	t.closed = true
+	close(t.Updates)
 }
 
 func (t *Tracker) SendError(message string) {
@@ -119,7 +121,9 @@ func (t *Tracker) SendError(message string) {
 	default:
 	}
 
-	t.Close()
+	// Close inline to avoid deadlock (Close() also locks t.mu)
+	t.closed = true
+	close(t.Updates)
 }
 
 func (t *Tracker) Close() {
