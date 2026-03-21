@@ -20,6 +20,7 @@ permissions: {}
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
+  TRIVY_VERSION: "0.69.3"
 
 jobs:
   build:
@@ -113,13 +114,16 @@ jobs:
         gunzip /tmp/image.tar.gz
         docker load -i /tmp/image.tar
 
+    - name: Install Trivy
+      run: |
+        curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin "v${TRIVY_VERSION}"
+        trivy --version
+
     - name: Run Trivy vulnerability scanner
-      uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1  # 0.35.0
-      with:
-        image-ref: ${{ needs.build.outputs.image-id }}
-        format: json
-        output: trivy-results.json
-        severity: CRITICAL,HIGH,MEDIUM,LOW
+      run: |
+        trivy image --format json --output trivy-results.json \
+          --severity CRITICAL,HIGH,MEDIUM,LOW \
+          "${{ needs.build.outputs.image-id }}"
 
     - name: Upload Trivy artifact
       uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
@@ -157,14 +161,17 @@ jobs:
         gunzip /tmp/image.tar.gz
         docker load -i /tmp/image.tar
 
+    - name: Install Trivy
+      run: |
+        curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin "v${TRIVY_VERSION}"
+        trivy --version
+
     - name: Run Trivy vulnerability scanner
-      uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1  # 0.35.0
       continue-on-error: ${{ matrix.continue-on-error == true }}
-      with:
-        image-ref: ${{ needs.build.outputs.image-id }}
-        format: ${{ matrix.format }}
-        output: trivy-results.${{ matrix.format }}
-        severity: ${{ matrix.severity }}
+      run: |
+        trivy image --format ${{ matrix.format }} --output trivy-results.${{ matrix.format }} \
+          --severity ${{ matrix.severity }} \
+          "${{ needs.build.outputs.image-id }}"
 
     - name: Upload Trivy results to GitHub Security
       if: matrix.format == 'sarif'
