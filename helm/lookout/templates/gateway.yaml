@@ -1,4 +1,6 @@
-{{- if .Values.gateway.enabled }}
+{{- /* For provider=external the chart creates no Gateway — caller provides
+       it via httproute.parentRefs. envoy-gateway and istio render here. */ -}}
+{{- if and .Values.gateway.enabled (ne (.Values.gateway.provider | default "envoy-gateway") "external") }}
 apiVersion: gateway.networking.k8s.io/v1
 kind: Gateway
 metadata:

@@ -10,10 +10,14 @@ metadata:
     app.kubernetes.io/managed-by: {{ .Release.Service }}
 spec:
   parentRefs:
+  {{- if .Values.httproute.parentRefs }}
+  {{- toYaml .Values.httproute.parentRefs | nindent 2 }}
+  {{- else }}
   - name: {{ .Values.gateway.name }}
     {{- if .Values.httproute.gatewayNamespace }}
     namespace: {{ .Values.httproute.gatewayNamespace }}
     {{- end }}
+  {{- end }}
   {{- with .Values.httproute.hostnames }}
   hostnames:
   {{- toYaml . | nindent 2 }}
