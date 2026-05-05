@@ -1,4 +1,6 @@
-{{- if .Values.basicAuth.enabled }}
+{{- /* SecurityPolicy is an Envoy Gateway CRD; for other providers, auth is
+       expected to be provided externally (e.g., oauth2-proxy in Istio). */ -}}
+{{- if and (eq (.Values.gateway.provider | default "envoy-gateway") "envoy-gateway") .Values.basicAuth.enabled }}
 apiVersion: gateway.envoyproxy.io/v1alpha1
 kind: SecurityPolicy
 metadata:

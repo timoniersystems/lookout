@@ -15,6 +15,17 @@ global:
 gateway:
   enabled: true
   name: lookout
+  # Gateway implementation. Controls whether implementation-specific
+  # resources are rendered:
+  #   envoy-gateway (default) — renders BackendTrafficPolicy, ClientTrafficPolicy,
+  #                             SecurityPolicy (Envoy Gateway CRDs)
+  #   istio                  — renders only Gateway-API-portable resources
+  #                             (Gateway, HTTPRoute). EG-specific CRDs skipped;
+  #                             rate-limiting, body-size, and basic-auth must be
+  #                             handled via Istio policies / oauth2-proxy upstream.
+  #   external               — chart creates no Gateway; httproute.parentRefs is
+  #                             expected to point at one provided by the platform.
+  provider: envoy-gateway
   listeners:
     http:
       port: 80
@@ -45,6 +56,15 @@ trafficPolicy:
 # HTTPRoute configuration
 httproute:
   enabled: true
+  # Optional explicit parentRefs override. When set, takes precedence over
+  # the implicit `gateway.name` / `gatewayNamespace` derivation. Use this
+  # to attach to a Gateway managed elsewhere — e.g., Istio's platform
+  # gateway in another namespace:
+  #   parentRefs:
+  #     - name: platform-gateway
+  #       namespace: istio-system
+  #       sectionName: https
+  parentRefs: []
   hostnames:
     - "lookout.example.com"  # Change this to your domain
   rules:
