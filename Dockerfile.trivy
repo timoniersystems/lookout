@@ -8,7 +8,7 @@ FROM ghcr.io/aquasecurity/trivy:${TRIVY_VERSION} AS trivy
 # Download the vulnerability database at build time
 RUN trivy image --download-db-only --db-repository ghcr.io/aquasecurity/trivy-db:2
 
-FROM ubuntu:24.04
+FROM ubuntu:26.04
 
 COPY --from=trivy /usr/local/bin/trivy /usr/local/bin/trivy
 COPY --from=trivy /root/.cache/trivy /root/.cache/trivy
