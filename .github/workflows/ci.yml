@@ -26,7 +26,7 @@ permissions:
 jobs:
   test:
     name: Test
-    runs-on: ubuntu-latest
+    runs-on: eagle-valley-runner
     env:
       GO111MODULE: on
       GOPROXY: direct
@@ -62,7 +62,7 @@ jobs:
 
   lint:
     name: Lint
-    runs-on: ubuntu-latest
+    runs-on: eagle-valley-runner
     env:
       GO111MODULE: on
 
@@ -99,7 +99,7 @@ jobs:
 
   build:
     name: Build
-    runs-on: ubuntu-latest
+    runs-on: eagle-valley-runner
     env:
       GO111MODULE: on
       GOPROXY: direct
@@ -133,7 +133,7 @@ jobs:
 
   security:
     name: Security Scan
-    runs-on: ubuntu-latest
+    runs-on: eagle-valley-runner
     permissions:
       contents: read
       security-events: write
@@ -150,10 +150,14 @@ jobs:
       with:
         go-version: '1.26'
 
+    # gosec ships as a Docker-container action, which needs a docker daemon
+    # the daemonless self-hosted pool doesn't have. Install + run the binary
+    # directly instead — setup-go puts $(go env GOPATH)/bin on PATH.
+    - name: Install gosec
+      run: go install github.com/securego/gosec/v2/cmd/gosec@v2.22.4
+
     - name: Run Gosec Security Scanner
-      uses: securego/gosec@6decf96c3d272d5a8bbdcf9fddb5789d0be16a8d  # v2.22.4
-      with:
-        args: '-no-fail -fmt sarif -out results.sarif ./...'
+      run: gosec -no-fail -fmt sarif -out results.sarif ./...
 
     - name: Upload SARIF file
       uses: github/codeql-action/upload-sarif@0d579ffd059c29b07949a3cce3983f0780820c98  # v4.32.6

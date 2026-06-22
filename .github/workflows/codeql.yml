@@ -23,7 +23,7 @@ permissions: {}
 jobs:
   analyze:
     name: Analyze (go)
-    runs-on: ubuntu-latest
+    runs-on: eagle-valley-runner
     permissions:
       contents: read
       actions: read

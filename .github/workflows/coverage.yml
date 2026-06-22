@@ -27,7 +27,7 @@ permissions:
 jobs:
   coverage:
     name: Generate Coverage Report
-    runs-on: ubuntu-latest
+    runs-on: eagle-valley-runner
 
     steps:
     - name: Checkout code
@@ -94,7 +94,9 @@ jobs:
       run: |
         COVERAGE=${{ steps.coverage.outputs.coverage }}
         THRESHOLD=25.0
-        if (( $(echo "$COVERAGE < $THRESHOLD" | bc -l) )); then
+        # awk, not bc: bc isn't in the Wolfi self-hosted runner's base tools.
+        # Same warn-only behavior (this step never fails the job).
+        if awk -v c="$COVERAGE" -v t="$THRESHOLD" 'BEGIN{exit !(c<t)}'; then
           echo "❌ Coverage $COVERAGE% is below threshold $THRESHOLD%"
           echo "::warning::Coverage is below $THRESHOLD% threshold"
         else
