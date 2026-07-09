@@ -1,0 +1,82 @@
+# Surfaces FAILED main-branch / scheduled workflow runs to Slack — the app-repo
+# arm of the eagle-valley#796 silent-failure-alerting epic (ported from the
+# landru-devops/transwarp notify-ci-failure.yml). CI failures live in neither
+# Prometheus nor Flux, so the cluster-side Alertmanager/Flux→Slack paths can't
+# see them — e.g. the eagle-valley#684 restrict-image-registries Audit→Enforce
+# flip silently broke every app-repo image build (the shared buildx driver pod
+# pulled moby/buildkit from docker.io, denied in the buildkit namespace) and
+# nothing alerted (landru-devops#168).
+#
+# Scope / LOW-NOISE by design:
+#   - `head_branch == 'main'` excludes every feature-branch / PR run (no
+#     branch-build noise) and naturally includes scheduled + manual-on-main runs.
+#     Only `conclusion == 'failure'` posts. A feature-branch build failure stays
+#     visible in the Actions tab / PR checks — intentional, to keep Slack signal.
+#   - The `workflows:` list is CURATED to workflows normally GREEN on main.
+#     DELIBERATELY OMITTED (findings-driven / noisy-by-design — a red there is
+#     often a real CVE finding, not a regression, so it would defeat low-noise):
+#       * "Trivy Base Image" — scheduled base-image CVE scan (like transwarp's
+#         Nightly Image Scan); add it only if you want CVE-finding pings here.
+#       * "CodeQL" — code-scanning; can red on scan-infra flakiness.
+#     Add either back by name if its silent main failure ever matters.
+#
+# Inert-safe: with no SLACK_ALERTS_WEBHOOK_URL secret the job logs a notice and
+# exits 0. The secret is set org-wide (visibility=private) so this repo inherits it.
+#
+# GOTCHAS:
+#   - `workflow_run.workflows` has NO wildcard — every workflow whose main/
+#     scheduled failures should alert MUST be listed below by its `name:`.
+#   - `workflow_run` always runs the DEFAULT-branch copy of this file, so changes
+#     take effect only after merge to `main`.
+#   - Runs on the self-hosted `eagle-valley-runner` (curl/jq baked in). ⚠ EGRESS:
+#     the runner egress NetworkPolicy MUST allowlist the Slack webhook host or
+#     this alerter fails SILENTLY.
+name: CI Failure → Slack
+
+on:
+  workflow_run:
+    types: [completed]
+    workflows:
+      - "CI"
+      - "Docker Build"
+      - "Test Coverage"
+      - "Secret Scan"
+      - "Release"
+
+permissions:
+  contents: read
+
+jobs:
+  notify:
+    name: Post failed main run to Slack
+    if: >-
+      github.event.workflow_run.conclusion == 'failure' &&
+      github.event.workflow_run.head_branch == 'main'
+    runs-on: eagle-valley-runner
+    steps:
+      - name: Post failure to Slack
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_ALERTS_WEBHOOK_URL }}
+          WF_NAME: ${{ github.event.workflow_run.name }}
+          WF_URL: ${{ github.event.workflow_run.html_url }}
+          WF_EVENT: ${{ github.event.workflow_run.event }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+          COMMIT_MSG: ${{ github.event.workflow_run.head_commit.message }}
+          REPO: ${{ github.repository }}
+          RUN_NUMBER: ${{ github.event.workflow_run.run_number }}
+        run: |
+          set -euo pipefail
+          if [ -z "${SLACK_WEBHOOK_URL:-}" ]; then
+            echo "::notice title=CI-failure Slack alerting inert::SLACK_ALERTS_WEBHOOK_URL is not set — add it (repo or org Actions secret) to enable. Skipping."
+            exit 0
+          fi
+          short_sha="$(printf '%s' "${HEAD_SHA:-}" | cut -c1-7)"
+          commit_subject="$(printf '%s' "${COMMIT_MSG:-}" | head -n1)"
+          # jq assembles BOTH the message and the JSON from --arg values, so a
+          # crafted commit subject / branch name can't break the payload or inject shell.
+          payload="$(jq -n \
+            --arg wf "$WF_NAME" --arg repo "$REPO" --arg event "$WF_EVENT" \
+            --arg run "$RUN_NUMBER" --arg url "$WF_URL" --arg sha "$short_sha" --arg subj "$commit_subject" \
+            '{text: ":x: *CI failure on `main`* — *\($wf)*\nRepo: \($repo) · event: `\($event)` · run #\($run)\n<\($url)|View run> · commit `\($sha)`: \($subj)"}')"
+          curl -fsS -X POST -H 'Content-type: application/json' --data "$payload" "$SLACK_WEBHOOK_URL" >/dev/null
+          echo "Posted CI-failure alert for '${WF_NAME}' (run #${RUN_NUMBER}) to Slack."
