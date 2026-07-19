@@ -285,11 +285,15 @@ func ListImages(client *dgo.Dgraph) ([]ImageInfo, error) {
 	txn := client.NewReadOnlyTxn()
 	defer func() { _ = txn.Discard(ctx) }()
 
+	// Alias the camelCase Dgraph predicates to the snake_case keys ImageInfo's
+	// json tags expect — without these aliases json.Unmarshal leaves every field
+	// zero-valued (imageDigest != image_digest, underscore defeats the
+	// case-insensitive match), and the digest-dedup below then drops every row.
 	query := `{
 		images(func: has(imageDigest)) {
-			imageName
-			imageDigest
-			uploadedAt
+			image_name: imageName
+			image_digest: imageDigest
+			uploaded_at: uploadedAt
 		}
 	}`
 
