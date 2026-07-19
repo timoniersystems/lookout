@@ -21,13 +21,6 @@ env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
   TRIVY_IMAGE: ghcr.io/${{ github.repository }}/trivy-base:latest
-  # Mirror the built image to Timonier's private ECR so private-package auth
-  # doesn't block in-cluster pulls. Trust for this role is granted in
-  # eagle-valley/envs/landru/tofu/aws/iam-github-actions.tf (PR #406).
-  ECR_REGISTRY: 954536064629.dkr.ecr.us-west-2.amazonaws.com
-  ECR_REPOSITORY: lookout
-  AWS_REGION: us-west-2
-  ECR_PUSH_ROLE_ARN: arn:aws:iam::954536064629:role/landru-github-actions-ecr-push
 
 jobs:
   build:
@@ -264,43 +257,6 @@ jobs:
         subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
         subject-digest: ${{ steps.push.outputs.digest }}
         push-to-registry: true
-
-    # ─── Mirror to Timonier's ECR ────────────────────────────────────────
-    # The image is already loaded locally; just re-tag and push to ECR so
-    # in-cluster deployments can pull without dealing with private-package
-    # auth on ghcr.io. Same content, same digest.
-
-    - name: Configure AWS credentials (OIDC)
-      uses: aws-actions/configure-aws-credentials@ec61189d14ec14c8efccab744f656cffd0e33f37  # v4
-      with:
-        role-to-assume: ${{ env.ECR_PUSH_ROLE_ARN }}
-        aws-region: ${{ env.AWS_REGION }}
-
-    - name: Log in to Amazon ECR
-      run: |
-        aws ecr get-login-password --region "${{ env.AWS_REGION }}" \
-          | docker login --username AWS --password-stdin "${{ env.ECR_REGISTRY }}"
-
-    - name: Ensure ECR repository exists
-      run: |
-        aws ecr describe-repositories \
-          --repository-names "${{ env.ECR_REPOSITORY }}" \
-          --region "${{ env.AWS_REGION }}" >/dev/null 2>&1 \
-        || aws ecr create-repository \
-          --repository-name "${{ env.ECR_REPOSITORY }}" \
-          --image-scanning-configuration scanOnPush=true \
-          --region "${{ env.AWS_REGION }}"
-
-    - name: Tag and push to ECR
-      run: |
-        # Re-tag every metadata-action tag with the ECR prefix and push.
-        for tag in $(echo "${{ needs.build.outputs.tags }}" | tr ',' '\n'); do
-          short="${tag##*:}"   # the version/sha part after the colon
-          ecr_tag="${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${short}"
-          echo "Re-tagging ${tag} → ${ecr_tag}"
-          docker tag "${tag}" "${ecr_tag}"
-          docker push "${ecr_tag}"
-        done
 
   docker-compose:
     name: Test Docker Compose
