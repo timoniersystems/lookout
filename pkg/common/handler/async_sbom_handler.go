@@ -95,8 +95,17 @@ func UploadBOMWithProgress(c echo.Context) error {
 	tracker := progress.NewTracker(sessionID)
 	tracker.SendProgress("upload", progress.StatusComplete, "SBOM file uploaded successfully", 10)
 
+	// lookout#56: the transwarp pipeline posts image_name + image_digest form fields
+	// to identify the built image the SBOM belongs to (empty for interactive human
+	// uploads). Captured here so the async processor can tag the graph by image.
+	imageName := c.Request().Form.Get("image_name")
+	imageDigest := c.Request().Form.Get("image_digest")
+	if imageDigest != "" {
+		logging.Info("[Session %s] SBOM tagged to image %s (%s)", sessionID, imageName, imageDigest)
+	}
+
 	// Start async processing with the temp file path, severity filters, and detected format
-	go processSBOMWithProgress(sessionID, tempFilePath, severityFilters, tracker, bomFormat)
+	go processSBOMWithProgress(sessionID, tempFilePath, severityFilters, tracker, bomFormat, imageName, imageDigest)
 
 	// Return JSON redirect so the browser navigates to /progress/:sessionId as a real page
 	// load (preserving cached basic auth credentials). Using document.write() to inline the
@@ -106,7 +115,7 @@ func UploadBOMWithProgress(c echo.Context) error {
 	})
 }
 
-func processSBOMWithProgress(sessionID string, tempFilePath string, severityFilters []string, tracker *progress.Tracker, bomFormat string) {
+func processSBOMWithProgress(sessionID string, tempFilePath string, severityFilters []string, tracker *progress.Tracker, bomFormat string, imageName string, imageDigest string) {
 	defer tracker.Close()
 	defer func() { _ = os.Remove(tempFilePath) }()
 
@@ -140,20 +149,17 @@ func processSBOMWithProgress(sessionID string, tempFilePath string, severityFilt
 	tracker.SendProgress("db", progress.StatusActive, "Building dependency graph...", 25)
 
 	client := dgraph.DgraphClient()
-	if err := dgraph.DropAllData(client); err != nil {
-		logging.Warn("Failed to drop existing data (Dgraph may be unavailable): %v", err)
+	// lookout#56: do NOT DropAllData here — the SBOM graph now persists across
+	// uploads so it holds platform-wide multi-image state (each upload is tagged
+	// with its image, InsertComponentsAndDependencies upserts by bomRef). SetupSchema
+	// is idempotent and doubles as the Dgraph-availability probe.
+	if err := dgraph.SetupSchema(client); err != nil {
+		logging.Warn("Failed to setup schema (Dgraph may be unavailable): %v", err)
 		dgraphAvailable = false
 	}
 
 	if dgraphAvailable {
-		if err := dgraph.SetupSchema(client); err != nil {
-			logging.Warn("Failed to setup schema: %v", err)
-			dgraphAvailable = false
-		}
-	}
-
-	if dgraphAvailable {
-		if err := dgraph.InsertComponentsAndDependencies(dgraph.DgraphClient(), bom); err != nil {
+		if err := dgraph.InsertComponentsAndDependencies(dgraph.DgraphClient(), bom, imageName, imageDigest); err != nil {
 			logging.Warn("Failed to insert BOM data into Dgraph: %v", err)
 			dgraphAvailable = false
 		}

@@ -53,7 +53,7 @@ func filterBySeverity(pair nvd.CVEPURLPair, severityFilters []string) bool {
 
 	// If all four standard severity levels are selected, include CVEs with "N/A" severity as well
 	allSeveritiesSelected := severityMap["CRITICAL"] && severityMap["HIGH"] &&
-	                         severityMap["MEDIUM"] && severityMap["LOW"]
+		severityMap["MEDIUM"] && severityMap["LOW"]
 
 	// Check if any vulnerability in the pair matches the severity filter
 	for _, vuln := range pair.Data.Vulnerabilities {
@@ -426,13 +426,14 @@ func UploadBOMAndInsertData(deps *HandlerDependencies) echo.HandlerFunc {
 
 		// Build dependency graph (non-fatal - CVE results still shown if Dgraph is unavailable)
 		dgraphAvailable := true
-		if err := deps.Repo.DropAllData(ctx); err != nil {
-			logging.Warn("Failed to drop existing data (Dgraph may be unavailable): %v", err)
+		// lookout#56: persist across uploads — no DropAllData. Probe availability via the
+		// client manager (non-panicking) and ensure the schema (idempotent).
+		client, cerr := dgraph.GetGlobalClientManager().GetClient()
+		if cerr != nil {
+			logging.Warn("Dgraph unavailable: %v", cerr)
 			dgraphAvailable = false
 		}
-
 		if dgraphAvailable {
-			client := dgraph.DgraphClient()
 			if err := dgraph.SetupSchema(client); err != nil {
 				logging.Warn("Failed to setup schema: %v", err)
 				dgraphAvailable = false
@@ -534,16 +535,15 @@ func PurlTraversal(deps *HandlerDependencies) echo.HandlerFunc {
 		}
 		defer func() { _ = tempFileHandle.Cleanup() }()
 
-		// Drop existing data and setup schema
-		if err := deps.Repo.DropAllData(ctx); err != nil {
-			logging.Error("Error clearing data: %v", err)
+		// lookout#56: persist across uploads — do NOT clear the database. Get the client
+		// via the manager (non-panicking) rather than the panicking DgraphClient().
+		client, cerr := dgraph.GetGlobalClientManager().GetClient()
+		if cerr != nil {
+			logging.Error("Dgraph unavailable: %v", cerr)
 			return c.JSON(http.StatusInternalServerError, map[string]interface{}{
-				"error": "Failed to clear database",
+				"error": "SBOM store unavailable",
 			})
 		}
-
-		// Re-setup schema after dropping all data
-		client := dgraph.DgraphClient()
 		if err := dgraph.SetupSchema(client); err != nil {
 			logging.Error("Failed to setup schema: %v", err)
 			return c.JSON(http.StatusInternalServerError, map[string]interface{}{

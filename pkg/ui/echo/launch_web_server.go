@@ -173,6 +173,7 @@ func LaunchWebServer() {
 	e.GET("/progress-page/:sessionId", handler.ProgressPage) // HTML progress page
 	e.GET("/progress/:sessionId", handler.ProgressSSE)       // SSE stream
 	e.GET("/results/:sessionId", handler.GetSBOMResults)     // SBOM analysis results
+	e.GET("/api/sboms", handler.ListSBOMs)                   // lookout#56: enumerate ingested images (transwarp feed / eagle-valley#1049)
 
 	// Get port from environment or use default
 	port := os.Getenv("SERVER_PORT")

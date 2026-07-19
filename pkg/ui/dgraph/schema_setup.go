@@ -51,6 +51,10 @@ func setupSchemaInternal(client *dgo.Dgraph, ctx context.Context) error {
         cveID: string @index(exact) .
         dgraphURL: string @index(exact) .
         root: bool @index(bool) .
+        seenInImage: [string] @index(exact) .
+        imageName: string @index(exact) .
+        imageDigest: string @index(exact) .
+        uploadedAt: string .
 
         type Component {
 			bomRef
@@ -63,6 +67,13 @@ func setupSchemaInternal(client *dgo.Dgraph, ctx context.Context) error {
             cveID
             dgraphURL
             root
+            seenInImage
+        }
+
+        type Image {
+            imageName
+            imageDigest
+            uploadedAt
         }
     `
 

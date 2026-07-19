@@ -7,7 +7,9 @@ import (
 	"fmt"
 	"net/url"
 	"regexp"
+	"sort"
 	"strings"
+	"time"
 
 	"github.com/timoniersystems/lookout/pkg/common/cyclonedx"
 	"github.com/timoniersystems/lookout/pkg/logging"
@@ -114,7 +116,14 @@ func RetrieveExistingComponents(txn *dgo.Txn) (map[string]string, error) {
 	return existingComponents, nil
 }
 
-func InsertComponentsAndDependencies(client *dgo.Dgraph, bom *cyclonedx.Bom) error {
+// InsertComponentsAndDependencies upserts the SBOM's components + dependency
+// edges. imageName/imageDigest (supplied by the transwarp pipeline upload, empty
+// for interactive human uploads) identify which image this SBOM came from: each
+// component is tagged with seenInImage=<imageDigest> and a lightweight Image node
+// records the upload, so the accumulated multi-image graph can answer "what is in
+// image X" / "which images contain component Y" (lookout#56 / eagle-valley#1049).
+// Callers must NOT DropAll first — the graph persists across uploads.
+func InsertComponentsAndDependencies(client *dgo.Dgraph, bom *cyclonedx.Bom, imageName, imageDigest string) error {
 	ctx := context.Background()
 	txn := client.NewTxn()
 	defer func() { _ = txn.Discard(ctx) }()
@@ -132,7 +141,8 @@ func InsertComponentsAndDependencies(client *dgo.Dgraph, bom *cyclonedx.Bom) err
 
 	bom.Components = append(bom.Components, rootComponent)
 
-	dgraphQuery := buildDependencyTree(bom, rootComponent.BomRef, existingComponents, componentIDs)
+	uploadedAt := time.Now().UTC().Format(time.RFC3339)
+	dgraphQuery := buildDependencyTree(bom, rootComponent.BomRef, existingComponents, componentIDs, imageName, imageDigest, uploadedAt)
 
 	// log.Printf("Prepared Dgraph Mutation Query:\n%s", dgraphQuery)  // Debug output
 
@@ -149,7 +159,7 @@ func InsertComponentsAndDependencies(client *dgo.Dgraph, bom *cyclonedx.Bom) err
 	return nil
 }
 
-func buildDependencyTree(bom *cyclonedx.Bom, rootComponent string, existingComponents map[string]string, componentIDs map[string]string) string {
+func buildDependencyTree(bom *cyclonedx.Bom, rootComponent string, existingComponents map[string]string, componentIDs map[string]string, imageName, imageDigest, uploadedAt string) string {
 	var dgraphQuery strings.Builder
 
 	for _, comp := range bom.Components {
@@ -183,6 +193,22 @@ func buildDependencyTree(bom *cyclonedx.Bom, rootComponent string, existingCompo
         <%s> <root> "%s" .
         <%s> <dgraph.type> "Component" .
         `, compID, reference, compID, name, compID, comp.Version, compID, comp.Purl, compID, encodedPurl, compID, decodedPurl, compID, comp.BomRef, compID, vulnerable, compID, root, compID)
+
+		// lookout#56: tag every component with the image it was seen in, so the
+		// persistent multi-image graph can answer "what is in image X".
+		if imageDigest != "" {
+			fmt.Fprintf(&dgraphQuery, "<%s> <seenInImage> \"%s\" .\n", compID, escapeNQuad(imageDigest))
+		}
+	}
+
+	// lookout#56: record a lightweight Image node per upload so GET /api/sboms can
+	// enumerate the ingested images (deduped by digest on read).
+	if imageDigest != "" {
+		fmt.Fprintf(&dgraphQuery, `_:image <imageName> "%s" .
+        _:image <imageDigest> "%s" .
+        _:image <uploadedAt> "%s" .
+        _:image <dgraph.type> "Image" .
+        `, escapeNQuad(imageName), escapeNQuad(imageDigest), escapeNQuad(uploadedAt))
 	}
 
 	var traverse func(string, bool)
@@ -226,4 +252,73 @@ func findComponentByRef(components []cyclonedx.Component, ref string) *cyclonedx
 		}
 	}
 	return nil
+}
+
+// escapeNQuad escapes a string for safe interpolation into an RDF N-Quads string
+// literal. The pipeline-supplied image_name/image_digest are the one externally
+// controlled input in the mutation, so they get escaped even though controlled
+// values (ECR refs / sha256 digests) don't normally contain these characters.
+func escapeNQuad(s string) string {
+	return strings.NewReplacer(
+		`\`, `\\`,
+		`"`, `\"`,
+		"\n", `\n`,
+		"\r", `\r`,
+		"\t", `\t`,
+	).Replace(s)
+}
+
+// ImageInfo is one image whose SBOM has been ingested into the store (lookout#56).
+type ImageInfo struct {
+	ImageName   string `json:"image_name"`
+	ImageDigest string `json:"image_digest"`
+	UploadedAt  string `json:"uploaded_at"`
+}
+
+// ListImages returns the distinct images whose SBOMs have been ingested, newest
+// upload first, deduped by digest (a re-uploaded digest keeps its latest upload
+// time). Backs GET /api/sboms (eagle-valley#1049). uploadedAt is stored RFC3339,
+// which is lexicographically sortable, so we sort in Go and avoid requiring a
+// dgraph sort index on the predicate.
+func ListImages(client *dgo.Dgraph) ([]ImageInfo, error) {
+	ctx := context.Background()
+	txn := client.NewReadOnlyTxn()
+	defer func() { _ = txn.Discard(ctx) }()
+
+	query := `{
+		images(func: has(imageDigest)) {
+			imageName
+			imageDigest
+			uploadedAt
+		}
+	}`
+
+	resp, err := txn.Query(ctx, query)
+	if err != nil {
+		logging.Error("Failed to query images: %v", err)
+		return nil, err
+	}
+
+	var result struct {
+		Images []ImageInfo `json:"images"`
+	}
+	if err := json.Unmarshal(resp.Json, &result); err != nil {
+		logging.Error("Failed to unmarshal images response: %v", err)
+		return nil, err
+	}
+
+	sort.Slice(result.Images, func(i, j int) bool {
+		return result.Images[i].UploadedAt > result.Images[j].UploadedAt
+	})
+
+	seen := make(map[string]bool)
+	deduped := make([]ImageInfo, 0, len(result.Images))
+	for _, img := range result.Images {
+		if img.ImageDigest == "" || seen[img.ImageDigest] {
+			continue
+		}
+		seen[img.ImageDigest] = true
+		deduped = append(deduped, img)
+	}
+	return deduped, nil
 }

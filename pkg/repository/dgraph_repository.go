@@ -36,7 +36,11 @@ func (r *DgraphRepository) InsertComponents(ctx context.Context, bom *cyclonedx.
 		return fmt.Errorf("failed to get Dgraph client: %w", err)
 	}
 
-	return dgraph.InsertComponentsAndDependencies(client, bom)
+	// lookout#56: the repository/legacy/CLI insert paths carry no image identity
+	// (interactive human uploads); only the transwarp pipeline path tags by image, via
+	// the async handler. Empty image fields → the SBOM still persists + upserts, just
+	// untagged.
+	return dgraph.InsertComponentsAndDependencies(client, bom, "", "")
 }
 
 // UpdateVulnerabilities updates vulnerability information for components.
