@@ -56,6 +56,10 @@ func setupSchemaInternal(client *dgo.Dgraph, ctx context.Context) error {
         imageDigest: string @index(exact) .
         uploadedAt: string .
 
+        sessionID: string @index(exact) .
+        sessionData: string .
+        sessionExpiresAt: string @index(exact) .
+
         type Component {
 			bomRef
 			reference
@@ -74,6 +78,12 @@ func setupSchemaInternal(client *dgo.Dgraph, ctx context.Context) error {
             imageName
             imageDigest
             uploadedAt
+        }
+
+        type Session {
+            sessionID
+            sessionData
+            sessionExpiresAt
         }
     `
 
