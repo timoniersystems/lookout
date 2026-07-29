@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ main, develop, eagle-valley ]
     paths:
       - '**.go'
       - 'go.mod'
@@ -11,7 +11,7 @@ on:
       - 'cmd/**'
       - 'pkg/**'
   pull_request:
-    branches: [ main, develop ]
+    branches: [ main, develop, eagle-valley ]
     paths:
       - '**.go'
       - 'go.mod'
