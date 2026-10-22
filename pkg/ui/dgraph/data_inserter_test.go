@@ -2,6 +2,9 @@ package dgraph
 
 import (
 	"encoding/base64"
+	"encoding/json"
+	"fmt"
+	"strings"
 	"testing"
 )
 
@@ -285,6 +288,85 @@ func TestExtractName(t *testing.T) {
 				t.Errorf("extractName(%q) = %q, expected %q", tt.input, result, tt.expected)
 			}
 		})
+	}
+}
+
+// listInQuery returns the refs inside `eq(bomRef, [...])`, decoded as the JSON
+// array they are written as, so a test can assert exactly what is asked for.
+func listInQuery(t *testing.T, query string) []string {
+	t.Helper()
+	const open = "eq(bomRef, "
+	start := strings.Index(query, open)
+	// The LAST `]))` closes the list: a ref may itself contain `))`.
+	end := strings.LastIndex(query, "]))")
+	if start < 0 || end < start {
+		t.Fatalf("query has no eq(bomRef, [...]) lookup:\n%s", query)
+	}
+	var refs []string
+	if err := json.Unmarshal([]byte(query[start+len(open):end+1]), &refs); err != nil {
+		t.Fatalf("the ref list is not a valid literal list (%v):\n%s", err, query)
+	}
+	return refs
+}
+
+// lookout#63: the lookup must name this BOM's refs, never read every component.
+// `has(bomRef)` returned 10,587,961 bytes at 94,761 components, over the 10 MiB
+// gRPC cap, and every insert failed.
+func TestExistingComponentsQuery_AsksOnlyForTheGivenRefs(t *testing.T) {
+	refs := []string{"pkg:golang/a@v1", "pkg:npm/b@2"}
+	query := existingComponentsQuery(refs)
+	if strings.Contains(query, "has(bomRef)") {
+		t.Fatalf("query reads every component:\n%s", query)
+	}
+	if got := listInQuery(t, query); strings.Join(got, "|") != strings.Join(refs, "|") {
+		t.Fatalf("query asks for %q, want exactly %q", got, refs)
+	}
+}
+
+// A ref must not be able to end the list early or change the query. Each is
+// written as a JSON string literal, which dgraph v25.4.1 parses the same way
+// (measured with these characters against a live alpha).
+func TestExistingComponentsQuery_QuotesEveryRef(t *testing.T) {
+	refs := []string{
+		`pkg:npm/q"uote@1`,
+		`pkg:x/back\slash@2`,
+		"pkg:maven/org.x/a@1.0?type=jar&classifier=sources",
+		"pkg:pypi/café@3",
+		`pkg:x/close"]) } { all(func: has(bomRef)) { uid } }`,
+	}
+	got := listInQuery(t, existingComponentsQuery(refs))
+	if strings.Join(got, "|") != strings.Join(refs, "|") {
+		t.Fatalf("refs did not survive quoting:\n got %q\nwant %q", got, refs)
+	}
+}
+
+func TestRefBatches_BoundsDedupesAndDropsEmpty(t *testing.T) {
+	refs := make([]string, 0, 1203)
+	for i := 0; i < 1201; i++ {
+		refs = append(refs, fmt.Sprintf("pkg:x/c%d@1", i))
+	}
+	refs = append(refs, "", "pkg:x/c0@1") // an empty ref and a repeat
+
+	batches := refBatches(refs, 500)
+	var sizes []int
+	seen := map[string]int{}
+	for _, b := range batches {
+		sizes = append(sizes, len(b))
+		for _, r := range b {
+			seen[r]++
+		}
+	}
+	if fmt.Sprint(sizes) != "[500 500 201]" {
+		t.Fatalf("batch sizes %v, want [500 500 201]", sizes)
+	}
+	if _, ok := seen[""]; ok {
+		t.Fatal("an empty ref was looked up")
+	}
+	if seen["pkg:x/c0@1"] != 1 || len(seen) != 1201 {
+		t.Fatalf("want each of 1201 refs exactly once, got %d distinct, c0 %d times", len(seen), seen["pkg:x/c0@1"])
+	}
+	if got := refBatches(nil, 500); len(got) != 0 {
+		t.Fatalf("no refs must mean no query, got %d batches", len(got))
 	}
 }
 

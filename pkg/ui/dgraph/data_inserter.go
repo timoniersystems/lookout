@@ -79,41 +79,90 @@ func extractName(purl string) string {
 	return purl
 }
 
-func RetrieveExistingComponents(txn *dgo.Txn) (map[string]string, error) {
-	query := `
-    {
-        components(func: has(bomRef)) {
-            uid
-            bomRef
-        }
-    }`
+// existingComponentsBatch bounds how many refs one lookup asks for, so neither
+// the query nor its reply grows with the size of a BOM either.
+const existingComponentsBatch = 500
 
-	resp, err := txn.Query(context.Background(), query)
-	if err != nil {
-		logging.Error("Failed to query existing components: %v", err)
-		return nil, err
-	}
-
+// RetrieveExistingComponents maps each of bomRefs that is already in the graph
+// to its uid.
+//
+// It used to read the uid and bomRef of EVERY component (`has(bomRef)`). At
+// 94,761 components that reply was 10,587,961 bytes, over the client's 10 MiB
+// gRPC cap, so every insert failed while the upload still returned 200 (#63).
+// Asking only for this BOM's refs, through the bomRef exact index, makes the
+// reply scale with one BOM instead of the whole graph.
+func RetrieveExistingComponents(txn *dgo.Txn, bomRefs []string) (map[string]string, error) {
 	type Component struct {
 		UID    string `json:"uid"`
 		BomRef string `json:"bomRef"`
 	}
 
-	var result struct {
-		Components []Component `json:"components"`
-	}
-
-	if err := json.Unmarshal(resp.Json, &result); err != nil {
-		logging.Error("Failed to unmarshal response: %v", err)
-		return nil, err
-	}
-
 	existingComponents := make(map[string]string)
-	for _, comp := range result.Components {
-		existingComponents[comp.BomRef] = comp.UID
+	for _, batch := range refBatches(bomRefs, existingComponentsBatch) {
+		resp, err := txn.Query(context.Background(), existingComponentsQuery(batch))
+		if err != nil {
+			logging.Error("Failed to query existing components: %v", err)
+			return nil, err
+		}
+
+		var result struct {
+			Components []Component `json:"components"`
+		}
+		if err := json.Unmarshal(resp.Json, &result); err != nil {
+			logging.Error("Failed to unmarshal response: %v", err)
+			return nil, err
+		}
+		for _, comp := range result.Components {
+			existingComponents[comp.BomRef] = comp.UID
+		}
 	}
 
 	return existingComponents, nil
+}
+
+// existingComponentsQuery looks refs up through the bomRef exact index.
+//
+// ⚠ Each ref is written INTO the query as a JSON string literal, which DQL
+// parses, quotes, backslashes and \u escapes included. Passing the list as a
+// query variable instead (`eq(bomRef, $refs)`) returns NO rows on dgraph
+// v25.4.1, with no error (measured), which would make every component look new
+// and insert it a second time.
+func existingComponentsQuery(refs []string) string {
+	quoted := make([]string, len(refs))
+	for i, ref := range refs {
+		b, _ := json.Marshal(ref) // a string always marshals
+		quoted[i] = string(b)
+	}
+	return fmt.Sprintf(`{
+    components(func: eq(bomRef, [%s])) {
+        uid
+        bomRef
+    }
+}`, strings.Join(quoted, ", "))
+}
+
+// refBatches drops empty and repeated refs, then splits the rest into batches
+// of at most size.
+func refBatches(refs []string, size int) [][]string {
+	seen := make(map[string]bool, len(refs))
+	unique := make([]string, 0, len(refs))
+	for _, ref := range refs {
+		if ref == "" || seen[ref] {
+			continue
+		}
+		seen[ref] = true
+		unique = append(unique, ref)
+	}
+
+	var batches [][]string
+	for start := 0; start < len(unique); start += size {
+		end := start + size
+		if end > len(unique) {
+			end = len(unique)
+		}
+		batches = append(batches, unique[start:end])
+	}
+	return batches
 }
 
 // InsertComponentsAndDependencies upserts the SBOM's components + dependency
@@ -128,18 +177,23 @@ func InsertComponentsAndDependencies(client *dgo.Dgraph, bom *cyclonedx.Bom, ima
 	txn := client.NewTxn()
 	defer func() { _ = txn.Discard(ctx) }()
 
-	existingComponents, err := RetrieveExistingComponents(txn)
-	if err != nil {
-		logging.Error("Failed to retrieve existing components: %v", err)
-		return err
-	}
-
 	rootComponent := bom.Metadata.Component
 	// fmt.Println("HERE IS THE rootComponent: ", rootComponent)  // Debug output
 	rootComponent.Purl = rootComponent.Name + "@root"
 	componentIDs := make(map[string]string)
 
 	bom.Components = append(bom.Components, rootComponent)
+
+	// Look up only the refs this BOM names, the root included (#63).
+	bomRefs := make([]string, 0, len(bom.Components))
+	for _, comp := range bom.Components {
+		bomRefs = append(bomRefs, comp.BomRef)
+	}
+	existingComponents, err := RetrieveExistingComponents(txn, bomRefs)
+	if err != nil {
+		logging.Error("Failed to retrieve existing components: %v", err)
+		return err
+	}
 
 	uploadedAt := time.Now().UTC().Format(time.RFC3339)
 	dgraphQuery := buildDependencyTree(bom, rootComponent.BomRef, existingComponents, componentIDs, imageName, imageDigest, uploadedAt)
