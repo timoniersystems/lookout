@@ -530,6 +530,37 @@ func TestDetectObfuscatedContent(t *testing.T) {
 			writeFile("clean_bom.json", `{"bomFormat": "CycloneDX", "specVersion": "1.4", "components": [{"name": "test", "version": "1.0"}]}`),
 			false, "",
 		},
+		// #65: npm bundles libnpmexec, and its real description matched `exec\s*\(`.
+		{
+			"CycloneDX BOM listing npm's libnpmexec is OK (#65)",
+			writeFile("npm_bom.json", `{"bomFormat": "CycloneDX", "specVersion": "1.7", "components": [{"type": "library", "author": "GitHub Inc., Ruy Adorno (https://ruyadorno.com)", "name": "libnpmexec", "version": "11.0.4", "description": "npm exec (npx) programmatic API", "licenses": [{"license": {"id": "ISC"}}]}]}`),
+			false, "",
+		},
+		{
+			"CycloneDX free text is skipped in author, copyright, publisher and license text",
+			writeFile("free_text_bom.json", `{"bomFormat": "CycloneDX", "components": [{"name": "a", "author": "eval(x)", "copyright": "system(x)", "publisher": "<script>", "licenses": [{"license": {"name": "custom", "text": {"content": "exec(x)"}}}]}]}`),
+			false, "",
+		},
+		{
+			"The same description outside a CycloneDX BOM is still rejected",
+			writeFile("npm_desc_trivy.json", `{"SchemaVersion": 2, "Results": [], "desc": "npm exec (npx) programmatic API"}`),
+			true, "script",
+		},
+		{
+			"Script in a CycloneDX component name is still rejected",
+			writeFile("bom_name_script.json", `{"bomFormat": "CycloneDX", "components": [{"name": "<script>alert(1)</script>", "version": "1.0"}]}`),
+			true, "script",
+		},
+		{
+			"Eval in a CycloneDX purl is still rejected",
+			writeFile("bom_purl_eval.json", `{"bomFormat": "CycloneDX", "components": [{"name": "x", "purl": "pkg:npm/x@1?q=eval(1)"}]}`),
+			true, "script",
+		},
+		{
+			"A JSON-escaped script in a CycloneDX bom-ref is rejected once decoded",
+			writeFile("bom_ref_escaped.json", `{"bomFormat": "CycloneDX", "components": [{"bom-ref": "<script>", "name": "x"}]}`),
+			true, "script",
+		},
 		{
 			"Short base64 is OK (checksums)",
 			writeFile("short_b64.json", `{"SchemaVersion": 2, "Results": [], "checksum": "dGhpcyBpcyBhIHNob3J0IGhhc2g="}`),
@@ -537,7 +568,7 @@ func TestDetectObfuscatedContent(t *testing.T) {
 		},
 		{
 			"Long base64 blob rejected",
-			writeFile("long_b64.json", `{"SchemaVersion": 2, "Results": [], "payload": "` + longBase64 + `"}`),
+			writeFile("long_b64.json", `{"SchemaVersion": 2, "Results": [], "payload": "`+longBase64+`"}`),
 			true, "base64",
 		},
 		{

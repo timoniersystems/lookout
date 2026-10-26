@@ -303,6 +303,61 @@ var (
 	shellPatterns = regexp.MustCompile(`(?im)(^#!/bin/|^\s*bash\s+-c\s+|^\s*sh\s+-c\s+|^\s*.*\|\s*base64\s+-d|;\s*rm\s+-rf\s+/|&&\s*curl\s|&&\s*wget\s)`)
 )
 
+// cyclonedxFreeText names the CycloneDX fields that hold free prose. Lookout
+// stores none of them (a Component keeps bomRef, reference, name, version, purl
+// and its edges; see pkg/ui/dgraph/schema_setup.go), and real packages write
+// code-like words there: npm bundles libnpmexec, described as
+// "npm exec (npx) programmatic API", which matches `exec\s*\(` and got every
+// SBOM that lists npm refused (#65).
+var cyclonedxFreeText = map[string]bool{
+	"description": true,
+	"author":      true,
+	"copyright":   true,
+	"publisher":   true,
+}
+
+// scriptScanText returns the text scriptPatterns runs over. For a CycloneDX
+// JSON document it is the document re-encoded without its free-text fields, so
+// every field lookout keeps is still scanned, now with JSON escapes decoded.
+// For anything else it is the file as uploaded.
+func scriptScanText(data []byte) string {
+	var doc map[string]any
+	if json.Unmarshal(data, &doc) != nil || doc["bomFormat"] != "CycloneDX" {
+		return string(data)
+	}
+	dropFreeText(doc)
+	var b strings.Builder
+	enc := json.NewEncoder(&b)
+	// Keep <, > and & literal: the default < form would hide `<script`
+	// from scriptPatterns.
+	enc.SetEscapeHTML(false)
+	if err := enc.Encode(doc); err != nil {
+		return string(data)
+	}
+	return b.String()
+}
+
+// dropFreeText deletes cyclonedxFreeText keys, and a license's text, at any depth.
+func dropFreeText(v any) {
+	switch t := v.(type) {
+	case map[string]any:
+		for k, child := range t {
+			if cyclonedxFreeText[k] {
+				delete(t, k)
+				continue
+			}
+			if lic, ok := child.(map[string]any); ok && k == "license" {
+				delete(lic, "text")
+			}
+			dropFreeText(child)
+		}
+	case []any:
+		for _, child := range t {
+			dropFreeText(child)
+		}
+	}
+}
+
 // DetectObfuscatedContent scans a file for obfuscated or suspicious content
 // that doesn't belong in CVE lists, Trivy scans, or SBOM files.
 func DetectObfuscatedContent(filePath string) error {
@@ -329,7 +384,7 @@ func DetectObfuscatedContent(filePath string) error {
 		return fmt.Errorf("rejected: file contains unicode escape sequences")
 	}
 
-	if scriptPatterns.MatchString(content) {
+	if scriptPatterns.MatchString(scriptScanText(data)) {
 		return fmt.Errorf("rejected: file contains embedded script or code execution patterns")
 	}
 
