@@ -1,6 +1,9 @@
 # Kubernetes Setup Guide
 
-Complete guide for deploying Lookout on Kubernetes with kind cluster, Gateway API, ArgoCD (with auto-deploy), and AWS ALB.
+Complete guide for deploying Lookout on Kubernetes with kind cluster, Gateway API, and ArgoCD (with auto-deploy).
+
+> [!NOTE]
+> The standalone EC2 and AWS ALB deployment was retired on 2026-10-09 (see `timoniersystems/eagle-valley#819`). Lookout production runs on the **landru** cluster at `lookout.timonier.ai`, deployed via this repo's `helm/lookout` chart. This guide documents deploying Lookout locally on a Kind cluster or generic Kubernetes cluster with Gateway API.
 
 ## Table of Contents
 
@@ -10,7 +13,7 @@ Complete guide for deploying Lookout on Kubernetes with kind cluster, Gateway AP
 - [Chapter 2: Gateway API Setup](#chapter-2-gateway-api-setup)
 - [Chapter 3: ArgoCD GitOps Setup](#chapter-3-argocd-gitops-setup)
   - [3.10 ArgoCD Image Updater for Auto-Deploy](#310-argocd-image-updater-for-auto-deploy)
-- [Chapter 4: AWS ALB Integration](#chapter-4-aws-alb-integration)
+- [Chapter 4: Ingress & Production Access](#chapter-4-ingress--production-access)
 - [Chapter 5: Secrets Management with External Secrets Operator](#chapter-5-secrets-management-with-external-secrets-operator)
 - [Chapter 6: Basic Authentication](#chapter-6-basic-authentication)
   - [6.2 Staging Setup](#62-staging-setup)
@@ -24,20 +27,16 @@ Complete guide for deploying Lookout on Kubernetes with kind cluster, Gateway AP
 
 This guide covers the complete Kubernetes deployment stack for Lookout:
 
-1. **Kind Cluster** - Local Kubernetes cluster running on EC2
+1. **Kind Cluster** - Local Kubernetes cluster
 2. **Gateway API** - Modern ingress using Envoy Gateway with fixed NodePorts
 3. **ArgoCD** - GitOps continuous deployment from GitHub Container Registry
-4. **AWS ALB** - Application Load Balancer for production access
 
 ### Environment
 
-**EC2 Instance:** `<EC2_PRIVATE_IP>`
-- OS: Ubuntu 24.04 (Linux 6.14.0-1018-aws)
-- RAM: 7.6GB
-- Disk: 234GB available
-- Docker: 29.2.1
-- Kind: v0.27.0
-- kubectl: v1.35.1
+- OS: Linux (Ubuntu 24.04 or compatible)
+- Docker: 20.10+
+- Kind: v0.27.0+
+- kubectl: v1.28+
 
 ---
 
@@ -47,67 +46,40 @@ This guide covers the complete Kubernetes deployment stack for Lookout:
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                           Internet                               │
+│                           Clients                               │
 └───────────────────────────────┬─────────────────────────────────┘
                                 │
-                ┌───────────────▼──────────────────────┐
-                │  Route53:                            │
-                │  - lookout-stg.timonier.io (staging) │
-                │  - lookout-prod.timonier.io (prod)   │
-                │  - lookout.timonier.io (prod alias)  │
-                └───────────────┬──────────────────────┘
-                                │
                 ┌───────────────▼────────────────┐
-                │   Application Load Balancer    │
-                │  - HTTPS Listener (443)        │
-                │  - HTTP Redirect (80→443)      │
-                │  - SSL/TLS Termination         │
-                │  - Host-based routing rules    │
-                └───────────────┬────────────────┘
-                                │
-                ┌───────────────▼────────────────┐
-                │  Target Groups                 │
-                │  - HTTP TG → Port 32080        │
-                │  - HTTPS TG → Port 32443       │
-                │  Health Check: /health         │
-                └───────────────┬────────────────┘
-                                │
-                ┌───────────────▼────────────────┐
-                │  EC2 Instance: <EC2_PRIVATE_IP>      │
+                │  Kubernetes Cluster            │
                 │  ┌──────────────────────────┐  │
-                │  │  Kind Cluster            │  │
-                │  │  ┌────────────────────┐  │  │
-                │  │  │ Envoy Gateway      │  │  │
-                │  │  │ HTTP: :32080       │  │  │
-                │  │  │ HTTPS: :32443      │  │  │
-                │  │  │ (Fixed NodePorts)  │  │  │
-                │  │  └─────────┬──────────┘  │  │
-                │  │            │              │  │
-                │  │  ┌─────────▼──────────┐  │  │
-                │  │  │  staging namespace │  │  │
-                │  │  │  - Gateway:lookout │  │  │
-                │  │  │    (shared)        │  │  │
-                │  │  │  - HTTPRoute (stg) │  │  │
-                │  │  │  - Lookout App     │  │  │
-                │  │  │  - Dgraph          │  │  │
-                │  │  └────────────────────┘  │  │
-                │  │  ┌────────────────────┐  │  │
-                │  │  │ production         │  │  │
-                │  │  │  namespace         │  │  │
-                │  │  │  - HTTPRoute (prod)│  │  │
-                │  │  │    (cross-ns ref   │  │  │
-                │  │  │     to stg gw)     │  │  │
-                │  │  │  - Lookout App     │  │  │
-                │  │  │  - Dgraph          │  │  │
-                │  │  └────────────────────┘  │  │
-                │  │  ┌────────────────────┐  │  │
-                │  │  │  argocd namespace  │  │  │
-                │  │  │  - ArgoCD Server   │  │  │
-                │  │  │  - Image Updater   │  │  │
-                │  │  │  - Applications    │  │  │
-                │  │  └────────────────────┘  │  │
+                │  │  Envoy Gateway           │  │
+                │  │  HTTP: :32080            │  │
+                │  │  HTTPS: :32443           │  │
+                │  │  (Fixed NodePorts)       │  │
+                │  └────────────┬─────────────┘  │
+                │               │                │
+                │  ┌────────────▼─────────────┐  │
+                │  │  staging namespace       │  │
+                │  │  - Gateway:lookout       │  │
+                │  │    (shared)              │  │
+                │  │  - HTTPRoute (stg)       │  │
+                │  │  - Lookout App           │  │
+                │  │  - Dgraph                │  │
                 │  └──────────────────────────┘  │
-                └─────────────────────────────────┘
+                │  ┌──────────────────────────┐  │
+                │  │ production namespace     │  │
+                │  │  - HTTPRoute (prod)      │  │
+                │  │    (cross-ns ref to gw)  │  │
+                │  │  - Lookout App           │  │
+                │  │  - Dgraph                │  │
+                │  └──────────────────────────┘  │
+                │  ┌──────────────────────────┐  │
+                │  │ argocd namespace         │  │
+                │  │  - ArgoCD Server         │  │
+                │  │  - Image Updater         │  │
+                │  │  - Applications          │  │
+                │  └──────────────────────────┘  │
+                └────────────────────────────────┘
                         │
                         ▼
                 ┌─────────────────────────────┐
@@ -121,8 +93,7 @@ This guide covers the complete Kubernetes deployment stack for Lookout:
 ### Traffic Flow
 
 ```
-Internet → Route53 → ALB (TLS termination, host-based routing) → EC2 Instance →
-  → Kind NodePorts (32080/32443) → Envoy Gateway (shared) → HTTPRoute (per-env) →
+Clients → Gateway (NodePorts 32080/32443) → HTTPRoute (per-env) →
   → Lookout App Service → Lookout Pods
 ```
 
@@ -146,7 +117,6 @@ Production:
 
 - Ubuntu 24.04 or later
 - Docker installed and running
-- SSH access to EC2 instance
 
 ### 1.2 Install Kind
 
@@ -183,11 +153,11 @@ name: lookout
 nodes:
 - role: control-plane
   extraPortMappings:
-  # Fixed HTTP NodePort for ALB
+  # Fixed HTTP NodePort for Gateway API ingress
   - containerPort: 32080
     hostPort: 32080
     protocol: TCP
-  # Fixed HTTPS NodePort for ALB
+  # Fixed HTTPS NodePort for Gateway API ingress
   - containerPort: 32443
     hostPort: 32443
     protocol: TCP
@@ -249,13 +219,13 @@ kubectl get namespaces
 
 ### 2.1 Overview
 
-The Gateway API provides a modern, Kubernetes-native ingress solution using Envoy Gateway. For ALB integration, we configure **fixed NodePorts** to ensure stable target group configuration.
+The Gateway API provides a modern, Kubernetes-native ingress solution using Envoy Gateway. We configure **fixed NodePorts** to ensure stable local port mapping.
 
 ### 2.2 Fixed NodePorts Configuration
 
 **Why Fixed NodePorts?**
 - Prevents NodePorts from changing when Gateway is recreated
-- No need to reconfigure ALB target groups after Gateway updates
+- Predictable port mapping across Gateway updates
 - Predictable port mapping for security groups
 
 **Configured Ports:**
@@ -337,8 +307,8 @@ openssl req -x509 -newkey rsa:4096 \
   -out /tmp/tls.crt \
   -days 365 \
   -nodes \
-  -subj "/CN=lookout-stg.timonier.io/O=Timonier Systems" \
-  -addext "subjectAltName=DNS:lookout-stg.timonier.io,DNS:*.lookout-stg.timonier.io"
+  -subj "/CN=lookout.example.com/O=Timonier Systems" \
+  -addext "subjectAltName=DNS:lookout.example.com,DNS:*.lookout.example.com"
 
 # Create Kubernetes TLS secret in staging namespace
 kubectl create secret tls lookout-tls \
@@ -380,11 +350,11 @@ kubectl get svc -n envoy-gateway-system -l gateway.envoyproxy.io/owning-gateway-
 ### 2.7 Test Gateway Connectivity
 
 ```bash
-# Test HTTP (from EC2)
-curl -H "Host: lookout-stg.timonier.io" http://localhost:32080/health
+# Test HTTP
+curl -H "Host: lookout.example.com" http://localhost:32080/health
 
 # Test HTTPS (self-signed cert)
-curl -k -H "Host: lookout-stg.timonier.io" https://localhost:32443/health
+curl -k -H "Host: lookout.example.com" https://localhost:32443/health
 ```
 
 ### 2.8 Production TLS Certificates (Optional)
@@ -404,7 +374,7 @@ metadata:
 spec:
   acme:
     server: https://acme-v02.api.letsencrypt.org/directory
-    email: admin@timonier.io
+    email: admin@example.com
     privateKeySecretRef:
       name: letsencrypt-prod
     solvers:
@@ -426,7 +396,7 @@ spec:
     name: letsencrypt-prod
     kind: ClusterIssuer
   dnsNames:
-  - lookout-stg.timonier.io
+  - lookout.example.com
 EOF
 ```
 
@@ -485,11 +455,10 @@ kubectl -n argocd get secret argocd-initial-admin-secret \
 
 ### 3.3 Access ArgoCD UI
 
-From your local machine, create an SSH tunnel:
+Port-forward the ArgoCD server:
 
 ```bash
-ssh -L 8080:localhost:8080 ubuntu@<EC2_PRIVATE_IP> \
-  'kubectl port-forward svc/argocd-server -n argocd 8080:443'
+kubectl port-forward svc/argocd-server -n argocd 8080:443
 ```
 
 Open https://localhost:8080
@@ -619,7 +588,7 @@ kubectl get gateway,httproute -n staging
 kubectl logs -n staging -l app.kubernetes.io/name=lookout-app -f
 
 # Test health endpoint
-curl -H "Host: lookout-stg.timonier.io" http://localhost:32080/health
+curl -H "Host: lookout.example.com" http://localhost:32080/health
 ```
 
 ### 3.10 ArgoCD Image Updater for Auto-Deploy
@@ -820,778 +789,43 @@ These secrets are already configured and should not need manual updates.
 
 ---
 
-## Chapter 4: AWS ALB Integration
+## Chapter 4: Ingress & Production Access
 
-### 4.1 Overview
+### 4.1 Ingress Architecture
 
-The Application Load Balancer provides access for both staging and production:
-- `lookout-stg.timonier.io` - Staging environment
-- `lookout-prod.timonier.io` - Production environment
-- `lookout.timonier.io` - Production alias
+In production, Lookout is deployed on the **landru** Kubernetes cluster and accessible at `https://lookout.timonier.ai`, routing via Gateway API / Istio platform gateways (see [EXAMPLES.md](../helm/lookout/EXAMPLES.md) for external gateway configurations).
 
-Features:
-- TLS termination with ACM certificates
-- HTTP to HTTPS redirection (301 redirect)
-- Host-based routing rules for multi-environment support
-- Health checks with `/health` endpoint
-- Multi-AZ availability
-- Route53 DNS integration
-- Integration with fixed NodePorts from Gateway
+> [!NOTE]
+> The previous standalone AWS EC2 and ALB setup (`lookout-alb`, `lookout-alb-sg`, and Route53 records in `timonier.io`) was retired on 2026-10-09 (see `timoniersystems/eagle-valley#819`).
 
-**Traffic Flow:**
-```
-Internet → Route53 (lookout-stg/lookout-prod/lookout.timonier.io) →
-  → ALB (TLS termination, host-based routing) →
-  → Target Groups (32080/32443) → EC2 Instance → Kind NodePorts →
-  → Envoy Gateway (shared) → HTTPRoute (per-env) → Lookout App
-```
+### 4.2 Local Ingress via Gateway API NodePorts
 
-### 4.2 Prerequisites
-
-Before configuring ALB:
-
-1. **Gateway with Fixed NodePorts configured** (completed in Chapter 2)
-   - HTTP NodePort: `32080`
-   - HTTPS NodePort: `32443`
-2. AWS account with appropriate IAM permissions
-3. VPC with EC2 instance at `<EC2_PRIVATE_IP>`
-4. Domain `timonier.io` managed in Route53
-5. SSL certificate for `*.timonier.io` or `lookout-stg.timonier.io` in AWS Certificate Manager
-
-**Verify Fixed NodePorts:**
-```bash
-kubectl get svc -n envoy-gateway-system -l gateway.envoyproxy.io/owning-gateway-name=lookout
-
-# Expected: 8080:32080/TCP,8443:32443/TCP
-```
-
-### 4.3 Kind-Specific Setup (Required for Kind Clusters)
-
-**IMPORTANT:** If you're using a Kind cluster (like in this setup), Kind NodePorts are **not exposed to the EC2 host** by default. They only exist within the Kind Docker container network. You must complete these additional steps before setting up the ALB:
-
-#### Step 1: Setup NodePort Forwarding
-
-Run the automated script to forward NodePorts from the Kind container to the EC2 host:
+For local Kind or bare-metal development:
+- Envoy Gateway listens on fixed NodePorts:
+  - **HTTP:** `32080`
+  - **HTTPS:** `32443`
+- Test access locally using the `Host` header or by configuring `/etc/hosts`:
 
 ```bash
-# SSH to EC2
-ssh ubuntu@<EC2_PRIVATE_IP>
+# Add entry to /etc/hosts for local testing
+127.0.0.1 lookout.example.com
 
-make kind-forward
+# Test HTTP
+curl -H "Host: lookout.example.com" http://localhost:32080/health
+
+# Test HTTPS
+curl -k -H "Host: lookout.example.com" https://localhost:32443/health
 ```
 
-This script:
-- Installs `socat` if not already installed
-- Creates port forwarding from EC2 host ports 32080 and 32443 to Kind container
-- Verifies the forwarding is working
+### 4.3 Unauthenticated Health Checks
 
-**Manual setup (if script fails):**
-
-```bash
-# Get Kind container IP
-KIND_IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' lookout-control-plane)
-
-# Install socat
-sudo apt-get update && sudo apt-get install -y socat
-
-# Forward port 32080 (HTTP)
-sudo nohup socat TCP4-LISTEN:32080,fork,reuseaddr TCP4:${KIND_IP}:32080 > /tmp/socat-32080.log 2>&1 &
-
-# Forward port 32443 (HTTPS)
-sudo nohup socat TCP4-LISTEN:32443,fork,reuseaddr TCP4:${KIND_IP}:32443 > /tmp/socat-32443.log 2>&1 &
-
-# Verify forwarding is active
-ps aux | grep "[s]ocat.*3204"
-```
-
-#### Step 2: Setup Health Check HTTPRoute
-
-ALB health checks don't send the `Host: lookout-stg.timonier.io` header. Create an HTTPRoute that accepts `/health` requests without hostname restrictions:
+To allow cluster health checkers to verify service readiness without a `Host` header:
 
 ```bash
 make health-route
 ```
 
-This creates an HTTPRoute that:
-- Accepts requests to `/health` from any hostname
-- Forwards to the Lookout app service
-- Allows ALB health checks to succeed
-
-**Manual setup (if script fails):**
-
-```bash
-kubectl apply -f - <<EOF
-apiVersion: gateway.networking.k8s.io/v1
-kind: HTTPRoute
-metadata:
-  name: lookout-health
-  namespace: staging
-spec:
-  parentRefs:
-  - name: lookout
-  rules:
-  - matches:
-    - path:
-        type: Exact
-        value: /health
-    backendRefs:
-    - name: lookout-staging-lookout-app
-      port: 3000
-EOF
-```
-
-**Test the setup:**
-
-```bash
-# Test HTTP port without Host header
-curl http://localhost:32080/health
-
-# Test HTTPS port without Host header
-curl -k https://localhost:32443/health
-
-# Both should return: {"service":"lookout-ui","status":"healthy",...}
-```
-
-### 4.4 Step 1: Create Target Groups
-
-You'll need **two target groups** - one for HTTP and one for HTTPS.
-
-#### HTTP Target Group
-
-1. Navigate to **EC2 Console** → **Target Groups** → **Create target group**
-
-2. **Basic Configuration:**
-   - Target type: `Instances`
-   - Target group name: `lookout-http-tg`
-   - Protocol: `HTTP`
-   - Port: `32080` (fixed HTTP NodePort)
-   - VPC: Select the VPC where your EC2 instance is running
-
-3. **Health Check Settings:**
-   - Health check protocol: `HTTP`
-   - Health check path: `/health`
-   - Advanced health check settings:
-     - Healthy threshold: `2`
-     - Unhealthy threshold: `2`
-     - Timeout: `5 seconds`
-     - Interval: `10 seconds`
-     - Success codes: `200`
-
-4. **Register Targets:**
-   - Select your EC2 instance
-   - Port: `32080`
-   - Click "Include as pending below"
-   - Click "Create target group"
-
-#### HTTPS Target Group
-
-Repeat the above steps with:
-- Target group name: `lookout-https-tg`
-- **Protocol: `HTTPS`** (ALB re-encrypts traffic and forwards HTTPS to target)
-- Port: `32443` (fixed HTTPS NodePort - Envoy Gateway terminates TLS)
-- **Health check protocol: `HTTPS`** (Port 32443 uses TLS)
-- Health check path: `/health`
-- Register same EC2 instance on port `32443`
-
-**Important:**
-- Target group protocol is `HTTPS` (ALB terminates TLS from client, then re-encrypts for backend)
-- Health check protocol is `HTTPS` (because Envoy Gateway's port 32443 uses TLS)
-- This provides end-to-end encryption from client to Envoy Gateway
-
-### 4.4 Step 2: Configure Security Groups
-
-#### EC2 Instance Security Group
-
-Add inbound rules to allow traffic from ALB:
-
-```
-Inbound Rules:
-- Type: Custom TCP
-  Port: 32080
-  Source: <ALB Security Group>
-  Description: Allow HTTP traffic from ALB
-
-- Type: Custom TCP
-  Port: 32443
-  Source: <ALB Security Group>
-  Description: Allow HTTPS traffic from ALB
-```
-
-#### Create ALB Security Group
-
-1. Navigate to **EC2** → **Security Groups** → **Create security group**
-
-2. **Basic details:**
-   - Security group name: `lookout-alb-sg`
-   - Description: Security group for Lookout ALB
-   - VPC: Same VPC as EC2 instance
-
-3. **Inbound rules:**
-   ```
-   - Type: HTTP
-     Port: 80
-     Source: 0.0.0.0/0
-     Description: Allow HTTP from anywhere
-
-   - Type: HTTPS
-     Port: 443
-     Source: 0.0.0.0/0
-     Description: Allow HTTPS from anywhere
-   ```
-
-4. **Outbound rules:**
-   ```
-   - Type: All traffic
-     Destination: 0.0.0.0/0
-   ```
-
-### 4.5 Step 3: Request SSL Certificate
-
-#### Using AWS Certificate Manager (ACM)
-
-1. Navigate to **Certificate Manager** → **Request certificate**
-2. Choose "Request a public certificate"
-3. Domain names: `lookout-stg.timonier.io` (or `*.timonier.io` for wildcard)
-4. Validation method: DNS validation (recommended)
-5. Follow ACM instructions to add DNS validation records to Route53
-6. Wait for certificate to be issued (usually a few minutes)
-
-#### Import Existing Certificate (Alternative)
-
-If you already have an SSL certificate:
-1. Navigate to **Certificate Manager** → **Import certificate**
-2. Provide certificate body, private key, and certificate chain
-
-### 4.6 Step 4: Create Application Load Balancer
-
-1. **Navigate to EC2 Console** → **Load Balancers** → **Create Load Balancer**
-
-2. **Choose Load Balancer Type:** Application Load Balancer
-
-3. **Basic Configuration:**
-   - Load balancer name: `lookout-alb`
-   - Scheme: `Internet-facing`
-   - IP address type: `IPv4`
-
-4. **Network Mapping:**
-   - VPC: Select the same VPC as your EC2 instance
-   - Availability Zones: Select at least 2 AZs for high availability
-   - Select public subnets in each AZ
-
-5. **Security Groups:**
-   - Select the `lookout-alb-sg` security group
-   - Remove the default security group
-
-6. **Listeners and Routing:**
-
-   **HTTP Listener (Port 80):**
-   - Protocol: HTTP
-   - Port: 80
-   - Default action: Redirect to HTTPS
-     - Protocol: HTTPS
-     - Port: 443
-     - Status code: 301 (Permanent redirect)
-
-   **HTTPS Listener (Port 443):**
-   - Protocol: HTTPS
-   - Port: 443
-   - Default SSL/TLS certificate: Select the certificate from Step 3
-   - Default action: Forward to `lookout-https-tg`
-
-7. **Review and Create**
-
-### 4.7 Step 5: Configure DNS in Route53
-
-1. Navigate to **Route53** → **Hosted zones** → Select `timonier.io`
-
-2. **Create Records:**
-
-   **Staging:** `lookout-stg` → ALB
-   - Record name: `lookout-stg`
-   - Record type: `A - Routes traffic to an IPv4 address`
-   - Alias: Yes
-   - Route traffic to:
-     - Alias to Application and Classic Load Balancer
-     - Region: Select your region
-     - Load balancer: Select `lookout-alb`
-   - Routing policy: Simple routing
-   - Click "Create records"
-
-   **Production:** `lookout-prod` → ALB
-   - Record name: `lookout-prod`
-   - Record type: `A - Routes traffic to an IPv4 address`
-   - Alias: Yes
-   - Route traffic to: Same ALB as staging
-   - Click "Create records"
-
-   **Production alias:** `lookout` → ALB
-   - Record name: `lookout`
-   - Record type: `A - Routes traffic to an IPv4 address`
-   - Alias: Yes
-   - Route traffic to: Same ALB as staging
-   - Click "Create records"
-
-### 4.7 AWS CLI Alternative
-
-For automation, use the provided script or run these AWS CLI commands manually.
-
-#### Quick Setup with Script
-
-Use `make alb`:
-
-```bash
-# Set required environment variables
-export AWS_REGION=us-east-1
-export VPC_ID=vpc-xxxxx
-export EC2_INSTANCE_ID=i-xxxxx
-export SUBNET_1=subnet-xxxxx
-export SUBNET_2=subnet-xxxxx
-export SUBNET_3=subnet-xxxxx
-export CERTIFICATE_ARN=arn:aws:acm:us-east-1:xxxxx:certificate/xxxxx
-export HOSTED_ZONE_ID=Z0xxxxx
-
-# Optional: Enable multi-environment support (staging + production)
-export ENABLE_PROD=true
-
-make alb
-```
-
-The script will:
-- ✅ Verify fixed NodePorts are configured
-- ✅ Create ALB and target security groups
-- ✅ Create HTTP and HTTPS target groups (ports 32080, 32443) with Protocol=HTTPS
-- ✅ Automatically fix misconfigured target groups (wrong protocol)
-- ✅ Register EC2 instance with target groups
-- ✅ Create Application Load Balancer
-- ✅ Configure HTTP→HTTPS redirect listener (301)
-- ✅ Configure HTTPS listener with ACM certificate and end-to-end encryption
-- ✅ Configure host-based routing (if ENABLE_PROD=true):
-  - `lookout-stg.timonier.io` → staging target group
-  - `lookout-prod.timonier.io`, `lookout.timonier.io` → production target group
-- ✅ Verify target health
-
-**Multi-Environment Support:**
-- With `ENABLE_PROD=true`: Creates separate target groups for staging and production with host-based routing
-- Without `ENABLE_PROD`: Single staging environment only
-
-#### Manual Setup (Individual Commands)
-
-Alternatively, run these commands individually:
-
-##### Set Variables
-
-```bash
-# Configuration
-export AWS_REGION=us-east-1
-export VPC_ID=vpc-xxxxx  # Your VPC ID
-export EC2_INSTANCE_ID=i-xxxxx  # Your EC2 instance ID
-export SUBNET_1=subnet-xxxxx  # Public subnet in AZ 1
-export SUBNET_2=subnet-xxxxx  # Public subnet in AZ 2
-export CERTIFICATE_ARN=arn:aws:acm:us-east-1:xxxxx:certificate/xxxxx  # Your ACM certificate ARN
-export HOSTED_ZONE_ID=Z0xxxxx  # Your Route53 hosted zone ID
-```
-
-#### Create Security Groups
-
-```bash
-# Create ALB security group
-ALB_SG_ID=$(aws ec2 create-security-group \
-  --group-name lookout-alb-sg \
-  --description "Security group for Lookout ALB" \
-  --vpc-id $VPC_ID \
-  --region $AWS_REGION \
-  --output text --query 'GroupId')
-
-echo "ALB Security Group ID: $ALB_SG_ID"
-
-# Add inbound rules to ALB security group
-aws ec2 authorize-security-group-ingress \
-  --group-id $ALB_SG_ID \
-  --ip-permissions \
-    IpProtocol=tcp,FromPort=80,ToPort=80,IpRanges='[{CidrIp=0.0.0.0/0,Description="Allow HTTP from anywhere"}]' \
-    IpProtocol=tcp,FromPort=443,ToPort=443,IpRanges='[{CidrIp=0.0.0.0/0,Description="Allow HTTPS from anywhere"}]' \
-  --region $AWS_REGION
-
-# Get EC2 instance security group ID
-EC2_SG_ID=$(aws ec2 describe-instances \
-  --instance-ids $EC2_INSTANCE_ID \
-  --region $AWS_REGION \
-  --query 'Reservations[0].Instances[0].SecurityGroups[0].GroupId' \
-  --output text)
-
-echo "EC2 Security Group ID: $EC2_SG_ID"
-
-# Add inbound rules to EC2 security group (allow traffic from ALB)
-aws ec2 authorize-security-group-ingress \
-  --group-id $EC2_SG_ID \
-  --ip-permissions \
-    IpProtocol=tcp,FromPort=32080,ToPort=32080,UserIdGroupPairs="[{GroupId=$ALB_SG_ID,Description='Allow HTTP from ALB'}]" \
-    IpProtocol=tcp,FromPort=32443,ToPort=32443,UserIdGroupPairs="[{GroupId=$ALB_SG_ID,Description='Allow HTTPS from ALB'}]" \
-  --region $AWS_REGION
-```
-
-#### Create Target Groups
-
-```bash
-# Create HTTP target group
-HTTP_TG_ARN=$(aws elbv2 create-target-group \
-  --name lookout-http-tg \
-  --protocol HTTP \
-  --port 32080 \
-  --vpc-id $VPC_ID \
-  --health-check-protocol HTTP \
-  --health-check-path /health \
-  --health-check-interval-seconds 10 \
-  --health-check-timeout-seconds 5 \
-  --healthy-threshold-count 2 \
-  --unhealthy-threshold-count 2 \
-  --matcher HttpCode=200 \
-  --region $AWS_REGION \
-  --query 'TargetGroups[0].TargetGroupArn' \
-  --output text)
-
-echo "HTTP Target Group ARN: $HTTP_TG_ARN"
-
-# Create HTTPS target group (Protocol=HTTPS for end-to-end encryption)
-HTTPS_TG_ARN=$(aws elbv2 create-target-group \
-  --name lookout-https-tg \
-  --protocol HTTPS \
-  --port 32443 \
-  --vpc-id $VPC_ID \
-  --health-check-protocol HTTPS \
-  --health-check-path /health \
-  --health-check-interval-seconds 10 \
-  --health-check-timeout-seconds 5 \
-  --healthy-threshold-count 2 \
-  --unhealthy-threshold-count 2 \
-  --matcher HttpCode=200 \
-  --region $AWS_REGION \
-  --query 'TargetGroups[0].TargetGroupArn' \
-  --output text)
-
-echo "HTTPS Target Group ARN: $HTTPS_TG_ARN"
-
-# Register EC2 instance with both target groups
-aws elbv2 register-targets \
-  --target-group-arn $HTTP_TG_ARN \
-  --targets Id=$EC2_INSTANCE_ID,Port=32080 \
-  --region $AWS_REGION
-
-aws elbv2 register-targets \
-  --target-group-arn $HTTPS_TG_ARN \
-  --targets Id=$EC2_INSTANCE_ID,Port=32443 \
-  --region $AWS_REGION
-```
-
-#### Create Application Load Balancer
-
-```bash
-# Create ALB
-ALB_ARN=$(aws elbv2 create-load-balancer \
-  --name lookout-alb \
-  --subnets $SUBNET_1 $SUBNET_2 \
-  --security-groups $ALB_SG_ID \
-  --scheme internet-facing \
-  --type application \
-  --ip-address-type ipv4 \
-  --region $AWS_REGION \
-  --query 'LoadBalancers[0].LoadBalancerArn' \
-  --output text)
-
-echo "ALB ARN: $ALB_ARN"
-
-# Get ALB DNS name
-ALB_DNS=$(aws elbv2 describe-load-balancers \
-  --load-balancer-arns $ALB_ARN \
-  --region $AWS_REGION \
-  --query 'LoadBalancers[0].DNSName' \
-  --output text)
-
-echo "ALB DNS: $ALB_DNS"
-
-# Get ALB Hosted Zone ID (for Route53 alias)
-ALB_ZONE_ID=$(aws elbv2 describe-load-balancers \
-  --load-balancer-arns $ALB_ARN \
-  --region $AWS_REGION \
-  --query 'LoadBalancers[0].CanonicalHostedZoneId' \
-  --output text)
-
-echo "ALB Hosted Zone ID: $ALB_ZONE_ID"
-```
-
-#### Create Listeners
-
-```bash
-# Create HTTP listener with redirect to HTTPS
-HTTP_LISTENER_ARN=$(aws elbv2 create-listener \
-  --load-balancer-arn $ALB_ARN \
-  --protocol HTTP \
-  --port 80 \
-  --default-actions Type=redirect,RedirectConfig='{Protocol=HTTPS,Port=443,StatusCode=HTTP_301}' \
-  --region $AWS_REGION \
-  --query 'Listeners[0].ListenerArn' \
-  --output text)
-
-echo "HTTP Listener ARN: $HTTP_LISTENER_ARN"
-
-# Create HTTPS listener
-HTTPS_LISTENER_ARN=$(aws elbv2 create-listener \
-  --load-balancer-arn $ALB_ARN \
-  --protocol HTTPS \
-  --port 443 \
-  --certificates CertificateArn=$CERTIFICATE_ARN \
-  --default-actions Type=forward,TargetGroupArn=$HTTPS_TG_ARN \
-  --region $AWS_REGION \
-  --query 'Listeners[0].ListenerArn' \
-  --output text)
-
-echo "HTTPS Listener ARN: $HTTPS_LISTENER_ARN"
-```
-
-#### Configure Route53
-
-```bash
-# Create Route53 A record (alias to ALB)
-cat > /tmp/route53-change.json <<EOF
-{
-  "Changes": [
-    {
-      "Action": "UPSERT",
-      "ResourceRecordSet": {
-        "Name": "lookout-stg.timonier.io",
-        "Type": "A",
-        "AliasTarget": {
-          "HostedZoneId": "$ALB_ZONE_ID",
-          "DNSName": "$ALB_DNS",
-          "EvaluateTargetHealth": true
-        }
-      }
-    }
-  ]
-}
-EOF
-
-aws route53 change-resource-record-sets \
-  --hosted-zone-id $HOSTED_ZONE_ID \
-  --change-batch file:///tmp/route53-change.json \
-  --region $AWS_REGION
-
-rm /tmp/route53-change.json
-
-echo "Route53 record created for lookout-stg.timonier.io"
-```
-
-#### Request ACM Certificate (Optional)
-
-If you don't have a certificate yet:
-
-```bash
-# Request ACM certificate
-CERT_ARN=$(aws acm request-certificate \
-  --domain-name lookout-stg.timonier.io \
-  --validation-method DNS \
-  --region $AWS_REGION \
-  --query 'CertificateArn' \
-  --output text)
-
-echo "Certificate ARN: $CERT_ARN"
-
-# Get DNS validation records
-aws acm describe-certificate \
-  --certificate-arn $CERT_ARN \
-  --region $AWS_REGION \
-  --query 'Certificate.DomainValidationOptions[0].ResourceRecord'
-
-# Add the CNAME record to Route53 for validation
-# (Copy the Name and Value from the output above)
-
-# Check certificate status
-aws acm describe-certificate \
-  --certificate-arn $CERT_ARN \
-  --region $AWS_REGION \
-  --query 'Certificate.Status' \
-  --output text
-```
-
-#### Verify Target Health
-
-```bash
-# Check HTTP target group health
-aws elbv2 describe-target-health \
-  --target-group-arn $HTTP_TG_ARN \
-  --region $AWS_REGION
-
-# Check HTTPS target group health
-aws elbv2 describe-target-health \
-  --target-group-arn $HTTPS_TG_ARN \
-  --region $AWS_REGION
-
-# Both should show State: healthy
-```
-
-#### Complete Script
-
-All commands above are available via `make alb` (see [Quick Setup with Script](#quick-setup-with-script) section above).
-
-The script includes:
-- Error handling and validation
-- Idempotent operations (safe to re-run)
-- Color-coded output
-- Progress indicators
-- Health check verification
-- Helpful summary with next steps
-
-### 4.8 Step 6: Verify the Setup
-
-```bash
-# Check Target Health (AWS Console)
-# EC2 → Target Groups → lookout-http-tg → Targets tab
-# EC2 → Target Groups → lookout-https-tg → Targets tab
-# Both should show "healthy"
-
-# Test DNS Resolution
-nslookup lookout-stg.timonier.io
-# Should return ALB's IP addresses
-
-# Test HTTPS Access
-curl -I https://lookout-stg.timonier.io/health
-# Should return 200 OK
-
-# Test HTTP Redirect
-curl -I http://lookout-stg.timonier.io
-# Should return 301 redirect to HTTPS
-```
-
-### 4.9 Troubleshooting ALB
-
-#### Target is Unhealthy
-
-1. Check EC2 security group allows traffic from ALB on ports 32080 and 32443
-2. Verify the Gateway service is running with fixed NodePorts:
-   ```bash
-   kubectl get svc -n envoy-gateway-system
-   ```
-3. Check health check path is accessible:
-   ```bash
-   curl -H "Host: lookout-stg.timonier.io" http://localhost:32080/health
-   curl -k -H "Host: lookout-stg.timonier.io" https://localhost:32443/health
-   ```
-4. Check Kind cluster status:
-   ```bash
-   kubectl get pods -n staging
-   ```
-
-#### SSL Certificate Issues
-
-1. Ensure certificate covers `lookout-stg.timonier.io`
-2. Check certificate status in ACM (must be "Issued")
-3. Verify DNS validation records exist in Route53
-
-#### 502 Bad Gateway
-
-1. Check target health in target group
-2. Verify Envoy Gateway is running:
-   ```bash
-   kubectl get pods -n envoy-gateway-system
-   ```
-3. Check HTTPRoute configuration:
-   ```bash
-   kubectl get httproute -n staging -o yaml
-   ```
-
-#### DNS Not Resolving
-
-1. Wait 5-10 minutes for DNS propagation
-2. Check Route53 record is correctly configured
-3. Verify ALB is in "active" state
-4. Use `dig` to debug:
-   ```bash
-   dig lookout-stg.timonier.io
-   ```
-
-### 4.10 Fixed NodePorts Benefits
-
-The fixed NodePorts (32080, 32443) ensure:
-- **Stable Configuration:** NodePorts don't change when Gateway is recreated
-- **No ALB Updates:** Target groups remain valid after Gateway changes
-- **Predictable Security Rules:** Security group rules never need updating
-- **Consistent Port Mapping:** Always know which ports to use
-
-To reconfigure NodePorts if needed:
-
-```bash
-# Change NodePort values
-make kind-nodeports HTTP_NODEPORT=32090 HTTPS_NODEPORT=32453
-
-# Recreate Gateway to apply
-kubectl delete gateway lookout -n staging
-kubectl apply -f k8s/argocd/staging-application.yaml
-
-# Update ALB target groups with new ports
-```
-
-### 4.11 Cost Considerations
-
-- **Application Load Balancer:** ~$16-20/month + data processing charges
-- **ACM Certificate:** Free for public certificates
-- **Route53:** $0.50/month per hosted zone + $0.40 per million queries
-
-### 4.12 Architecture Diagram
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                           Internet                               │
-└───────────────────────────────┬─────────────────────────────────┘
-                                │
-                ┌───────────────▼──────────────────────┐
-                │  Route53:                            │
-                │  - lookout-stg.timonier.io (staging) │
-                │  - lookout-prod.timonier.io (prod)   │
-                │  - lookout.timonier.io (prod alias)  │
-                └───────────────┬──────────────────────┘
-                                │
-                ┌───────────────▼────────────────┐
-                │   Application Load Balancer    │
-                │  - HTTPS Listener (443)        │
-                │  - HTTP Redirect (80→443)      │
-                │  - SSL/TLS Termination         │
-                │  - Host-based routing rules    │
-                └───────────────┬────────────────┘
-                                │
-                ┌───────────────▼────────────────┐
-                │  Target Groups                 │
-                │  - HTTP TG → Port 32080        │
-                │  - HTTPS TG → Port 32443       │
-                │  Health Check: /health         │
-                └───────────────┬────────────────┘
-                                │
-                ┌───────────────▼────────────────┐
-                │  EC2 Instance: <EC2_PRIVATE_IP>      │
-                │  ┌──────────────────────────┐  │
-                │  │  Kind Cluster            │  │
-                │  │  ┌────────────────────┐  │  │
-                │  │  │ Envoy Gateway      │  │  │
-                │  │  │ HTTP: :32080       │  │  │
-                │  │  │ HTTPS: :32443      │  │  │
-                │  │  └─────────┬──────────┘  │  │
-                │  │            │              │  │
-                │  │  ┌─────────▼──────────┐  │  │
-                │  │  │  staging namespace │  │  │
-                │  │  │  - Gateway:lookout │  │  │
-                │  │  │  - HTTPRoute (stg) │  │  │
-                │  │  │  - Lookout App     │  │  │
-                │  │  │  - Dgraph          │  │  │
-                │  │  └────────────────────┘  │  │
-                │  │  ┌────────────────────┐  │  │
-                │  │  │ production         │  │  │
-                │  │  │  namespace         │  │  │
-                │  │  │  - HTTPRoute (prod)│  │  │
-                │  │  │  - Lookout App     │  │  │
-                │  │  │  - Dgraph          │  │  │
-                │  │  └────────────────────┘  │  │
-                │  └──────────────────────────┘  │
-                └─────────────────────────────────┘
-```
+This creates an HTTPRoute targeting `/health` across hostnames.
 
 ---
 
@@ -1735,7 +969,7 @@ aws iam create-policy \
 
 **C. Create IAM User and Bootstrap Credentials**
 
-Since Kind-on-EC2 can't use IRSA (EKS-only) or IMDS (not accessible from Docker containers),
+Since local Kind clusters cannot use IRSA (EKS-only) or IMDS without special setup,
 we use a dedicated IAM user with static credentials:
 
 ```bash
@@ -1808,7 +1042,7 @@ lookout-app:
     refreshInterval: "1h"  # How often to sync from AWS
     aws:
       region: "us-west-2"
-      role: ""  # Set for EKS/IRSA; leave empty for Kind-on-EC2
+      role: ""  # Set for EKS/IRSA; leave empty for Kind
       credentialsSecret: "aws-credentials"  # K8s secret with access-key-id and secret-access-key
     secretStore:
       name: "aws-secrets-manager"
@@ -1819,7 +1053,7 @@ lookout-app:
 ```
 
 **Auth modes** (set one, leave the other empty):
-- `credentialsSecret`: Name of a K8s secret containing `access-key-id` and `secret-access-key` (for Kind-on-EC2)
+- `credentialsSecret`: Name of a K8s secret containing `access-key-id` and `secret-access-key` (for Kind / static credentials)
 - `role`: IAM role ARN for IRSA (for EKS)
 
 #### AWS Secret Format
@@ -1974,10 +1208,10 @@ aws iam attach-user-policy \
 
 #### SecretStore Shows InvalidProviderConfig
 
-**Error:** `an IAM role must be associated with service account` or `no EC2 IMDS role found`
+**Error:** `an IAM role must be associated with service account` or `no IMDS role found`
 
 **Cause:** SecretStore is configured for IRSA/IMDS auth instead of `secretRef`.
-Kind-on-EC2 can't use IRSA (EKS-only) or IMDS (not accessible from Docker containers).
+Kind clusters cannot use IRSA (EKS-only) or IMDS without additional setup.
 
 **Fix:** Ensure `credentialsSecret` is set in Helm values and the `aws-credentials` K8s secret exists:
 ```bash
@@ -2175,7 +1409,7 @@ kubectl get externalsecret -n staging \
 - [External Secrets Operator Documentation](https://external-secrets.io/)
 - [AWS Secrets Manager Documentation](https://docs.aws.amazon.com/secretsmanager/)
 - [Kubernetes Secrets](https://kubernetes.io/docs/concepts/configuration/secret/)
-- [IAM Roles for EC2](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/iam-roles-for-amazon-ec2.html)
+- [AWS Secrets Manager Best Practices](https://docs.aws.amazon.com/secretsmanager/latest/userguide/best-practices.html)
 
 ---
 
@@ -2261,10 +1495,10 @@ argocd app sync lookout-staging
 
 ```bash
 # Should return 401 Unauthorized
-curl -s -o /dev/null -w "%{http_code}" https://lookout-stg.timonier.io/
+curl -s -o /dev/null -w "%{http_code}" -H "Host: lookout.example.com" https://localhost:32443/
 
 # Should return 200 with correct credentials
-curl -s -o /dev/null -w "%{http_code}" -u staginguser:your-secure-password https://lookout-stg.timonier.io/
+curl -s -o /dev/null -w "%{http_code}" -u staginguser:your-secure-password -H "Host: lookout.example.com" https://localhost:32443/
 ```
 
 ### 6.3 Managing Credentials
@@ -2366,9 +1600,6 @@ See [Chapter 5 Troubleshooting](#56-troubleshooting) for ExternalSecret debuggin
 ### Access the Cluster
 
 ```bash
-# SSH to EC2
-ssh ubuntu@<EC2_PRIVATE_IP>
-
 # Check cluster status
 kubectl cluster-info
 kubectl get nodes
@@ -2654,7 +1885,7 @@ docker pull ghcr.io/timoniersystems/lookout:main
 ### NodePort Issues
 
 **Symptoms:**
-- ALB health checks failing
+- Health check route failing
 - Ports changed after Gateway recreation
 - Cannot access via NodePort
 
@@ -2669,9 +1900,9 @@ kubectl get svc -n envoy-gateway-system | grep envoy-staging
 # 2. Check EnvoyProxy configuration
 kubectl get envoyproxy custom-proxy-config -n staging -o yaml
 
-# 3. Test NodePorts from EC2
-curl -H "Host: lookout-stg.timonier.io" http://localhost:32080/health
-curl -k -H "Host: lookout-stg.timonier.io" https://localhost:32443/health
+# 3. Test NodePorts
+curl -H "Host: lookout.example.com" http://localhost:32080/health
+curl -k -H "Host: lookout.example.com" https://localhost:32443/health
 
 # 4. Check Kind port mappings
 docker ps | grep lookout-control-plane
@@ -2712,7 +1943,7 @@ kubectl get httproute lookout -n staging -o jsonpath='{.spec.hostnames}'
 kubectl get svc lookout-staging-lookout-app -n staging
 
 # 4. Test with Host header
-curl -H "Host: lookout-stg.timonier.io" http://localhost:32080/health
+curl -H "Host: lookout.example.com" http://localhost:32080/health
 
 # 5. Check Envoy routing configuration
 kubectl logs -n envoy-gateway-system -l gateway.envoyproxy.io/owning-gateway-name=lookout | grep -i route
@@ -2789,7 +2020,7 @@ kubectl get pods -n argocd | grep server
 # 2. Check service
 kubectl get svc argocd-server -n argocd
 
-# 3. Test locally on EC2
+# 3. Test locally
 kubectl port-forward svc/argocd-server -n argocd 8080:443 &
 curl -k https://localhost:8080
 
@@ -2873,12 +2104,11 @@ kubectl logs -n staging -l app.kubernetes.io/name=lookout-app -f
 kubectl logs -n envoy-gateway-system -l gateway.envoyproxy.io/owning-gateway-name=lookout -f
 
 # Health checks
-curl -H "Host: lookout-stg.timonier.io" http://localhost:32080/health
-curl -k -H "Host: lookout-stg.timonier.io" https://localhost:32443/health
+curl -H "Host: lookout.example.com" http://localhost:32080/health
+curl -k -H "Host: lookout.example.com" https://localhost:32443/health
 
 # ArgoCD access
-ssh -L 8080:localhost:8080 ubuntu@<EC2_PRIVATE_IP> \
-  'kubectl port-forward svc/argocd-server -n argocd 8080:443'
+kubectl port-forward svc/argocd-server -n argocd 8080:443
 
 # Sync application
 kubectl patch application lookout-staging -n argocd \
@@ -2909,4 +2139,4 @@ kubectl patch application lookout-staging -n argocd \
 
 **Setup Date:** 2026-02-15
 **Cluster:** lookout (Kind v0.27.0, K8s v1.32.2)
-**Location:** EC2 instance <EC2_PRIVATE_IP>
+**Location:** Local / Kind

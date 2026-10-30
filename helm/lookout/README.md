@@ -131,7 +131,7 @@ helm install lookout ./helm/lookout -f values.yaml -n production
 | Image tag | `main` (latest commit) | Semver tags (`v1.0.0`) |
 | ArgoCD strategy | Digest (auto-deploy on push) | Semver (deploy on tag) |
 | Gateway | Owns the shared `lookout` gateway | No gateway (cross-namespace HTTPRoute) |
-| Hostnames | `lookout-stg.timonier.io` | `lookout-prod.timonier.io`, `lookout.timonier.io` |
+| Hostnames | `lookout-stg.example.com` | `lookout.example.com` |
 | Basic auth | Enabled (username: staging) | Enabled (username: production) |
 | Replicas | 1 (Kind cluster) | 1 (Kind cluster) |
 | Image pull | Always | IfNotPresent |

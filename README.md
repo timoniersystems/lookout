@@ -127,7 +127,7 @@ make install
 
 - 📖 **[Usage Guide](docs/USAGE.md)** - Complete guide with examples and workflows
 - 🐳 **[Docker Compose Guide](docs/DOCKER_COMPOSE.md)** - Running with Docker, services, ports, troubleshooting
-- ☸️ **[Kubernetes Deployment](docs/KUBERNETES_SETUP.md)** - Complete K8s guide: Kind cluster, Gateway API, ArgoCD GitOps, AWS ALB, production deployment
+- ☸️ **[Kubernetes Deployment](docs/KUBERNETES_SETUP.md)** - Complete K8s guide: Kind cluster, Gateway API, ArgoCD GitOps, production deployment
 - 🔒 **[TLS Setup Guide](docs/TLS_SETUP.md)** - HTTPS configuration and security best practices
 - 🏗️ **[Architecture](docs/ARCHITECTURE.md)** - System design and components
 - 💻 **[Contributing Guide](CONTRIBUTING.md)** - Development setup and contribution guide

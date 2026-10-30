@@ -1,4 +1,6 @@
 # Staging environment values for Lookout
+# Note: The landru deployment (lookout.timonier.ai) manages its own values
+# independently and does not use this file.
 global:
   environment: staging
   gatewayAPI:
@@ -49,7 +51,7 @@ trafficPolicy:
 httproute:
   enabled: true
   hostnames:
-    - "lookout-stg.timonier.io"  # Staging subdomain
+    - "lookout-stg.example.com"  # Staging subdomain
   rules:
     - matches:
         - path:

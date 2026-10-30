@@ -1,4 +1,6 @@
 # Production environment values for Lookout
+# Note: The landru production deployment (lookout.timonier.ai) manages its own
+# values externally and does not use this file.
 global:
   environment: production
   gatewayAPI:
@@ -32,8 +34,7 @@ httproute:
   enabled: true
   gatewayNamespace: staging  # Cross-namespace reference to staging gateway
   hostnames:
-    - "lookout-prod.timonier.io"
-    - "lookout.timonier.io"
+    - "lookout.example.com"
   rules:
     - matches:
         - path:

@@ -7,7 +7,7 @@ This document describes the organization of the Lookout repository.
 ```
 lookout/
 ├── docs/                       # All documentation
-│   ├── KUBERNETES_SETUP.md     # Complete K8s guide (Kind, Gateway, ArgoCD, ALB)
+│   ├── KUBERNETES_SETUP.md     # Complete K8s guide (Kind, Gateway, ArgoCD)
 │   ├── ARCHITECTURE.md         # System architecture
 │   ├── DOCKER_COMPOSE.md       # Docker Compose setup
 │   ├── TLS_SETUP.md            # TLS certificate setup
@@ -16,22 +16,10 @@ lookout/
 │   └── USAGE.md                # Usage guide
 │
 ├── scripts/                    # Automation scripts
-│   ├── create-ghcr-secret.sh   # Create GHCR pull secret in a namespace
-│   ├── deploy.sh               # Legacy deployment script
+│   ├── build-demo-cast.py      # Regenerate CLI demo SVG
+│   ├── demo.sh                 # Asciinema demo script
 │   ├── generate-certs.sh       # TLS certificate generation for nginx
-│   ├── generate-favicon.py     # Favicon generator
-│   ├── setup-alb.sh            # AWS ALB setup (staging + production)
-│   ├── setup-argocd.sh         # ArgoCD installation
-│   ├── setup-argocd-github-repo.sh    # ArgoCD GitHub repo connection
-│   ├── setup-argocd-image-updater.sh  # ArgoCD Image Updater installation
-│   ├── setup-basic-auth.sh     # Basic auth setup (configurable per env)
-│   ├── setup-external-secrets.sh      # External Secrets Operator setup
-│   ├── setup-fixed-nodeports.sh       # Gateway fixed NodePort config
-│   ├── setup-gateway.sh        # Envoy Gateway setup
-│   ├── setup-health-httproute.sh      # ALB health check route
-│   ├── setup-kind-nodeport-forwarding.sh  # Kind NodePort forwarding
-│   ├── setup-registry.sh       # Docker registry setup for Kind
-│   └── sync-to-ec2.sh          # Rsync code to EC2 instance
+│   └── generate-favicon.py     # Favicon generator
 │
 ├── helm/                       # Helm charts
 │   └── lookout/
@@ -113,7 +101,7 @@ lookout/
 ## Key Documentation
 
 ### Deployment & Operations
-- **[KUBERNETES_SETUP.md](KUBERNETES_SETUP.md)** - Complete guide: Kind cluster, Gateway API, ArgoCD GitOps, AWS ALB, production deployment
+- **[KUBERNETES_SETUP.md](KUBERNETES_SETUP.md)** - Complete guide: Kind cluster, Gateway API, ArgoCD GitOps, production deployment
 - **[DOCKER_COMPOSE.md](DOCKER_COMPOSE.md)** - Local development with Docker Compose
 
 ### Development
