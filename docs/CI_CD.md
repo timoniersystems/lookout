@@ -158,8 +158,8 @@ kubectl get application lookout-production -n argocd
 # Check production pods
 kubectl get pods -n production
 
-# Test production endpoint
-curl -u production:PASSWORD https://lookout-prod.timonier.io/health
+# Test production endpoint (runs on landru)
+curl https://lookout.timonier.ai/health
 ```
 
 ## Setting Up CI/CD

@@ -9,7 +9,7 @@ spec:
     kubernetes:
       envoyService:
         type: LoadBalancer
-        # Fixed NodePorts to prevent ALB reconfiguration
+        # Fixed NodePorts for stable ingress routing
         # HTTP: 32080, HTTPS: 32443
         annotations:
           service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
